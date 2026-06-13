@@ -41,7 +41,7 @@ const ANTIGRAVITY_CONFIG = {
   loadProjectApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
   tokenUrl: "https://oauth2.googleapis.com/token",
   clientId: process.env.VERTEX_CLIENT_ID || "",
-  client[REDACTED],
+  clientSecret: process.env.CLIENT_SECRET || "",
   userAgent: getPlatformUserAgent(),
 };
 

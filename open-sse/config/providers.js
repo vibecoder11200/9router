@@ -59,7 +59,7 @@ export const PROVIDERS = {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
     format: "gemini",
     clientId: process.env.GOOGLE_CLIENT_ID || "",
-    client[REDACTED]
+    clientSecret: process.env.CLIENT_SECRET || ""
   },
   "gemini-web": {
     baseUrl: "https://gemini.google.com",
@@ -70,7 +70,7 @@ export const PROVIDERS = {
     baseUrl: "https://cloudcode-pa.googleapis.com/v1internal",
     format: "gemini-cli",
     clientId: process.env.GOOGLE_CLIENT_ID || "",
-    client[REDACTED]
+    clientSecret: process.env.CLIENT_SECRET || ""
   },
   codex: {
     baseUrl: "https://chatgpt.com/backend-api/codex/responses",
@@ -94,7 +94,7 @@ export const PROVIDERS = {
     format: "openai",
     headers: { "User-Agent": "iFlow-Cli" },
     clientId: process.env.GLM_CLIENT_ID || "",
-    client[REDACTED],
+    clientSecret: process.env.CLIENT_SECRET || "",
     tokenUrl: "https://iflow.cn/oauth/token",
     authUrl: "https://iflow.cn/oauth"
   },
@@ -118,7 +118,7 @@ export const PROVIDERS = {
     format: "antigravity",
     headers: { "User-Agent": `antigravity/1.107.0 ${platform()}/${arch()}` },
     clientId: process.env.VERTEX_CLIENT_ID || "",
-    client[REDACTED]
+    clientSecret: process.env.CLIENT_SECRET || ""
   },
   openrouter: {
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
