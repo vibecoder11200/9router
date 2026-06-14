@@ -159,10 +159,10 @@ async function callStreamGenerate(cookies, session, messages, modelName, streami
   const url = `${STREAMGENERATE_URL}?${searchParams.toString()}`;
 
   // Build form body — include SNlM0e (at token) for XSRF protection
-  const body = new URLSearchParams();
-  body.set("f.req", fReq);
+  const formBody = new URLSearchParams();
+  formBody.set("f.req", fReq);
   if (session.snlm0e) {
-    body.set("at", session.snlm0e);
+    formBody.set("at", session.snlm0e);
   }
 
   // Build fresh SAPISIDHASH per request (real browsers do this every time)
@@ -191,7 +191,7 @@ async function callStreamGenerate(cookies, session, messages, modelName, streami
   const res = await fetch(url, {
     method: "POST",
     headers: requestHeaders,
-    body: body.toString(),
+    body: formBody.toString(),
     signal,
   });
 
