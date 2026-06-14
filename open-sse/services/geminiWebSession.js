@@ -13,6 +13,7 @@
 
 import { serializeGeminiWebCookieHeader, validateGeminiWebCookies } from "./geminiWebCookie.js";
 import { buildBatchExecuteBody, parseResponseFrames, extractModelList, getNestedValue } from "./geminiWebRpc.js";
+import { generateNavigationClientHints, generateApiClientHints, getNextUserAgent } from "./geminiWebFingerprint.js";
 import crypto from "crypto";
 
 const GEMINI_BASE = "https://gemini.google.com";
@@ -20,7 +21,7 @@ const GEMINI_APP_URL = `${GEMINI_BASE}/app`;
 const BATCHEXECUTE_URL = `${GEMINI_BASE}/_/BardChatUi/data/batchexecute`;
 
 const DEFAULT_TIMEOUT_MS = 15_000;
-const USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
+// Using getNextUserAgent() from fingerprint module
 
 // Regex patterns for extraction from HTML
 const BUILD_LABEL_PATTERN = /"cfb2h":\s*"(.*?)"/;
@@ -81,43 +82,33 @@ function buildCookieHeader(cookies) {
 }
 
 function browserHeaders(cookieHeader) {
+  const hints = generateNavigationClientHints();
   return {
-    "User-Agent": USER_AGENT,
+    "User-Agent": getNextUserAgent(),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept-Encoding": "gzip, deflate, br",
     "Cookie": cookieHeader,
-    "Referer": `${GEMINI_BASE}/`,
-    "Origin": GEMINI_BASE,
-    "Sec-CH-UA": '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
-    "Sec-CH-UA-Mobile": "?0",
-    "Sec-CH-UA-Platform": '"macOS"',
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "same-origin",
-    "Priority": "u=0, i",
+    "Referer": "https://gemini.google.com/",
+    "Origin": "https://gemini.google.com",
+    ...hints,
   };
 }
 
 function rpcHeaders(cookieHeader, authHeader, contentType = "application/x-www-form-urlencoded;charset=utf-8") {
+  const hints = generateApiClientHints();
   return {
-    "User-Agent": USER_AGENT,
+    "User-Agent": getNextUserAgent(),
     "Accept": "*/*",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept-Encoding": "gzip, deflate, br",
     "Content-Type": contentType,
     "Cookie": cookieHeader,
     "Authorization": authHeader,
-    "Referer": `${GEMINI_BASE}/app`,
-    "Origin": GEMINI_BASE,
+    "Referer": "https://gemini.google.com/app",
+    "Origin": "https://gemini.google.com",
     "X-Same-Domain": "1",
-    "Sec-CH-UA": '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
-    "Sec-CH-UA-Mobile": "?0",
-    "Sec-CH-UA-Platform": '"macOS"',
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Site": "same-origin",
-    "Priority": "u=0, i",
+    ...hints,
   };
 }
 

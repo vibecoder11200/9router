@@ -103,6 +103,12 @@ async function getOrBootstrapSession(cookies, log, proxy) {
   }
 
   setCachedSession(hash, session);
+
+  // Start session keep-alive (non-blocking, only once)
+  try {
+    const { startSessionKeepAlive } = require("../services/geminiWebKeepAlive.js");
+    startSessionKeepAlive({ cookies }, proxy);
+  } catch {}
   return session;
 }
 
