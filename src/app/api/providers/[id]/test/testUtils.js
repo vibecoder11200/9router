@@ -19,6 +19,8 @@ import {
   KILOCODE_CONFIG,
 } from "@/lib/oauth/constants/oauth";
 import { buildClineHeaders } from "@/shared/utils/clineAuth";
+import { extractGeminiWebCredentials } from "open-sse/services/geminiWebCookie.js";
+import { bootstrapGeminiWebSession } from "open-sse/services/geminiWebSession.js";
 
 // OAuth provider test endpoints
 const OAUTH_TEST_CONFIG = {
@@ -563,6 +565,19 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
       case "chutes": {
         const res = await fetchWithConnectionProxy("https://llm.chutes.ai/v1/models", { headers: { Authorization: `Bearer ${connection.apiKey}` } }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
+      }
+      case "gemini-web": {
+        const { cookies, valid: cookiesValid, error: cookieError } = extractGeminiWebCredentials(connection);
+        if (!cookiesValid) return { valid: false, error: cookieError || "Invalid Gemini Web cookies" };
+        try {
+          await bootstrapGeminiWebSession(cookies, { proxy: effectiveProxy });
+          return { valid: true, error: null };
+        } catch (err) {
+          if (err.status === 401 || err.status === 403) {
+            return { valid: false, error: "Cookie expired or invalid" };
+          }
+          return { valid: false, error: err.message };
+        }
       }
       case "grok-web": {
         const token = connection.apiKey.startsWith("sso=") ? connection.apiKey.slice(4) : connection.apiKey;
