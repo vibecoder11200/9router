@@ -18,7 +18,7 @@ function getOAuthPlatformEnum() {
 
 // Claude OAuth Configuration (Authorization Code Flow with PKCE)
 export const CLAUDE_CONFIG = {
-  clientId: process.env.CLAUDE_CLIENT_ID || "",
+  clientId: "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
   authorizeUrl: "https://claude.ai/oauth/authorize",
   tokenUrl: "https://api.anthropic.com/v1/oauth/token",
   scopes: ["org:create_api_key", "user:profile", "user:inference"],
@@ -27,7 +27,7 @@ export const CLAUDE_CONFIG = {
 
 // Codex (OpenAI) OAuth Configuration (Authorization Code Flow with PKCE)
 export const CODEX_CONFIG = {
-  clientId: process.env.KILOCODE_CLIENT_ID || "",
+  clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
   authorizeUrl: "https://auth.openai.com/oauth/authorize",
   tokenUrl: "https://auth.openai.com/oauth/token",
   scope: "openid profile email offline_access",
@@ -42,8 +42,8 @@ export const CODEX_CONFIG = {
 
 // Gemini (Google) OAuth Configuration (Standard OAuth2)
 export const GEMINI_CONFIG = {
-  clientId: process.env.GOOGLE_CLIENT_ID || "",
-  clientSecret: process.env.CLIENT_SECRET || "",
+  clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+  clientSecret: "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",
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenUrl: "https://oauth2.googleapis.com/token",
   userInfoUrl: "https://www.googleapis.com/oauth2/v1/userinfo",
@@ -56,7 +56,7 @@ export const GEMINI_CONFIG = {
 
 // Qwen OAuth Configuration (Device Code Flow with PKCE)
 export const QWEN_CONFIG = {
-  clientId: process.env.MINIMAX_CLIENT_ID || "",
+  clientId: "f0304373b74a44d2b584a3fb70ca9e56",
   deviceCodeUrl: "https://chat.qwen.ai/api/v1/oauth2/device/code",
   tokenUrl: "https://chat.qwen.ai/api/v1/oauth2/token",
   scope: "openid profile email model.completion",
@@ -81,8 +81,8 @@ export const QODER_CONFIG = {
 
 // iFlow OAuth Configuration (Authorization Code)
 export const IFLOW_CONFIG = {
-  clientId: process.env.GLM_CLIENT_ID || "",
-  clientSecret: process.env.CLIENT_SECRET || "",
+  clientId: "10009311001",
+  clientSecret: "4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW",
   authorizeUrl: "https://iflow.cn/oauth",
   tokenUrl: "https://iflow.cn/oauth/token",
   userInfoUrl: "https://iflow.cn/api/oauth/getUserInfo",
@@ -94,8 +94,8 @@ export const IFLOW_CONFIG = {
 
 // Antigravity OAuth Configuration (Standard OAuth2 with Google)
 export const ANTIGRAVITY_CONFIG = {
-  clientId: process.env.VERTEX_CLIENT_ID || "",
-  clientSecret: process.env.CLIENT_SECRET || "",
+  clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
+  clientSecret: "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",
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenUrl: "https://oauth2.googleapis.com/token",
   userInfoUrl: "https://www.googleapis.com/oauth2/v1/userinfo",
@@ -127,7 +127,7 @@ export function getOAuthClientMetadata() {
 
 // OpenAI OAuth Configuration (Authorization Code Flow with PKCE)
 export const OPENAI_CONFIG = {
-  clientId: process.env.KILOCODE_CLIENT_ID || "",
+  clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
   authorizeUrl: "https://auth.openai.com/oauth/authorize",
   tokenUrl: "https://auth.openai.com/oauth/token",
   scope: "openid profile email offline_access",
@@ -140,7 +140,7 @@ export const OPENAI_CONFIG = {
 
 // GitHub Copilot OAuth Configuration (Device Code Flow)
 export const GITHUB_CONFIG = {
-  clientId: process.env.GITHUB_CLIENT_ID || "",
+  clientId: "Iv1.b507a08c87ecfe98",
   deviceCodeUrl: "https://github.com/login/device/code",
   tokenUrl: "https://github.com/login/oauth/access_token",
   userInfoUrl: "https://api.github.com/user",
@@ -211,7 +211,7 @@ export const CURSOR_CONFIG = {
 
 // Kimi Coding OAuth Configuration (Device Code Flow)
 export const KIMI_CODING_CONFIG = {
-  clientId: process.env.KIMI_CODING_OAUTH_CLIENT_ID || process.env.CODEX_CLIENT_ID || "",
+  clientId: process.env.KIMI_CODING_OAUTH_CLIENT_ID || "17e5f671-d194-4dfb-9706-5516cb48c098",
   deviceCodeUrl: "https://auth.kimi.com/api/oauth/device_authorization",
   tokenUrl: "https://auth.kimi.com/api/oauth/token",
 };

@@ -52,25 +52,20 @@ export const PROVIDERS = {
     baseUrl: "https://api.anthropic.com/v1/messages",
     format: "claude",
     headers: { ...CLAUDE_CLI_SPOOF_HEADERS },
-    clientId: process.env.CLAUDE_CLIENT_ID || "",
+    clientId: "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
     tokenUrl: "https://api.anthropic.com/v1/oauth/token"
   },
   gemini: {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
     format: "gemini",
-    clientId: process.env.GOOGLE_CLIENT_ID || "",
-    clientSecret: process.env.CLIENT_SECRET || ""
-  },
-  "gemini-web": {
-    baseUrl: "https://gemini.google.com",
-    format: "gemini-web",
-    headers: {},
+    clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+    clientSecret: "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"
   },
   "gemini-cli": {
     baseUrl: "https://cloudcode-pa.googleapis.com/v1internal",
     format: "gemini-cli",
-    clientId: process.env.GOOGLE_CLIENT_ID || "",
-    clientSecret: process.env.CLIENT_SECRET || ""
+    clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+    clientSecret: "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"
   },
   codex: {
     baseUrl: "https://chatgpt.com/backend-api/codex/responses",
@@ -79,13 +74,13 @@ export const PROVIDERS = {
       "originator": "codex_cli_rs",
       "User-Agent": "codex_cli_rs/0.136.0"
     },
-    clientId: process.env.KILOCODE_CLIENT_ID || "",
+    clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
     tokenUrl: "https://auth.openai.com/oauth/token"
   },
   qwen: {
     baseUrl: "https://portal.qwen.ai/v1/chat/completions",
     format: "openai",
-    clientId: process.env.MINIMAX_CLIENT_ID || "",
+    clientId: "f0304373b74a44d2b584a3fb70ca9e56",
     tokenUrl: "https://chat.qwen.ai/api/v1/oauth2/token",
     authUrl: "https://chat.qwen.ai/api/v1/oauth2/device/code"
   },
@@ -93,8 +88,8 @@ export const PROVIDERS = {
     baseUrl: "https://apis.iflow.cn/v1/chat/completions",
     format: "openai",
     headers: { "User-Agent": "iFlow-Cli" },
-    clientId: process.env.GLM_CLIENT_ID || "",
-    clientSecret: process.env.CLIENT_SECRET || "",
+    clientId: "10009311001",
+    clientSecret: "4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW",
     tokenUrl: "https://iflow.cn/oauth/token",
     authUrl: "https://iflow.cn/oauth"
   },
@@ -117,8 +112,8 @@ export const PROVIDERS = {
     ],
     format: "antigravity",
     headers: { "User-Agent": `antigravity/1.107.0 ${platform()}/${arch()}` },
-    clientId: process.env.VERTEX_CLIENT_ID || "",
-    clientSecret: process.env.CLIENT_SECRET || ""
+    clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
+    clientSecret: "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"
   },
   openrouter: {
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
@@ -198,7 +193,7 @@ export const PROVIDERS = {
       "Accept": "application/json",
       "Content-Type": "application/json"
     },
-    clientId: process.env.GITHUB_CLIENT_ID || ""
+    clientId: "Iv1.b507a08c87ecfe98"
   },
   kiro: {
     // All three hosts resolve to the same regional CodeWhisperer streaming service
@@ -244,7 +239,7 @@ export const PROVIDERS = {
     baseUrl: KIMI_CODING_BASE_URL,
     format: "claude",
     headers: { ...CLAUDE_API_HEADERS },
-    clientId: process.env.CODEX_CLIENT_ID || "",
+    clientId: "17e5f671-d194-4dfb-9706-5516cb48c098",
     tokenUrl: "https://auth.kimi.com/api/oauth/token",
     refreshUrl: "https://auth.kimi.com/api/oauth/token"
   },
@@ -297,7 +292,7 @@ export const PROVIDERS = {
     baseUrl: "https://api.x.ai/v1/chat/completions",
     responsesUrl: "https://api.x.ai/v1/responses",
     format: "openai",
-    clientId: process.env.KIRO_CLIENT_ID || "",
+    clientId: "b1a00492-073a-47ea-816f-4c329264a828",
     tokenUrl: "https://auth.x.ai/oauth2/token",
     refreshUrl: "https://auth.x.ai/oauth2/token"
   },
@@ -402,6 +397,11 @@ export const PROVIDERS = {
   "perplexity-web": {
     baseUrl: "https://www.perplexity.ai/rest/sse/perplexity_ask",
     format: "perplexity-web",
+    authType: "cookie"
+  },
+  "gemini-web": {
+    baseUrl: "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate",
+    format: "gemini-web",
     authType: "cookie"
   },
   azure: {

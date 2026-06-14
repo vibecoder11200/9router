@@ -40,8 +40,8 @@ const ANTIGRAVITY_CONFIG = {
   quotaApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
   loadProjectApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
   tokenUrl: "https://oauth2.googleapis.com/token",
-  clientId: process.env.VERTEX_CLIENT_ID || "",
-  clientSecret: process.env.CLIENT_SECRET || "",
+  clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
+  clientSecret: "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",
   userAgent: getPlatformUserAgent(),
 };
 
