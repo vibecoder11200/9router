@@ -120,9 +120,9 @@ function buildCookieHeader(cookies) {
 // StreamGenerate request
 // ---------------------------------------------------------------------------
 
-async function callStreamGenerate(cookies, session, messages, modelName, streaming, signal, log, proxy) {
+async function callStreamGenerate(cookies, session, messages, modelName, streaming, signal, log, proxy, body) {
   const model = resolveGeminiWebModel(modelName);
-  const { prompt } = convertMessages(messages);
+  const { prompt } = convertMessages(messages, body);
   const uuid = crypto.randomUUID().toUpperCase();
 
   // Build 102-slot payload (Google expanded from 69 → 102)
@@ -202,8 +202,39 @@ async function callStreamGenerate(cookies, session, messages, modelName, streami
 // Message conversion
 // ---------------------------------------------------------------------------
 
-function convertMessages(messages) {
+function convertMessages(messages, body) {
+  // Check if translator already pre-processed the messages
+  const preProcessed = body?._geminiWeb;
+  if (preProcessed) {
+    let prompt = preProcessed.prompt || "";
+
+    // Build full prompt with system prompt and conversation history
+    if (preProcessed.systemPrompt) {
+      prompt = preProcessed.systemPrompt + "\n\n" + prompt;
+    }
+
+    // Include conversation history as context
+    const history = preProcessed.conversationHistory || [];
+    if (history.length > 1) {
+      // Build context from all but the last message (which is the current prompt)
+      const historyText = history.slice(0, -1)
+        .map(msg => {
+          const role = msg.role === "assistant" ? "Assistant" : "User";
+          return `${role}: ${msg.content}`;
+        })
+        .join("\n");
+      if (historyText.trim()) {
+        prompt = historyText + "\n\n" + prompt;
+      }
+    }
+
+    return { prompt, metadata: null, fileData: null };
+  }
+
+  // Fallback: extract from messages array directly (includes system + history)
   const userMessages = [];
+  const systemParts = [];
+  const historyParts = [];
 
   for (const msg of (messages || [])) {
     const role = String(msg.role || "user");
@@ -219,12 +250,24 @@ function convertMessages(messages) {
     }
 
     if (!content.trim()) continue;
-    if (role === "user") {
-      userMessages.push(content);
+
+    if (role === "system") {
+      systemParts.push(content);
+    } else {
+      if (role === "user") userMessages.push(content);
+      historyParts.push(`${role === "assistant" ? "Assistant" : "User"}: ${content}`);
     }
   }
 
-  const prompt = userMessages[userMessages.length - 1] || "";
+  // Build final prompt: system + history + last user message
+  let prompt = "";
+  if (systemParts.length > 0) prompt += systemParts.join("\n\n") + "\n\n";
+  if (historyParts.length > 1) {
+    // Include all but last as history context
+    prompt += historyParts.slice(0, -1).join("\n") + "\n\n";
+  }
+  prompt += userMessages[userMessages.length - 1] || "";
+
   return { prompt, metadata: null, fileData: null };
 }
 
@@ -339,7 +382,7 @@ export class GeminiWebExecutor extends BaseExecutor {
 
       // Call StreamGenerate
       const res = await callStreamGenerate(
-        extracted.cookies, session, messages, modelName, stream, signal, log, proxyOptions
+        extracted.cookies, session, messages, modelName, stream, signal, log, proxyOptions, body
       );
 
       if (!res.ok) {

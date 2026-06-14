@@ -32,6 +32,13 @@ function buildTransformStream({ provider, sourceFormat, targetFormat, userAgent,
     return createSSETransformStreamWithLogger(FORMATS.OPENAI_RESPONSES, codexTarget, provider, reqLogger, toolNameMap, model, connectionId, body, onStreamComplete, apiKey);
   }
 
+  // Specialized executors (gemini-web, grok-web, perplexity-web, etc.)
+  // emit OpenAI-compatible SSE directly — use PASSTHROUGH to avoid mangling.
+  const SPECIALIZED_PASSTHROUGH = new Set(["gemini-web", "grok-web", "perplexity-web"]);
+  if (SPECIALIZED_PASSTHROUGH.has(provider)) {
+    return createPassthroughStreamWithLogger(provider, reqLogger, model, connectionId, body, onStreamComplete, apiKey);
+  }
+
   if (needsTranslation(targetFormat, sourceFormat)) {
     return createSSETransformStreamWithLogger(targetFormat, sourceFormat, provider, reqLogger, toolNameMap, model, connectionId, body, onStreamComplete, apiKey);
   }
