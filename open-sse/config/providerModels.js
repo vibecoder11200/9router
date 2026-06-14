@@ -907,6 +907,7 @@ const OAUTH_ALIASES = {
   claude: "cc",
   codex: "cx",
   "gemini-cli": "gc",
+  "gemini-web": "gweb",
   qwen: "qw",
   iflow: "if",
   antigravity: "ag",

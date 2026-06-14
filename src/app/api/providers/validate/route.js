@@ -280,6 +280,17 @@ export async function POST(request) {
           isValid = geminiRes.ok;
           break;
 
+        case "gemini-web": {
+          const res = await fetch("https://gemini.google.com/app", {
+            headers: {
+              "Cookie": apiKey.includes("=") ? apiKey : `__Secure-1PSID=${apiKey}`,
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+            },
+          });
+          isValid = res.ok;
+          break;
+        }
+
         case "openrouter":
           const openrouterRes = await fetch("https://openrouter.ai/api/v1/models", {
             headers: { "Authorization": `Bearer ${apiKey}` },
