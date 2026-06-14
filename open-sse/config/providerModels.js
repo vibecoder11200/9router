@@ -845,7 +845,6 @@ export const PROVIDER_MODELS = {
     { id: "gemini-3-flash", name: "Gemini 3 Flash" },
     { id: "gemini-3-pro", name: "Gemini 3 Pro" },
   ],
-  ],
 };
 
 // Helper functions
