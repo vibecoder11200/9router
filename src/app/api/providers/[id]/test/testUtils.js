@@ -614,6 +614,30 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
+      case "gemini-web":
+      case "grok-web":
+      case "perplexity-web": {
+        const psd = connection.providerSpecificData || {};
+        const cookies = psd.cookies || {};
+        const cookieStr = Object.entries(cookies).map(([k, v]) => k + "=" + v).join("; ");
+        if (!cookieStr) return { valid: false, error: "No cookies found" };
+        const urls = {
+          "gemini-web": "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate",
+          "grok-web": "https://grok.com/rest/app-chat/conversations/new",
+          "perplexity-web": "https://www.perplexity.ai/rest/sse/perplexity_ask",
+        };
+        try {
+          const url = urls[connection.provider];
+          const res = await fetchWithConnectionProxy(url, {
+            method: "GET",
+            headers: { Cookie: cookieStr, "User-Agent": "Mozilla/5.0" },
+          }, effectiveProxy);
+          const valid = res.status !== 401 && res.status !== 403;
+          return { valid, error: valid ? null : "Cookie expired - please re-paste from browser", refreshed: false };
+        } catch (err) {
+          return { valid: true, error: null, refreshed: false };
+        }
+      }
       default:
         return { valid: false, error: "Provider test not supported" };
     }
