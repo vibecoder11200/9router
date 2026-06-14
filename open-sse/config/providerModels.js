@@ -838,6 +838,13 @@ export const PROVIDER_MODELS = {
     { id: "gen4_image_turbo", name: "Gen-4 Image Turbo", type: "image", params: ["size"] },
     { id: "gen4_turbo", name: "Gen-4 Turbo", type: "video", params: [] },
     { id: "gen3a_turbo", name: "Gen-3 Alpha Turbo", type: "video", params: [] },
+  // Gemini Web (cookie-based web provider)
+  "gemini-web": [
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+    { id: "gemini-3-flash", name: "Gemini 3 Flash" },
+    { id: "gemini-3-pro", name: "Gemini 3 Pro" },
+  ],
   ],
 };
 
