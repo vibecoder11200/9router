@@ -1,4 +1,5 @@
 import { AI_PROVIDERS } from "../shared/constants/providers.js";
+import { parseGeminiWebCookies } from "../../open-sse/services/geminiWebCookie.js";
 
 /**
  * Detect xAI Grok models by id pattern (grok-*, Grok_*, etc).
@@ -24,6 +25,7 @@ export function normalizeProviderId(provider) {
   return providerByName?.id || trimmed;
 }
 
+
 export function normalizeProviderSpecificData(provider, body = {}, providerSpecificData = null) {
   const next = providerSpecificData && typeof providerSpecificData === "object"
     ? { ...providerSpecificData }
@@ -39,6 +41,19 @@ export function normalizeProviderSpecificData(provider, body = {}, providerSpeci
     ).trim();
 
     if (baseUrl) next.baseUrl = baseUrl;
+  }
+
+  // Cookie-based web providers (gemini-web, grok-web, perplexity-web)
+  // Parse the raw cookie input from apiKey field into structured cookies
+  if (provider === "gemini-web") {
+    const rawCookie = next.cookieText || body.apiKey || "";
+    if (rawCookie && !next.cookies) {
+      const parsed = parseGeminiWebCookies(rawCookie, { throwOnError: false });
+      if (parsed.cookies && Object.keys(parsed.cookies).length > 0) {
+        next.cookies = parsed.cookies;
+        next.cookieText = rawCookie;
+      }
+    }
   }
 
   return Object.keys(next).length > 0 ? next : null;
