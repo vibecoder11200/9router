@@ -5,9 +5,8 @@ import PropTypes from "prop-types";
 import { Button, Badge, Input, Modal, Select } from "@/shared/components";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 
-const BULK_PLACEHOLDER = isCookie
-    ? `name1|{\"__Secure-1PSID\":\"...\"}\n{\"__Secure-1PSID\":\"...\"} (auto-named)`
-    : `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
+const BULK_PLACEHOLDER_API = `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
+const BULK_PLACEHOLDER_COOKIE = `name1|{\"__Secure-1PSID\":\"...\"}\n{\"__Secure-1PSID\":\"...\"} (auto-named)`;
 
 export default function AddApiKeyModal({ isOpen, provider, providerName, isCompatible, isAnthropic, authType, authHint, website, proxyPools, error, onSave, onBulkDone, onClose }) {
   const NONE_PROXY_POOL_VALUE = "__none__";
@@ -194,7 +193,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
             <p className="text-xs text-text-muted">One key per line. Format: <code>name|apiKey</code> or just <code>apiKey</code> (auto-named by index).</p>
             <textarea
               className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[140px] focus:outline-none focus:ring-1 focus:ring-primary"
-              placeholder={BULK_PLACEHOLDER}
+              placeholder={isCookie ? BULK_PLACEHOLDER_COOKIE : BULK_PLACEHOLDER_API}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
             />
