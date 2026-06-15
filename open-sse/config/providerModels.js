@@ -841,10 +841,15 @@ export const PROVIDER_MODELS = {
   ],
   // Gemini Web (cookie-based web provider)
   "gemini-web": [
-    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
-    { id: "gemini-3-flash", name: "Gemini 3 Flash" },
     { id: "gemini-3-pro", name: "Gemini 3 Pro" },
+    { id: "gemini-3-flash", name: "Gemini 3 Flash" },
+    { id: "gemini-3-flash-thinking", name: "Gemini 3 Flash Thinking" },
+    { id: "gemini-3-pro-plus", name: "Gemini 3 Pro+ (Plus)" },
+    { id: "gemini-3-flash-plus", name: "Gemini 3 Flash+ (Plus)" },
+    { id: "gemini-3-flash-thinking-plus", name: "Gemini 3 Flash Thinking+ (Plus)" },
+    { id: "gemini-3-pro-advanced", name: "Gemini 3 Pro (Advanced)" },
+    { id: "gemini-3-flash-advanced", name: "Gemini 3 Flash (Advanced)" },
+    { id: "gemini-3-flash-thinking-advanced", name: "Gemini 3 Flash Thinking (Advanced)" },
   ],
 };
 
