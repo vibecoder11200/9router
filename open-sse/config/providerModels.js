@@ -192,7 +192,7 @@ export const PROVIDER_MODELS = {
     { id: "deepseek/deepseek-chat", name: "DeepSeek Chat" },
     { id: "deepseek/deepseek-reasoner", name: "DeepSeek Reasoner" },
   ],
-  "opencode-go": [  // OpenCode Go subscription (API key)
+  "ocg": [  // OpenCode Go subscription (API key)
     { id: "kimi-k2.6", name: "Kimi K2.6" },
     { id: "kimi-k2.5", name: "Kimi K2.5" },
     { id: "glm-5.1", name: "GLM 5.1" },
@@ -392,7 +392,7 @@ export const PROVIDER_MODELS = {
     { id: "qwen3-coder-plus", name: "Qwen3 Coder Plus" },
     { id: "glm-4.7", name: "GLM 4.7" },
   ],
-  "volcengine-ark": [
+  "ark": [
     { id: "Doubao-Seed-2.0-Code", name: "Doubao-Seed-2.0-Code" },
     { id: "Doubao-Seed-2.0-pro", name: "Doubao-Seed-2.0-pro" },
     { id: "Doubao-Seed-2.0-lite", name: "Doubao-Seed-2.0-lite" },
@@ -403,7 +403,7 @@ export const PROVIDER_MODELS = {
     { id: "MiniMax-M2.7", name: "MiniMax-M2.7" },
     { id: "Kimi-K2.6", name: "Kimi-K2.6" },
   ],
-  "cloudflare-ai": [
+  "cf": [
     { id: "@cf/meta/llama-3.2-1b-instruct", name: "Llama 3.2 1B Instruct" },
     { id: "@cf/meta/llama-3.2-3b-instruct", name: "Llama 3.2 3B Instruct" },
     { id: "@cf/meta/llama-3.1-8b-instruct-fp8-fast", name: "Llama 3.1 8B Instruct FP8 Fast" },
@@ -524,7 +524,7 @@ export const PROVIDER_MODELS = {
     { id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct" },
     { id: "Qwen/Qwen3-Embedding-8B", name: "Qwen3 Embedding 8B", type: "embedding" },
   ],
-  "voyage-ai": [
+  "voyage": [
     { id: "voyage-3-large", name: "Voyage 3 Large", type: "embedding" },
     { id: "voyage-3.5", name: "Voyage 3.5", type: "embedding" },
     { id: "voyage-3.5-lite", name: "Voyage 3.5 Lite", type: "embedding" },
@@ -556,13 +556,13 @@ export const PROVIDER_MODELS = {
     { id: "MiniMaxAI/MiniMax-M2.5", name: "MiniMax M2.5" },
     { id: "inclusionAI/Ling-flash-2.0", name: "Ling Flash 2.0" },
   ],
-  "xiaomi-mimo": [
+  "mimo": [
     { id: "mimo-v2.5-pro", name: "MiMo V2.5 Pro" },
     { id: "mimo-v2.5", name: "MiMo V2.5" },
     { id: "mimo-v2-omni", name: "MiMo V2 Omni" },
     { id: "mimo-v2-flash", name: "MiMo V2 Flash" },
   ],
-  "xiaomi-tokenplan": [
+  "xmtp": [
     { id: "mimo-v2.5-pro", name: "MiMo V2.5 Pro" },
     { id: "mimo-v2.5-pro-claude", name: "MiMo V2.5 Pro (Claude Native)", targetFormat: "claude", upstreamModelId: "mimo-v2.5-pro" },
     { id: "mimo-v2.5", name: "MiMo V2.5" },
@@ -603,7 +603,7 @@ export const PROVIDER_MODELS = {
     { id: "qwen/qwen3-next-80b-a3b-instruct-maas", name: "Qwen3 Next 80B Instruct (Vertex)" },
     { id: "zai-org/glm-5-maas", name: "GLM-5 (Vertex)" },
   ],
-  "grok-web": [
+  "gw": [
     { id: "grok-3", name: "Grok 3" },
     { id: "grok-3-mini", name: "Grok 3 Mini (Thinking)" },
     { id: "grok-3-thinking", name: "Grok 3 Thinking" },
@@ -617,7 +617,7 @@ export const PROVIDER_MODELS = {
     { id: "grok-4.1-thinking", name: "Grok 4.1 Thinking" },
     { id: "grok-4.2", name: "Grok 4.2 (4.20 Beta)" },
   ],
-  "perplexity-web": [
+  "pw": [
     { id: "pplx-auto", name: "Perplexity Auto (Free)" },
     { id: "pplx-sonar", name: "Perplexity Sonar" },
     { id: "pplx-gpt", name: "GPT-5.4 (via Perplexity)" },
@@ -725,7 +725,7 @@ export const PROVIDER_MODELS = {
     { id: "jamba-large", name: "Jamba 1.5 Large" },
     { id: "jamba-mini", name: "Jamba 1.5 Mini" },
   ],
-  "inference-net": [
+  "inet": [
     { id: "meta-llama/llama-3.3-70b-instruct/fp-16", name: "Llama 3.3 70B" },
     { id: "deepseek/deepseek-v3-0324", name: "DeepSeek V3" },
     { id: "mistralai/mistral-nemo-12b-instruct/fp-16", name: "Mistral Nemo 12B" },
@@ -786,7 +786,7 @@ export const PROVIDER_MODELS = {
   publicai: [
     { id: "auto", name: "Auto (Community)" },
   ],
-  "nous-research": [
+  "nous": [
     { id: "Hermes-4-405B", name: "Hermes 4 405B" },
     { id: "Hermes-4-70B", name: "Hermes 4 70B" },
   ],
@@ -805,7 +805,7 @@ export const PROVIDER_MODELS = {
     { id: "universal-3-pro", name: "Universal 3 Pro", type: "stt", params: ["language"] },
     { id: "universal-2", name: "Universal 2", type: "stt", params: ["language"] },
   ],
-  "fal-ai": [
+  "fal": [
     { id: "fal-ai/flux/schnell", name: "FLUX Schnell", type: "image", params: ["n", "size"] },
     { id: "fal-ai/flux/dev", name: "FLUX Dev", type: "image", params: ["n", "size"] },
     { id: "fal-ai/flux-pro/v1.1", name: "FLUX Pro v1.1", type: "image", params: ["n", "size"] },
@@ -814,14 +814,14 @@ export const PROVIDER_MODELS = {
     { id: "fal-ai/ideogram/v2", name: "Ideogram V2", type: "image", params: ["n", "size", "style"] },
     { id: "fal-ai/stable-diffusion-v35-large", name: "SD 3.5 Large", type: "image", params: ["n", "size"] },
   ],
-  "stability-ai": [
+  "stability": [
     { id: "stable-image-ultra", name: "Stable Image Ultra", type: "image", params: ["size"] },
     { id: "stable-image-core", name: "Stable Image Core", type: "image", params: ["size", "style"] },
     { id: "sd3.5-large", name: "Stable Diffusion 3.5 Large", type: "image", params: ["size"] },
     { id: "sd3.5-large-turbo", name: "Stable Diffusion 3.5 Large Turbo", type: "image", params: ["size"] },
     { id: "sd3.5-medium", name: "Stable Diffusion 3.5 Medium", type: "image", params: ["size"] },
   ],
-  "black-forest-labs": [
+  "bfl": [
     { id: "flux-pro-1.1", name: "FLUX Pro 1.1", type: "image", params: ["n", "size"] },
     { id: "flux-pro-1.1-ultra", name: "FLUX Pro 1.1 Ultra", type: "image", params: ["size"] },
     { id: "flux-pro", name: "FLUX Pro", type: "image", params: ["n", "size"] },
