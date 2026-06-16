@@ -841,6 +841,7 @@ export const PROVIDER_MODELS = {
   ],
   // Gemini Web (cookie-based web provider)
   "gweb": [
+    // LLM Models
     { id: "gemini-3-pro", name: "Gemini 3 Pro" },
     { id: "gemini-3-flash", name: "Gemini 3 Flash" },
     { id: "gemini-3-flash-thinking", name: "Gemini 3 Flash Thinking" },
@@ -850,6 +851,21 @@ export const PROVIDER_MODELS = {
     { id: "gemini-3-pro-advanced", name: "Gemini 3 Pro (Advanced)" },
     { id: "gemini-3-flash-advanced", name: "Gemini 3 Flash (Advanced)" },
     { id: "gemini-3-flash-thinking-advanced", name: "Gemini 3 Flash Thinking (Advanced)" },
+    // Image Generation Models
+    { id: "gemini-3-flash-image", name: "Gemini 3 Flash Image", type: "image", capabilities: ["text2img"] },
+    { id: "gemini-3-pro-image", name: "Gemini 3 Pro Image", type: "image", capabilities: ["text2img"] },
+    { id: "gemini-3-flash-image-plus", name: "Gemini 3 Flash Image+ (Plus)", type: "image", capabilities: ["text2img"] },
+    { id: "gemini-3-pro-image-plus", name: "Gemini 3 Pro Image+ (Plus)", type: "image", capabilities: ["text2img"] },
+    { id: "gemini-3-flash-image-advanced", name: "Gemini 3 Flash Image (Advanced)", type: "image", capabilities: ["text2img"] },
+    { id: "gemini-3-pro-image-advanced", name: "Gemini 3 Pro Image (Advanced)", type: "image", capabilities: ["text2img"] },
+    // Video Generation Models
+    { id: "gemini-3-veo-video", name: "Gemini 3 Veo Video", type: "video", capabilities: ["text2video"] },
+    { id: "gemini-3-veo-video-plus", name: "Gemini 3 Veo Video+ (Plus)", type: "video", capabilities: ["text2video"] },
+    { id: "gemini-3-veo-video-advanced", name: "Gemini 3 Veo Video (Advanced)", type: "video", capabilities: ["text2video"] },
+    // Audio/Music Generation Models
+    { id: "gemini-3-audio", name: "Gemini 3 Audio", type: "music", capabilities: ["text2audio"] },
+    { id: "gemini-3-audio-plus", name: "Gemini 3 Audio+ (Plus)", type: "music", capabilities: ["text2audio"] },
+    { id: "gemini-3-audio-advanced", name: "Gemini 3 Audio (Advanced)", type: "music", capabilities: ["text2audio"] },
   ],
 };
 

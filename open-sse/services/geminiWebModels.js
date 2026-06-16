@@ -72,6 +72,84 @@ export const GEMINI_WEB_MODELS = {
     header: buildModelHeader("e051ce1aa80aa576", 2),
     advancedOnly: true,
   },
+
+  // Image Generation models (use same model headers — image gen is prompt-driven)
+  "gemini-3-flash-image": {
+    modelName: "gemini-3-flash-image",
+    header: buildModelHeader("fbb127bbb056c959", 1),
+    advancedOnly: false,
+    imageGeneration: true,
+  },
+  "gemini-3-pro-image": {
+    modelName: "gemini-3-pro-image",
+    header: buildModelHeader("9d8ca3786ebdfbea", 1),
+    advancedOnly: false,
+    imageGeneration: true,
+  },
+  "gemini-3-flash-image-plus": {
+    modelName: "gemini-3-flash-image-plus",
+    header: buildModelHeader("56fdd199312815e2", 4),
+    advancedOnly: true,
+    imageGeneration: true,
+  },
+  "gemini-3-pro-image-plus": {
+    modelName: "gemini-3-pro-image-plus",
+    header: buildModelHeader("e6fa609c3fa255c0", 4),
+    advancedOnly: true,
+    imageGeneration: true,
+  },
+  "gemini-3-flash-image-advanced": {
+    modelName: "gemini-3-flash-image-advanced",
+    header: buildModelHeader("56fdd199312815e2", 2),
+    advancedOnly: true,
+    imageGeneration: true,
+  },
+  "gemini-3-pro-image-advanced": {
+    modelName: "gemini-3-pro-image-advanced",
+    header: buildModelHeader("e6fa609c3fa255c0", 2),
+    advancedOnly: true,
+    imageGeneration: true,
+  },
+
+  // Video Generation models (Veo — same chat endpoint, prompt-driven)
+  "gemini-3-veo-video": {
+    modelName: "gemini-3-veo-video",
+    header: buildModelHeader("fbb127bbb056c959", 1),
+    advancedOnly: false,
+    videoGeneration: true,
+  },
+  "gemini-3-veo-video-plus": {
+    modelName: "gemini-3-veo-video-plus",
+    header: buildModelHeader("56fdd199312815e2", 4),
+    advancedOnly: true,
+    videoGeneration: true,
+  },
+  "gemini-3-veo-video-advanced": {
+    modelName: "gemini-3-veo-video-advanced",
+    header: buildModelHeader("56fdd199312815e2", 2),
+    advancedOnly: true,
+    videoGeneration: true,
+  },
+
+  // Audio/Music Generation models
+  "gemini-3-audio": {
+    modelName: "gemini-3-audio",
+    header: buildModelHeader("fbb127bbb056c959", 1),
+    advancedOnly: false,
+    audioGeneration: true,
+  },
+  "gemini-3-audio-plus": {
+    modelName: "gemini-3-audio-plus",
+    header: buildModelHeader("56fdd199312815e2", 4),
+    advancedOnly: true,
+    audioGeneration: true,
+  },
+  "gemini-3-audio-advanced": {
+    modelName: "gemini-3-audio-advanced",
+    header: buildModelHeader("56fdd199312815e2", 2),
+    advancedOnly: true,
+    audioGeneration: true,
+  },
 };
 
 export const DEFAULT_GEMINI_WEB_MODEL = "gemini-3-flash";

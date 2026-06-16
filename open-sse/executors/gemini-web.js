@@ -28,6 +28,8 @@ import { bootstrapGeminiWebSession, getGeminiWebUserStatus, buildSapisidHash, ex
 import {
   parseResponseFrames,
   extractGeminiResponse,
+  extractGeminiMedia,
+  extractGeminiFullResponse,
 } from "../services/geminiWebRpc.js";
 import { PROVIDERS } from "../config/providers.js";
 import { resolveGeminiWebModel } from "../services/geminiWebModels.js";
@@ -283,8 +285,9 @@ function convertMessages(messages, body) {
 
 function parseGenerateResponse(responseText) {
   const frames = parseResponseFrames(responseText);
-  const result = extractGeminiResponse(frames);
-  return result || { text: "", thoughts: "", cid: "", rid: "", rcid: "" };
+  const result = extractGeminiFullResponse(frames);
+  if (!result) return { text: "", thoughts: "", cid: "", rid: "", rcid: "", images: [], videos: [], audio: [], webImages: [] };
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -421,7 +424,37 @@ export class GeminiWebExecutor extends BaseExecutor {
         });
         return { response: finalResponse, url: STREAMGENERATE_URL, headers: {}, transformedBody: body };
       } else {
-        const { text: extractedText, thoughts } = parseGenerateResponse(responseText);
+        const parsed = parseGenerateResponse(responseText);
+        const { text: extractedText, thoughts, images, videos, audio, webImages } = parsed;
+
+        // Build enriched content with media markdown
+        let enrichedContent = extractedText || "";
+
+        // Append generated images as markdown
+        if (images && images.length > 0) {
+          if (enrichedContent) enrichedContent += "\n\n";
+          for (const img of images) {
+            enrichedContent += `![${img.alt || "Generated Image"}](${img.url})\n`;
+          }
+        }
+
+        // Append generated videos as markdown links
+        if (videos && videos.length > 0) {
+          if (enrichedContent) enrichedContent += "\n\n";
+          for (const vid of videos) {
+            enrichedContent += `[🎬 Video](${vid.url})\n`;
+          }
+        }
+
+        // Append generated audio as markdown links
+        if (audio && audio.length > 0) {
+          if (enrichedContent) enrichedContent += "\n\n";
+          for (const aud of audio) {
+            enrichedContent += `[🎵 Audio (${aud.format})](${aud.url})\n`;
+          }
+        }
+
+        const mediaCount = (images?.length || 0) + (videos?.length || 0) + (audio?.length || 0);
 
         const responseBody = JSON.stringify({
           id: cid,
@@ -432,16 +465,19 @@ export class GeminiWebExecutor extends BaseExecutor {
             index: 0,
             message: {
               role: "assistant",
-              content: extractedText || "",
+              content: enrichedContent || "",
               ...(thoughts ? { thoughts } : {}),
             },
             finish_reason: "stop",
           }],
           usage: {
             prompt_tokens: Math.ceil((responseText.length || 0) / 4),
-            completion_tokens: Math.ceil((extractedText?.length || 0) / 4),
-            total_tokens: Math.ceil(((responseText.length || 0) + (extractedText?.length || 0)) / 4),
+            completion_tokens: Math.ceil((enrichedContent?.length || 0) / 4),
+            total_tokens: Math.ceil(((responseText.length || 0) + (enrichedContent?.length || 0)) / 4),
           },
+          ...(mediaCount > 0 ? {
+            media: { images, videos, audio, webImages },
+          } : {}),
         });
 
         const finalResponse = new Response(responseBody, {

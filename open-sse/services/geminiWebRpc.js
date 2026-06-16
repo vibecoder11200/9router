@@ -380,3 +380,166 @@ export function extractGeneratedText(text) {
   const frames = parseResponseFrames(text);
   return extractGeminiResponse(frames);
 }
+
+// ---------------------------------------------------------------------------
+// Media extraction (images, videos, audio) — mirrors Python gemini_webapi
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract generated media (images, videos, audio) from parsed Gemini Web response frames.
+ *
+ * Field paths (from HanaokaYuzu/Gemini-API Python library):
+ *   Generated Images:
+ *     - Plain generation: candidate[12][7][0] -> array of gen_img_data
+ *     - Image-to-image:   candidate[12][0]["8"][0] -> array of gen_img_data
+ *     Each gen_img_data:
+ *       URL:      [0][3][3]
+ *       Alt:      [0][3][2]
+ *       Image ID: [1][0]
+ *
+ *   Generated Videos:
+ *     candidate[12][59][0][0][0] -> video_info
+ *     video_info[0][7] = [thumbnail_url, video_url]
+ *
+ *   Generated Media (Audio/Music):
+ *     candidate[12][86] -> media_data array
+ *     media_data[0] = MP3 entry: [0][1][7] = [thumbnail_url, mp3_url]
+ *     media_data[1] = MP4 entry: [1][1][7] = [thumbnail_url, mp4_url]
+ *
+ *   Web Images (search results, not AI-generated):
+ *     candidate[12][1] -> array of web_img_data
+ *     Each: [i][0][0][0] = URL, [i][0][4] = alt text
+ *
+ * @param {Array} parsedFrames  Parsed response frames
+ * @returns {{ images: Array, videos: Array, audio: Array, webImages: Array }}
+ */
+export function extractGeminiMedia(parsedFrames) {
+  const result = {
+    images: [],
+    videos: [],
+    audio: [],
+    webImages: [],
+  };
+
+  if (!parsedFrames || !Array.isArray(parsedFrames)) return result;
+
+  for (const frame of parsedFrames) {
+    if (!Array.isArray(frame) || frame[0] !== "wrb.fr") continue;
+
+    const innerJsonStr = frame[2];
+    if (typeof innerJsonStr !== "string") continue;
+
+    try {
+      const inner = JSON.parse(innerJsonStr);
+      const candidates = getNestedValue(inner, [4], []);
+      if (!Array.isArray(candidates)) continue;
+
+      for (const cand of candidates) {
+        if (!Array.isArray(cand)) continue;
+
+        const cid = getNestedValue(cand, [0], "");
+        const rcid = cid;
+
+        // --- Generated Images ---
+        const plainGenImages = getNestedValue(cand, [12, 7, 0], []);
+        const imgToImg = getNestedValue(cand, [12, 0, "8", 0], []);
+        const allGenImgData = [
+          ...(Array.isArray(plainGenImages) ? plainGenImages : []),
+          ...(Array.isArray(imgToImg) ? imgToImg : []),
+        ];
+
+        for (let i = 0; i < allGenImgData.length; i++) {
+          const genImg = allGenImgData[i];
+          const url = getNestedValue(genImg, [0, 3, 3], "");
+          if (url) {
+            const alt = getNestedValue(genImg, [0, 3, 2], "");
+            let imageId = getNestedValue(genImg, [1, 0], "");
+            if (!imageId) imageId = `gen_img_${i}`;
+            result.images.push({ url, alt, imageId, rcid });
+          }
+        }
+
+        // --- Generated Videos ---
+        const videoInfo = getNestedValue(cand, [12, 59, 0, 0, 0], []);
+        if (Array.isArray(videoInfo) && videoInfo.length > 0) {
+          const urls = getNestedValue(videoInfo, [0, 7], []);
+          if (Array.isArray(urls) && urls.length >= 2) {
+            result.videos.push({
+              url: urls[1],
+              thumbnail: urls[0],
+              rcid,
+            });
+          }
+        }
+
+        // --- Generated Media (Audio/Music) ---
+        const mediaData = getNestedValue(cand, [12, 86], []);
+        if (Array.isArray(mediaData)) {
+          const mp3Entry = mediaData[0];
+          if (mp3Entry) {
+            const mp3List = getNestedValue(mp3Entry, [1, 7], []);
+            if (Array.isArray(mp3List) && mp3List.length >= 2) {
+              result.audio.push({
+                url: mp3List[1],
+                thumbnail: mp3List[0],
+                format: "mp3",
+                rcid,
+              });
+            }
+          }
+          const mp4Entry = mediaData[1];
+          if (mp4Entry) {
+            const mp4List = getNestedValue(mp4Entry, [1, 7], []);
+            if (Array.isArray(mp4List) && mp4List.length >= 2) {
+              result.audio.push({
+                url: mp4List[1],
+                thumbnail: mp4List[0],
+                format: "mp4",
+                rcid,
+              });
+            }
+          }
+        }
+
+        // --- Web Images (search results) ---
+        const webImages = getNestedValue(cand, [12, 1], []);
+        if (Array.isArray(webImages)) {
+          for (const webImg of webImages) {
+            const url = getNestedValue(webImg, [0, 0, 0], "");
+            const alt = getNestedValue(webImg, [0, 4], "");
+            if (url) {
+              result.webImages.push({ url, alt, rcid });
+            }
+          }
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Extract ALL data from a Gemini Web response -- text, thoughts, and media.
+ *
+ * @param {Array} parsedFrames  Parsed response frames
+ * @returns {{ text, thoughts, cid, rid, rcid, images, videos, audio, webImages }|null}
+ */
+export function extractGeminiFullResponse(parsedFrames) {
+  const textResult = extractGeminiResponse(parsedFrames);
+  const media = extractGeminiMedia(parsedFrames);
+
+  if (!textResult && media.images.length === 0 && media.videos.length === 0 && media.audio.length === 0) {
+    return null;
+  }
+
+  return {
+    ...(textResult || { text: "", thoughts: "", cid: "", rid: "", rcid: "" }),
+    images: media.images,
+    videos: media.videos,
+    audio: media.audio,
+    webImages: media.webImages,
+  };
+}
