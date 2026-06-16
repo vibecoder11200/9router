@@ -1,0 +1,82 @@
+name: Auto Deploy to Magicsee-N5
+
+on:
+  repository_dispatch:
+    types: [deploy-event]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (e.g. 0.4.88)'
+        required: false
+        default: ''
+
+env:
+  N5_HOST: ${{ secrets.N5_HOST }}
+  N5_USER: ${{ secrets.N5_USER }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    # Chỉ chạy khi có secrets được cấu hình
+    if: env.N5_HOST != '' && env.N5_USER != '' && secrets.N5_SSH_KEY != ''
+
+    steps:
+      - name: Determine image tag
+        id: vars
+        run: |
+          TAG="${{ github.event.client_payload.image_tag || inputs.image_tag }}"
+          # Nếu tag bắt đầu bằng 'v' (như v0.4.88) thì bỏ 'v' đi (Docker tag không có 'v')
+          if [[ "$TAG" == v* ]]; then
+            TAG="${TAG#v}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=$TAG"
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.N5_SSH_KEY }}" > ~/.ssh/n5_key
+          chmod 600 ~/.ssh/n5_key
+          # Thêm fingerprint của server vào known_hosts để tránh prompt
+          ssh-keyscan -H -p 22 ${{ secrets.N5_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSH key configured"
+
+      - name: Pull new image
+        run: |
+          ssh -i ~/.ssh/n5_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.N5_USER }}@${{ secrets.N5_HOST }} \
+            "docker pull vibecoder11200/9router:${{ steps.vars.outputs.tag }}"
+
+      - name: Stop & Remove old container
+        run: |
+          ssh -i ~/.ssh/n5_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.N5_USER }}@${{ secrets.N5_HOST }} \
+            "docker stop 9router && docker rm 9router"
+
+      - name: Start new container
+        run: |
+          ssh -i ~/.ssh/n5_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.N5_USER }}@${{ secrets.N5_HOST }} \
+            "docker run -d \
+              --name 9router \
+              -p 20128:20128 \
+              --restart always \
+              -v /root/.9router:/app/data \
+              --env-file /root/9router.env \
+              vibecoder11200/9router:${{ steps.vars.outputs.tag }}"
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          ssh -i ~/.ssh/n5_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.N5_USER }}@${{ secrets.N5_HOST }} \
+            "docker ps --filter name=9router --format 'Container {{.Names}} is {{.Status}} with image {{.Image}}'"
+
+      - name: Cleanup dangling images
+        if: always()
+        run: |
+          ssh -i ~/.ssh/n5_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.N5_USER }}@${{ secrets.N5_HOST }} \
+            "docker image prune -f"
+
+      - name: Deployment Summary
+        run: |
+          echo "✅ Deploy completed successfully!"
+          echo "📦 Image: vibecoder11200/9router:${{ steps.vars.outputs.tag }}"
+          echo "🌐 Dashboard: https://ai.1k.io.vn"
