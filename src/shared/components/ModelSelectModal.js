@@ -189,6 +189,16 @@ export default function ModelSelectModal({
             const supports = (providerInfo.serviceKinds || ["llm"]).includes(kindFilter);
             if (supports) combined = [{ id: providerId, name: providerInfo.name, value: alias }];
           }
+        } else {
+          // LLM (no kindFilter): merge hardcoded models with DB aliases
+          // This ensures providers like mimo-free (passthroughModels: true) still show
+          // their hardcoded models (e.g. mimo-auto) even when no DB aliases are configured
+          const hardcodedModels = getModelsByProviderId(providerId)
+            .filter((m) => !m.type || m.type === "llm")
+            .map((m) => ({ id: m.id, name: m.name, value: `${alias}/${m.id}` }));
+          const hardcodedIds = new Set(hardcodedModels.map((m) => m.id));
+          const dbOnlyAliases = aliasModels.filter((m) => !hardcodedIds.has(m.id));
+          combined = [...hardcodedModels, ...dbOnlyAliases];
         }
 
         if (combined.length > 0) {
