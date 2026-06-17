@@ -2,9 +2,8 @@ import { getProviderConnectionById, updateProviderConnection } from "@/lib/local
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
-import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
 import { getDefaultModel } from "open-sse/config/providerModels.js";
-import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
+import { resolveOllamaLocalHost, PROVIDERS } from "open-sse/config/providers.js";
 import {
   refreshProviderCredentials,
   shouldRefreshCredentials,
@@ -474,7 +473,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
       }
       case "volcengine-ark":
       case "byteplus": {
-        const res = await fetchWithConnectionProxy(PROVIDER_ENDPOINTS[connection.provider], {
+        const res = await fetchWithConnectionProxy(PROVIDERS[connection.provider]?.baseUrl, {
           method: "POST",
           headers: { "Authorization": `Bearer ${connection.apiKey}`, "content-type": "application/json" },
           body: JSON.stringify({ model: getDefaultModel(connection.provider), max_tokens: 1, messages: [{ role: "user", content: "test" }] }),
@@ -613,30 +612,6 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
           headers: { Authorization: `Bearer ${connection.apiKey}` },
         }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
-      }
-      case "gemini-web":
-      case "grok-web":
-      case "perplexity-web": {
-        const psd = connection.providerSpecificData || {};
-        const cookies = psd.cookies || {};
-        const cookieStr = Object.entries(cookies).map(([k, v]) => k + "=" + v).join("; ");
-        if (!cookieStr) return { valid: false, error: "No cookies found" };
-        const urls = {
-          "gemini-web": "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate",
-          "grok-web": "https://grok.com/rest/app-chat/conversations/new",
-          "perplexity-web": "https://www.perplexity.ai/rest/sse/perplexity_ask",
-        };
-        try {
-          const url = urls[connection.provider];
-          const res = await fetchWithConnectionProxy(url, {
-            method: "GET",
-            headers: { Cookie: cookieStr, "User-Agent": "Mozilla/5.0" },
-          }, effectiveProxy);
-          const valid = res.status !== 401 && res.status !== 403;
-          return { valid, error: valid ? null : "Cookie expired - please re-paste from browser", refreshed: false };
-        } catch (err) {
-          return { valid: true, error: null, refreshed: false };
-        }
       }
       default:
         return { valid: false, error: "Provider test not supported" };

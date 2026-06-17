@@ -5,8 +5,7 @@ import PropTypes from "prop-types";
 import { Button, Badge, Input, Modal, Select } from "@/shared/components";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 
-const BULK_PLACEHOLDER_API = `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
-const BULK_PLACEHOLDER_COOKIE = `name1|{\"__Secure-1PSID\":\"...\"}\n{\"__Secure-1PSID\":\"...\"} (auto-named)`;
+const BULK_PLACEHOLDER = `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
 
 export default function AddApiKeyModal({ isOpen, provider, providerName, isCompatible, isAnthropic, authType, authHint, website, proxyPools, error, onSave, onBulkDone, onClose }) {
   const NONE_PROXY_POOL_VALUE = "__none__";
@@ -15,7 +14,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
   const isXaiApiKey = provider === "xai" && !isCookie;
   const credentialLabel = isCookie ? "Cookie Value" : "API Key";
   const credentialPlaceholder = isCookie
-    ? (provider === "gemini-web" ? "Paste your Gemini cookies (JSON or raw)" : (provider === "grok-web" ? "sso=xxxxx... or just the raw value" : "eyJhbGciOi..."))
+    ? (provider === "grok-web" ? "sso=xxxxx... or just the raw value" : "eyJhbGciOi...")
     : (isXaiApiKey ? "xai-..." : "");
 
   const isAzure = provider === "azure";
@@ -135,31 +134,10 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
     let success = 0;
     let failed = 0;
     for (let i = 0; i < lines.length; i++) {
-      let name, apiKey;
-      if (isCookie) {
-        // For cookie providers, try to parse as JSON first
-        try {
-          const parsed = JSON.parse(lines[i]);
-          // If it's a single cookie object, use it
-          apiKey = lines[i];
-          name = `Gemini ${i + 1}`;
-        } catch {
-          // Fallback: split by first pipe
-          const pipeIdx = lines[i].indexOf("|");
-          if (pipeIdx > 0) {
-            name = lines[i].slice(0, pipeIdx).trim();
-            apiKey = lines[i].slice(pipeIdx + 1).trim();
-          } else {
-            name = `Gemini ${i + 1}`;
-            apiKey = lines[i];
-          }
-        }
-      } else {
-        const parts = lines[i].split("|");
-        apiKey = parts.length >= 2 ? parts.slice(1).join("|").trim() : parts[0].trim();
-        const baseName = parts.length >= 2 ? parts[0].trim() : "Key";
-        name = `${baseName} ${i + 1}`;
-      }
+      const parts = lines[i].split("|");
+      const apiKey = parts.length >= 2 ? parts.slice(1).join("|").trim() : parts[0].trim();
+      const baseName = parts.length >= 2 ? parts[0].trim() : "Key";
+      const name = `${baseName} ${i + 1}`;
       try {
         const res = await fetch("/api/providers", {
           method: "POST",
@@ -193,7 +171,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
             <p className="text-xs text-text-muted">One key per line. Format: <code>name|apiKey</code> or just <code>apiKey</code> (auto-named by index).</p>
             <textarea
               className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[140px] focus:outline-none focus:ring-1 focus:ring-primary"
-              placeholder={isCookie ? BULK_PLACEHOLDER_COOKIE : BULK_PLACEHOLDER_API}
+              placeholder={BULK_PLACEHOLDER}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
             />
@@ -235,33 +213,19 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
           </div>
         )}
         {!isOllamaLocal && (
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              {isCookie ? (
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm font-medium text-text-muted">{credentialLabel}</label>
-                  <textarea
-                    className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[100px] focus:outline-none focus:ring-1 focus:ring-primary"
-                    value={formData.apiKey}
-                    onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                    placeholder={credentialPlaceholder}
-                  />
-                </div>
-              ) : (
-                <Input
-                  label={credentialLabel}
-                  type="password"
-                  value={formData.apiKey}
-                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                  placeholder={credentialPlaceholder}
-                  className="flex-1"
-                />
-              )}
-              <div className="pt-6">
-                <Button onClick={handleValidate} disabled={!formData.apiKey || validating || saving} variant="secondary">
-                  {validating ? "Checking..." : "Check"}
-                </Button>
-              </div>
+          <div className="flex gap-2">
+            <Input
+              label={credentialLabel}
+              type={isCookie ? "text" : "password"}
+              value={formData.apiKey}
+              onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+              placeholder={credentialPlaceholder}
+              className="flex-1"
+            />
+            <div className="pt-6">
+              <Button onClick={handleValidate} disabled={!formData.apiKey || validating || saving} variant="secondary">
+                {validating ? "Checking..." : "Check"}
+              </Button>
             </div>
           </div>
         )}
