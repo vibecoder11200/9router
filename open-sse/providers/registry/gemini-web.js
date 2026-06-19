@@ -11,6 +11,11 @@ export default {
     authType: "cookie",
     authHint: "Paste your Gemini cookies (JSON from cookie editor)",
   },
+  transport: {
+    baseUrl: "https://gemini.google.com",
+    format: "gemini-web",
+    authType: "cookie",
+  },
   serviceKinds: ["llm", "image", "video", "music"],
   imageConfig: {
     baseUrl: "https://gemini.google.com",
