@@ -6,6 +6,7 @@ export const FORMATS = {
   CLAUDE: "claude",
   GEMINI: "gemini",
   GEMINI_CLI: "gemini-cli",
+  GEMINI_WEB: "gemini-web",
   VERTEX: "vertex",
   CODEX: "codex",
   ANTIGRAVITY: "antigravity",

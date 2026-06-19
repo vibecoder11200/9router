@@ -280,3 +280,5 @@ import "./response/cursor-to-openai.js";
 import "./response/ollama-to-openai.js";
 import "./response/commandcode-to-openai.js";
 import "./response/kiro-to-claude.js";
+import "./request/openai-to-gemini-web.js";
+import "./response/gemini-web-to-openai.js";
