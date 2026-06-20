@@ -282,4 +282,4 @@
 - Restore /app/server.js in Docker standalone build (#1064, #1067)
 - Fix CLI TUI menu arrow-key escape sequences leaking (^[[A^[[B)
 - Switch macOS/Linux tray to systray2 fork (fixes Kaspersky AV false-positive) (#1080)
-- Fix zoom controls contrast in topology view (#1066)
+- Fix zoom controls contrast in topology view (#1066)// retry build
