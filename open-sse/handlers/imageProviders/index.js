@@ -11,6 +11,7 @@ import stabilityAi from "./stabilityAi.js";
 import blackForestLabs from "./blackForestLabs.js";
 import runwayml from "./runwayml.js";
 import cloudflareAi from "./cloudflareAi.js";
+import antigravity from "./antigravity.js";
 import geminiWeb from "./geminiWeb.js";
 
 const ADAPTERS = {
@@ -26,6 +27,7 @@ const ADAPTERS = {
   comfyui,
   huggingface,
   nanobanana,
+  antigravity,
   "fal-ai": falAi,
   "stability-ai": stabilityAi,
   "black-forest-labs": blackForestLabs,
