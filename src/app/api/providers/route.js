@@ -8,7 +8,7 @@ import {
 } from "@/models";
 import { APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { AI_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isCustomEmbeddingProvider } from "@/shared/constants/providers";
-import { normalizeProviderId, normalizeProviderSpecificData } from "@/lib/providerNormalization";
+import { normalizeProviderId, normalizeProviderSpecificData, normalizeProviderApiKey } from "@/lib/providerNormalization";
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +185,7 @@ export async function POST(request) {
       provider,
       authType: isWebCookieProvider ? "cookie" : "apikey",
       name: connectionName,
-      apiKey: apiKey || "",
+      apiKey: normalizeProviderApiKey(provider, apiKey, mergedProviderSpecificData),
       priority: priority || 1,
       globalPriority: globalPriority || null,
       defaultModel: defaultModel || null,
