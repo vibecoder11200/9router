@@ -7,14 +7,15 @@ import ProviderIcon from "./ProviderIcon";
 import CapacityBadges from "./CapacityBadges";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
-import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
+import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 
-// Provider order: OAuth first, then Free Tier, then API Key (matches dashboard/providers)
+// Provider order: OAuth first, then Free Tier, then API Key, then Web Cookie (matches dashboard/providers)
 const PROVIDER_ORDER = [
   ...Object.keys(OAUTH_PROVIDERS),
   ...Object.keys(FREE_PROVIDERS),
   ...Object.keys(FREE_TIER_PROVIDERS),
   ...Object.keys(APIKEY_PROVIDERS),
+  ...Object.keys(WEB_COOKIE_PROVIDERS),
 ];
 
 // Providers that need no auth — always show in model selector
@@ -113,7 +114,7 @@ export default function ModelSelectModal({
     if (isOpen) fetchDisabledModels();
   }, [isOpen]);
 
-  const allProviders = useMemo(() => ({ ...OAUTH_PROVIDERS, ...FREE_PROVIDERS, ...FREE_TIER_PROVIDERS, ...APIKEY_PROVIDERS }), []);
+  const allProviders = useMemo(() => ({ ...OAUTH_PROVIDERS, ...FREE_PROVIDERS, ...FREE_TIER_PROVIDERS, ...APIKEY_PROVIDERS, ...WEB_COOKIE_PROVIDERS }), []);
 
   // Group models by provider with priority order
   const groupedModels = useMemo(() => {
