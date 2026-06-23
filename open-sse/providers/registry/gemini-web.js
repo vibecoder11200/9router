@@ -2,6 +2,7 @@ export default {
   id: "gemini-web",
   category: "webCookie",
   uiAlias: "gweb",
+  alias: "gweb",
   display: {
     name: "Gemini Web",
     icon: "/images/providers/gemini-web.png",
