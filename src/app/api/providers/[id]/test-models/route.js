@@ -49,12 +49,22 @@ export async function POST(request, { params }) {
     const results = [{ modelId: first.id, name: first.name || first.id, ...firstResult }];
 
     if (rest.length > 0) {
-      const restResults = await Promise.all(
-        rest.map(async (model) => {
-          const result = await pingModelByKind(`${alias}/${model.id}`, model.kind || model.type || "llm", baseUrl);
-          return { modelId: model.id, name: model.name || model.id, ...result };
-        })
-      );
+      const chunkSize = 5;
+      const restResults = [];
+      for (let i = 0; i < rest.length; i += chunkSize) {
+        const chunk = rest.slice(i, i + chunkSize);
+        const chunkResults = await Promise.all(
+          chunk.map(async (model) => {
+            try {
+              const result = await pingModelByKind(`${alias}/${model.id}`, model.kind || model.type || "llm", baseUrl);
+              return { modelId: model.id, name: model.name || model.id, ...result };
+            } catch (err) {
+              return { modelId: model.id, name: model.name || model.id, ok: false, error: err.message || "Test error", latencyMs: -1 };
+            }
+          })
+        );
+        restResults.push(...chunkResults);
+      }
       results.push(...restResults);
     }
 
