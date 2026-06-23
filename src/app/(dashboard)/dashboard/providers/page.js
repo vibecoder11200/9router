@@ -561,9 +561,9 @@ export default function ProvidersPage() {
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "apikey")}
-              authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+              stats={getProviderStats(key, "cookie")}
+              authType="cookie"
+              onToggle={(active) => handleToggleProvider(key, "cookie", active)}
             />
           ))}
         </div>
@@ -626,12 +626,14 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
   const dotColors = {
     free: "bg-green-500",
     oauth: "bg-blue-500",
+    cookie: "bg-purple-500",
     apikey: "bg-amber-500",
     compatible: "bg-orange-500",
   };
   const dotLabels = {
     free: "Free",
     oauth: "OAuth",
+    cookie: "Cookie",
     apikey: "API Key",
     compatible: "Compatible",
   };
@@ -745,12 +747,14 @@ function ApiKeyProviderCard({
   const dotColors = {
     free: "bg-green-500",
     oauth: "bg-blue-500",
+    cookie: "bg-purple-500",
     apikey: "bg-amber-500",
     compatible: "bg-orange-500",
   };
   const dotLabels = {
     free: "Free",
     oauth: "OAuth",
+    cookie: "Cookie",
     apikey: "API Key",
     compatible: "Compatible",
   };
@@ -886,7 +890,8 @@ function ProviderTestResultsView({ results }) {
     {
       oauth: "OAuth",
       free: "Free",
-      apikey: "API Key",
+      cookie: "Cookie",
+    apikey: "API Key",
       provider: "Provider",
       all: "All",
     }[mode] || mode;
