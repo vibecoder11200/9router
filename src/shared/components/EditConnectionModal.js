@@ -57,6 +57,7 @@ export default function EditConnectionModal({ isOpen, connection, proxyPools, on
   const isCompatible = connection
     ? (isOpenAICompatibleProvider(connection.provider) || isAnthropicCompatibleProvider(connection.provider))
     : false;
+  const isCookie = connection?.authType === "cookie";
 
   const handleTest = async () => {
     if (!connection?.provider) return;
@@ -184,15 +185,28 @@ export default function EditConnectionModal({ isOpen, connection, proxyPools, on
         {!isOAuth && (
           <>
             <div className="flex gap-2">
-              <Input
-                label="API Key"
-                type="password"
-                value={formData.apiKey}
-                onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                placeholder="Enter new API key"
-                hint="Leave blank to keep the current API key."
-                className="flex-1"
-              />
+              {isCookie ? (
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-sm font-medium text-text-muted">Cookie Value</label>
+                  <textarea
+                    className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[100px] focus:outline-none focus:ring-1 focus:ring-primary"
+                    value={formData.apiKey}
+                    onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                    placeholder="Paste new cookie value"
+                  />
+                  <p className="text-xs text-text-muted">Leave blank to keep the current cookie.</p>
+                </div>
+              ) : (
+                <Input
+                  label="API Key"
+                  type="password"
+                  value={formData.apiKey}
+                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  placeholder="Enter new API key"
+                  hint="Leave blank to keep the current API key."
+                  className="flex-1"
+                />
+              )}
               <div className="pt-6">
                 <Button onClick={handleValidate} disabled={!formData.apiKey || validating || saving} variant="secondary">
                   {validating ? "Checking..." : "Check"}

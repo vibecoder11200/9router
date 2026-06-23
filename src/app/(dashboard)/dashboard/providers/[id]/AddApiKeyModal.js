@@ -168,7 +168,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
 
         {mode === "bulk" && (
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-text-muted">One key per line. Format: <code>name|apiKey</code> or just <code>apiKey</code> (auto-named by index).</p>
+            <p className="text-xs text-text-muted">{isCookie ? "One cookie per line. Paste raw JSON or <code>name|{...json...}</code> (auto-named by index)." : "One key per line. Format: <code>name|apiKey</code> or just <code>apiKey</code> (auto-named by index)."}</p>
             <textarea
               className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[140px] focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder={BULK_PLACEHOLDER}
