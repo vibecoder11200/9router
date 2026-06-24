@@ -1,6 +1,13 @@
 # 9Router Architecture
 
-_Last updated: 2026-02-06_
+> **⚠️ DEPRECATED** — This document is inherited from a fork and is no longer
+> maintained. It references old persistence (db.json, usage.json — migrated to
+> SQLite), omits MITM mode, RTK filters (Ponytail, Caveman, Headroom), the
+> Gemini-Web cluster, and many newer providers. See
+> [docs/system-architecture.md](system-architecture.md) for the current
+> authoritative architecture.
+
+_Last updated: 2026-06-24_
 
 ## Executive Summary
 
@@ -555,3 +562,5 @@ Environment variables actively used by code:
 - `GET /api/settings`
 - `GET /api/v1/models`
 - CLI target base URL should be `http://<host>:20128/v1` when `PORT=20128`
+
+

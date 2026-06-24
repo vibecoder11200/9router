@@ -76,6 +76,15 @@
 - **Streaming utilities** (`utils/stream.js`, `streamHandler.js`) are the
   canonical way to build SSE transform pipelines (tool-name mapping, usage
   tracking, disconnect/stall detection).
+- **Pre-translate hooks** (`rtk/`) run in order before format translation: RTK
+  compression (tool_result), Headroom proxy compress, Caveman inject, Ponytail
+  inject. All are fail-open — errors return null, body untouched.
+- **Web-based/session-based executors** (`grok-web`, `perplexity-web`,
+  `gemini-web`) use cookies not API keys. Each implements its own session
+  management; there is no shared base class for cookie-based auth.
+- **Responses API transformer** (`transformer/responsesTransformer.js`,
+  `streamToJsonConverter.js`) converts Chat Completions SSE to Responses API
+  format for clients that expect the Responses API shape.
 
 ## Security conventions
 
@@ -87,6 +96,9 @@
 - Secrets are read from env (`.env.example` is the canonical list) or stored
   encrypted-at-rest only insofar as SQLite file permissions allow — never
   commit `.env`, tokens, or the `~/.9router` data dir.
+- **SSRF guard** (`src/shared/utils/ssrfGuard.js`) validates outbound fetch
+  targets and blocks requests to private/internal/metadata IP ranges. All
+  provider executor calls pass through this guard.
 
 ## Testing conventions
 
