@@ -35,9 +35,9 @@
 | `src/sse` | ~11 | ~2,000 | SSE request handlers bridging API routes → `open-sse` |
 | `src/store` | 7 | ~250 | Zustand client stores |
 | `src/i18n` | 3 | ~335 | Runtime DOM i18n (31 locales) |
-| `open-sse` | ~317 | ~38,700 | Engine: executors, translators, handlers, services |
+| `open-sse` | ~327 | ~39,700 | Engine: executors, translators, handlers, services |
 | `cli` | ~23 | ~6,000 | `9router` CLI |
-| `tests` | ~112 | ~15,400 | Vitest tests + fixtures |
+| `tests` | ~115 | ~15,500 | Vitest tests + fixtures + baseline |
 
 ## `src/` — the application
 
@@ -63,6 +63,8 @@
   `migrate.js`, `paths.js`, `repos/` (repository per entity).
 - **`auth/`** — `dashboardSession.js` (JWT + bcrypt), `oidc.js` (PKCE),
   `loginLimiter.js` (rate limiting).
+- **`ds2api/`** — `process.js` (DS2API sidecar lifecycle management), `detect.js`.
+- **`headroom/`** — `process.js` (Headroom proxy lifecycle management), `detect.js`.
 - **`tunnel/`** — `cloudflare/manager.js`, `tailscale/manager.js`.
 - **`network/`** — `connectionProxy.js`, `proxyTest.js`, `providers.js`.
 - **`oauth/providers.js`** — centralized OAuth handlers.
@@ -77,7 +79,7 @@
 - **`services/`** — `bootstrap.js`, `initializeApp.js` (post-auth setup).
 - **`hooks/`** — `useTheme.js`, etc.
 - **`constants/`** — `providers.js`, `models.js`, `config.js`.
-- **`utils/api.js`** — typed API client functions.
+- **`utils/`** — `api.js` (typed API client functions), `ssrfGuard.js` (SSRF protection).
 
 ### `src/mitm/` — interception proxy
 
@@ -115,18 +117,56 @@ provider and streams the response back in the client's format.
 | Subdir | Role |
 |---|---|
 | `config/` | Constants, providers registry, model registry, runtime timeouts/retry, error/backoff config |
-| `executors/` | Per-provider HTTP clients (`base.js`, `default.js`, + specialized: azure, vertex, codex, cursor, kiro, gemini-web, gemini-cli, github, antigravity, qoder, qwen, grok-web, perplexity-web, …) |
+| `executors/` | Per-provider HTTP clients (`base.js`, `default.js`, + specialized: azure, vertex, codex, cursor, kiro, gemini-web, gemini-cli, github, antigravity, qoder, qwen, grok-web, perplexity-web, codebuddy-cn, mimo-free, cloudflare-ai, commandcode, …) |
 | `handlers/` | Modality orchestrators: `chatCore.js` (+ `chatCore/` streaming/non-streaming/SSE→JSON), `responsesHandler.js`, `embeddingsCore.js`, `imageGenerationCore.js`, `ttsCore.js`, `sttCore.js`, `search/` |
 | `translator/` | Format conversion: `formats/` (openai, claude, gemini, responsesApi), `request/`, `response/`, `schema/`, `concerns/` (modality stripping, finish-reason) |
-| `services/` | `model.js`, `provider.js`, `accountFallback.js`, `combo.js`, `oauthCredentialManager.js`, `tokenRefresh.js`, `usage/` (per-provider usage parsers), Gemini-Web session/cookie/RPC/keepalive/fingerprint cluster, `projectId.js` (Vertex) |
-| `rtk/` | "Response Token Kernel" — compresses verbose tool_result content (git diff/status, logs, grep, find, ls) to cut token usage; `filters/`, `autodetect.js`, `caveman.js` |
+| `services/` | `model.js`, `provider.js`, `accountFallback.js`, `combo.js`, `oauthCredentialManager.js`, `tokenRefresh.js`, `usage/` (per-provider usage parsers), Gemini-Web session/cookie/RPC/keepalive/fingerprint cluster (8 files), `projectId.js` (Vertex) |
+| `rtk/` | "Response Token Kernel" — compresses verbose tool_result content (git diff/status, logs, grep, find, ls) to cut token usage; `filters/` (11 files), `autodetect.js`, `headroom.js` (external proxy), `caveman.js` (−65% output tokens), `ponytail.js` (lazy senior dev, Lite/Full/Ultra) |
+| `transformer/` | `responsesTransformer.js` (Chat Completions SSE → Codex Responses API SSE), `streamToJsonConverter.js` |
 | `utils/` | `stream.js`, `streamHandler.js`, `sse.js`, `proxyFetch.js`, `bypassHandler.js`, `clientDetector.js`, `claudeCloaking.js`, `claudeHeaderCache.js`, `cursorChecksum.js`/`cursorProtobuf.js`, `usageTracking.js`, `error.js`, `requestLogger.js` |
-| `transformer/` | `responsesTransformer.js`, `streamToJsonConverter.js` |
-| `providers/`, `shared/` | Provider registry builder (`registry/`, `models/`, `pricing.js`, `capabilities.js`, `schema.js`) |
+| `providers/`, `shared/` | Provider registry builder (`registry/` — 96 files, `models/`, `pricing.js`, `capabilities.js`, `schema.js`) |
 
 Entry: `open-sse/index.js` (re-exports config, translators, services, handlers,
 stream utils). Imported for side effects (HTTP proxy env wiring) at the top of
 `src/sse/handlers/chat.js`.
+
+### Gemini-Web cluster
+
+A dedicated subsystem for session/cookie-based access to Gemini via the web interface (not API):
+
+- `open-sse/executors/gemini-web.js` — executor using Gemini Web RPC protocol
+- `open-sse/services/geminiWebSession.js` — session management (login, token refresh)
+- `open-sse/services/geminiWebCookiePool.js` — multi-account cookie rotation pool
+- `open-sse/services/geminiWebCookie.js` — individual cookie lifecycle
+- `open-sse/services/geminiWebKeepAlive.js` — keepalive to prevent session expiry
+- `open-sse/services/geminiWebFingerprint.js` — browser fingerprint simulation
+- `open-sse/services/geminiWebRpc.js` — RPC protocol (batchexecute, streamgenerate)
+- `open-sse/services/geminiWebModels.js` — model listing from web session
+- `open-sse/services/geminiWebUsage.js` — usage tracking for web sessions
+- `tests/fixtures/gemini-web/` — 15 fixture files for Gemini-Web testing
+- `add-gemini-web.sh`, `update-gemini-cookies.sh`, `gemini-health-check-runner.js` — ops scripts
+
+### Web-based executors
+
+Three executors that use session cookies (not API keys) to access web versions:
+- **`grok-web`** (`open-sse/executors/grok-web.js`) — xAI Grok via web interface
+- **`perplexity-web`** (`open-sse/executors/perplexity-web.js`) — Perplexity via web interface
+- **`gemini-web`** (`open-sse/executors/gemini-web.js`) — Google Gemini via RPC protocol
+
+### Provider registry
+
+The provider registry in `open-sse/providers/registry/` contains **97 individual provider definition files**, each exporting metadata, model lists, and capabilities. The `registry/index.js` auto-generates the import list. Combined with `config/providers.js` and `config/providerModels.js`, this powers model resolution, pricing calculation, and capability detection.
+
+### RTK (Response Token Kernel)
+
+Token-reduction layer that compresses verbose `tool_result` content before it reaches the LLM — 16 files total:
+
+- `open-sse/rtk/index.js` — entry point, orchestrates compression pipeline
+- `open-sse/rtk/autodetect.js` — auto-detects tool output type from first 1KB
+- `open-sse/rtk/filters/` — **11 filter files**: `gitDiff.js`, `gitStatus.js`, `grep.js`, `find.js`, `ls.js`, `tree.js`, `dedupLog.js`, `smartTruncate.js`, `readNumbered.js`, `searchList.js`, `buildOutput.js`
+- `open-sse/rtk/headroom.js` — external Headroom proxy compressor integration
+- `open-sse/rtk/caveman.js` + `cavemanPrompts.js` — "caveman speak" system-prompt injector (3 levels, −65% output tokens)
+- `open-sse/rtk/ponytail.js` + `ponytailPrompt.js` + `systemInject.js` — "lazy senior dev" system-prompt injector (Lite/Full/Ultra)
 
 ## `cli/` — the `9router` CLI
 
@@ -140,13 +180,18 @@ stream utils). Imported for side effects (HTTP proxy env wiring) at the top of
   `trayRuntime.js`.
 - `scripts/build-cli.js` — packs the CLI (`npm run cli:pack`).
 
+The CLI includes quick-setup wizards for Claude Code, Codex CLI, Factory Droid, Open Claw, OpenCode, Hermes Agent, and other AI coding tools (`cli/src/cli/menus/cliTools.js`).
+
 ## `tests/`
 
-Vitest. Layout: `tests/translator/` (golden + regression tests for translation),
-`tests/unit/` (executors, capabilities, DB, routing, gemini-web, image,
-embeddings, mitm/antigravity), `tests/fixtures/` (mock provider payloads),
-`tests/__baseline__/` (baseline JSON + verification scripts). Run from the
-`tests/` directory; the root `package.json` has no `test` script.
+Vitest. Layout:
+
+- `tests/translator/` — **15 golden + regression test files** for translation (incl. `real/` and `__snapshots__/`)
+- `tests/unit/` — **89 unit test files** covering executors, capabilities, DB, routing, gemini-web, image, embeddings, mitm/antigravity, combo, fusion, translator concerns
+- `tests/__baseline__/` — **11 baseline verification scripts** (verify-providers, verify-alias, verify-no-regression, snapshot-providers, verify-oauth-urls) and 6 JSON baseline files (providers, aliases, OAuth URLs)
+- `tests/fixtures/` — mock provider payloads (15 Gemini-Web fixtures, provider response dumps)
+
+A data-driven translator coverage matrix maps which format pairs are tested and which remain implicit (via OpenAI bridge). Run from the `tests/` directory; the root `package.json` has no `test` script.
 
 ## Root helper scripts
 

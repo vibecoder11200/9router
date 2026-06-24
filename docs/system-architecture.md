@@ -75,16 +75,20 @@ Traceable from `src/app/api/v1/chat/completions/route.js`:
      from `open-sse/services/combo.js`.
 8. **Inside `open-sse` `handleChatCore`:**
    1. `handleBypassRequest()` short-circuits warmup/skip patterns.
-   2. **Capability concerns** strip unsupported modalities (vision/audio/pdf)
+   2. **Pre-translate hooks** (fail-open, run in order before translation):
+      - **RTK compress** verbose `tool_result` content (`rtk/index.js`).
+      - **Headroom proxy** (`rtk/headroom.js`) — optional external `/v1/compress` proxy.
+      - **Caveman mode** (`rtk/caveman.js`) — injects caveman-speak system prompt (−65% output tokens).
+      - **Ponytail** (`rtk/ponytail.js`) — injects "lazy senior dev" system prompt (Lite/Full/Ultra).
+   3. **Capability concerns** strip unsupported modalities (vision/audio/pdf)
       per model (`translator/concerns/`).
-   3. **Translate request** to the provider's format (`translator/index.js`;
+   4. **Translate request** to the provider's format (`translator/index.js`;
       pivots through OpenAI if no direct route).
-   4. **RTK compress** verbose `tool_result` content (`rtk/index.js`).
    5. **Select executor** (`executors/index.js`) — `DefaultExecutor` or a
       provider-specific one (cursor, kiro, gemini-web, vertex, …).
    6. **Execute** (`executors/base.js`) — build URL/headers, call provider
       with retry, fallback URLs, and credential refresh; honor outbound proxy
-      env vars via `utils/proxyFetch.js`.
+      env vars via `utils/proxyFetch.js`; validates target via `ssrfGuard.js`.
 9. **Response streaming.** `handlers/chatCore/streamingHandler.js` (or
    `nonStreamingHandler.js`) builds an SSE transform pipeline
    (`utils/stream.js`): converts provider SSE → client format, maps tool
@@ -96,6 +100,17 @@ Traceable from `src/app/api/v1/chat/completions/route.js`:
     `markAccountUnavailable(model)` and `open-sse/services/accountFallback.js`
     applies backoff; the next active account is tried until success or all are
     exhausted (`unavailableResponse`).
+
+### Responses API path
+
+`/v1/responses` is handled by a dedicated route handler
+(`src/app/api/v1/responses/route.js`) that delegates to the same `handleChat`
+pipeline. The `responsesHandler.js` in `open-sse/handlers/` converts Responses
+API format to Chat Completions format via `convertResponsesApiFormat()`
+(`open-sse/translator/formats/responsesApi.js`), then calls `handleChatCore`.
+On the response side, `responsesTransformer.js` converts Chat Completions SSE
+chunks into Responses API SSE format, and `streamToJsonConverter.js` handles
+non-streaming Responses.
 
 ## 3. The `open-sse` engine (internal architecture)
 
@@ -110,15 +125,89 @@ vars).
 - **Executors** = provider HTTP clients; `base.js` provides URL/header build,
   retry, fallback-URL, credential-refresh; specialized executors add
   provider protocols (protobuf for Cursor, EventStream for Kiro, RPC for
-  Gemini-Web, etc.).
+  Gemini-Web, etc.). **24 executors total**, including `codebuddy-cn`
+  (Tencent CodeBuddy), `mimo-free` (Xiaomi Mimo free), `commandcode`,
+  web-based executors (`grok-web`, `perplexity-web`, `gemini-web`).
 - **Services** = cross-cutting: model/provider resolution, account fallback,
   combos, OAuth credential management + token refresh, per-provider usage
   parsers (`services/usage/`), and the Gemini-Web session/cookie/RPC/keepalive
-  cluster.
+  cluster (8 files).
 - **RTK** = token-reduction layer that compresses tool output (git diff/status,
-  logs, grep/find/ls) before sending upstream.
+  logs, grep/find/ls) before sending upstream. Includes `filters/` (11 files),
+  `headroom.js` (external compress proxy), `caveman.js` (caveman-speak injector,
+  −65% output tokens), `ponytail.js` ("lazy senior dev" injector, Lite/Full/Ultra).
+- **Transformer** = `responsesTransformer.js` (Chat Completions SSE → Codex
+  Responses API SSE), `streamToJsonConverter.js` (Responses non-streaming).
 - **Config** = single source for timeouts, retry/backoff, error mapping, and
-  the provider/model registries (built from `providers/registry/`).
+  the provider/model registries (built from `providers/registry/` — 97 files).
+
+### The pre-translate hook pipeline (chat)
+
+Before translation, `chatCore.js` runs a series of **fail-open** hooks that
+mutate the request body in-place. Each hook returns null on error, leaving
+the body untouched:
+
+```
+Body → RTK compress (tool_result) → Headroom (/v1/compress proxy)
+     → Caveman (system inject, −65% output) → Ponytail (system inject,
+       Lite/Full/Ultra) → Translate → Execute
+```
+
+- **RTK** (`rtk/index.js` + `rtk/filters/`) compresses `tool_result` blocks
+  by auto-detecting their type (git diff, grep, ls, etc.) and applying
+  format-preserving compression. Safe by design — if a filter fails, the
+  original text is kept.
+- **Headroom** (`rtk/headroom.js`) forwards the request body to an optional
+  external Headroom proxy (`/v1/compress`). If the proxy is down or returns an
+  error, 9Router fails open and sends the original request. The Headroom
+  subprocess lifecycle is managed by `src/lib/headroom/process.js` with a
+  dashboard UI for start/stop/status (`/api/headroom/*`).
+- **Caveman** (`rtk/caveman.js`) injects a caveman-speak system prompt
+  ("why use many token when few token do trick") in 3 levels — −65% output tokens.
+- **Ponytail** (`rtk/ponytail.js`) injects a "lazy senior dev" system prompt
+  (Lite/Full/Ultra) that biases the LLM toward minimal, YAGNI-first code.
+
+
+### DS2API sidecar provider
+
+**DS2API** (`open-sse/providers/registry/ds2api.js`) is a registered provider that
+exposes DeepSeek web chat as an OpenAI-compatible API via a local sidecar process.
+It is defined with `noAuth: true` and `passthroughModels: true`, and connects to
+`http://localhost:5001` by default. The sidecar lifecycle (binary detection, spawn,
+stop, health probe) is managed by `src/lib/ds2api/process.js` and `detect.js`,
+with dashboard UI for start/stop/status at `/api/ds2api/*`. The `ds2apiEnabled`
+and `ds2apiUrl` settings are persisted in the `settings` table
+(`src/lib/db/repos/settingsRepo.js`).
+
+### Web-based/session-based executors
+
+Three executors use session cookies instead of API keys:
+
+- **`grok-web`** (`open-sse/executors/grok-web.js`) — accesses xAI Grok via cookies
+- **`perplexity-web`** (`open-sse/executors/perplexity-web.js`) — accesses Perplexity via cookies
+- **`gemini-web`** (`open-sse/executors/gemini-web.js`) — accesses Google Gemini via RPC protocol
+
+These share no common base; each implements its own session management within
+its executor.
+
+### Gemini-Web cluster
+
+A dedicated subsystem for session/cookie-based access to Gemini via the web
+interface (not API), comprising 9 service files + 1 executor:
+
+- `open-sse/executors/gemini-web.js` — executor using the Gemini-Web RPC protocol
+- `open-sse/services/geminiWebSession.js` — session management (login, token refresh)
+- `open-sse/services/geminiWebCookiePool.js` — multi-account cookie rotation pool
+- `open-sse/services/geminiWebCookie.js` — individual cookie lifecycle
+- `open-sse/services/geminiWebKeepAlive.js` — keepalive to prevent session expiry
+- `open-sse/services/geminiWebFingerprint.js` — browser fingerprint simulation (headers, TLS)
+- `open-sse/services/geminiWebRpc.js` — RPC protocol (batchexecute for status, streamgenerate for chat)
+- `open-sse/services/geminiWebModels.js` — model listing from web session
+- `open-sse/services/geminiWebUsage.js` — usage tracking for web sessions
+
+The executor calls through `geminiWebRpc.js` which uses `batchexecute` (JSON-RPC-style)
+for user status checks and `streamgenerate` (binary-framed SSE) for chat completion.
+Cookie rotation, keepalive pings, and fingerprint emulation run as background tasks.
 
 ## 4. MITM mode (`src/mitm/`)
 
@@ -138,9 +227,9 @@ locally instead of being re-pointed at `/v1`:
 5. `manager.js` owns the child-process lifecycle, health checks, and DNS
    teardown.
 
-Intercepted domains (from `src/mitm/config.js`): e.g. Antigravity
-(`*.googleapis.com` cloudcode), Cursor (`api2.cursor.sh`), Kiro
-(`runtime.*.kiro.dev`), Copilot (`api.individual.githubcopilot.com`).
+Intercepted domains (from `src/mitm/config.js`): Antigravity (cloudcode
+`*.googleapis.com`), Cursor (`api2.cursor.sh`), Kiro (`runtime.*.kiro.dev`),
+Copilot (`api.individual.githubcopilot.com`).
 
 ## 5. Data & persistence
 
@@ -181,6 +270,10 @@ Intercepted domains (from `src/mitm/config.js`): e.g. Antigravity
   and strips client-supplied forwarding headers so rate limiting and audit
   can't be spoofed. Requests seen through a reverse proxy are flagged
   (`x-9r-via-proxy`).
+- **SSRF guard:** `src/shared/utils/ssrfGuard.js` validates all outbound
+  fetch targets, blocking requests to private/internal/metadata IP ranges
+  (10.x, 172.16-31.x, 192.168.x, 127.x, 169.254.x, ::1, and cloud metadata
+  IPs like 169.254.169.254).
 - **Secrets:** env-driven (`.env.example`); `JWT_SECRET`, `INITIAL_PASSWORD`,
   `API_KEY_SECRET`, `MACHINE_ID_SALT` are the security-critical ones.
 

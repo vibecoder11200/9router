@@ -6,11 +6,11 @@
 
 ## 1. What 9Router is
 
-9Router (`package.json` name: `9router-app`, version tracked in `package.json`)
-is a **self-hosted LLM API gateway / router** with a Next.js dashboard. It exposes
-an OpenAI-compatible HTTP API and routes each request to one of many configured
-upstream providers — translating between client formats (OpenAI, Claude, Gemini,
-OpenAI Responses API) and provider formats on the fly, with streaming (SSE).
+9Router (`package.json` name: `9router-app`, version `0.5.8`) is a **self-hosted
+LLM API gateway / router** with a Next.js dashboard. It exposes an OpenAI-compatible
+HTTP API and routes each request to one of many configured upstream providers —
+translating between client formats (OpenAI, Claude, Gemini, OpenAI Responses API)
+and provider formats on the fly, with streaming (SSE).
 
 It is a **local-first** application: all state lives in a SQLite database on the
 host, there is no mandatory cloud dependency, and it ships both a web dashboard
@@ -27,7 +27,8 @@ and an npm CLI (`9router`) for headless use.
   translator exists.
 - **Many upstream providers** via specialized executors (OpenAI-compatible,
   Anthropic/Azure/Vertex, plus "web/IDE" providers: Gemini Web, Cursor, Kiro,
-  GitHub Copilot, Codex, Antigravity, Qoder, Grok-web, Perplexity-web, etc.).
+  GitHub Copilot, Codex, Antigravity, Qoder, Grok-web, Perplexity-web,
+  CodeBuddy-cn, Mimo-free, Cloudflare AI, etc.).
 - **Credentials & failover**: per-connection credentials (API key or OAuth),
   account fallback with exponential backoff, and multi-model "combos"
   (failover or fusion).
@@ -40,6 +41,8 @@ and an npm CLI (`9router`) for headless use.
   analytics, MITM config, proxy pools, CLI tools, media providers, and settings.
 - **CLI**: the `9router` npm package launches/manages the server and offers a
   terminal UI + system-tray mode.
+- **SSRF guard**: `ssrfGuard.js` validates outbound fetch targets, blocking
+  requests to private/internal/metadata IP ranges to prevent SSRF attacks.
 
 ## 2. Tech stack
 
@@ -95,6 +98,9 @@ comment in `package.json`).
 | FR-8 | Tunnel exposure (Cloudflare/Tailscale) | `src/lib/tunnel/` |
 | FR-9 | Dashboard auth (password / OIDC) with rate-limited login | `src/lib/auth/`, `/api/auth/` |
 | FR-10 | CLI launch + terminal UI + tray | `cli/` |
+| FR-11 | Web-based/session-based providers (cookie auth, not API key) | `open-sse/executors/gemini-web.js`, `grok-web.js`, `perplexity-web.js`; Gemini-Web cluster (`open-sse/services/geminiWeb*.js`) |
+| | FR-12 | SSRF guard for outbound requests | `src/shared/utils/ssrfGuard.js` — blocks requests to private/internal/metadata IP ranges |
+| FR-13 | DS2API sidecar management (start/stop/status of local DeepSeek-to-API proxy) | `src/lib/ds2api/{detect,process}.js`, `/api/ds2api/*`, `ds2apiEnabled`/`ds2apiUrl` settings |
 
 ### 3.4 Non-functional requirements
 
@@ -102,7 +108,8 @@ comment in `package.json`).
   macOS, Linux. DB driver is selected at runtime to avoid native-build failures.
 - **Security:** login rate-limiting (`loginLimiter.js`), bcrypt password hashing,
   JWT sessions, real-IP injection + spoofable-header stripping in
-  `custom-server.js`, optional API-key requirement on the endpoint.
+  `custom-server.js`, optional API-key requirement on the endpoint, SSRF guard
+  for outbound fetches (`ssrfGuard.js`).
 - **Observability:** in-memory console log buffer (`consoleLogBuffer.js`),
   optional request logging (`ENABLE_REQUEST_LOGS`), request-detail capture.
 - **Configurability:** behavior tunable via env vars (`.env.example`) and the

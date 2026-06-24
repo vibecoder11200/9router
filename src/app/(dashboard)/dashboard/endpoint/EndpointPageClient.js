@@ -41,6 +41,12 @@ export default function APIPageClient({ machineId }) {
   const [showHeadroomInstallModal, setShowHeadroomInstallModal] = useState(false);
   const [headroomActionLoading, setHeadroomActionLoading] = useState(false);
   const [headroomActionError, setHeadroomActionError] = useState("");
+  const [ds2apiEnabled, setDs2apiEnabled] = useState(false);
+  const [ds2apiUrl, setDs2apiUrl] = useState("http://localhost:5001");
+  const [ds2apiStatus, setDs2apiStatus] = useState({ installed: false, running: false, loading: true });
+  const [showDs2apiModal, setShowDs2apiModal] = useState(false);
+  const [ds2apiActionLoading, setDs2apiActionLoading] = useState(false);
+  const [ds2apiActionError, setDs2apiActionError] = useState("");
   const [cavemanEnabled, setCavemanEnabled] = useState(false);
   const [cavemanLevel, setCavemanLevel] = useState("full");
   const [ponytailEnabled, setPonytailEnabled] = useState(false);
@@ -250,6 +256,9 @@ export default function APIPageClient({ machineId }) {
         setCavemanLevel(data.cavemanLevel || "full");
         setPonytailEnabled(!!data.ponytailEnabled);
         setPonytailLevel(data.ponytailLevel || "full");
+        setDs2apiEnabled(!!data.ds2apiEnabled);
+        setDs2apiUrl(data.ds2apiUrl || "http://localhost:5001");
+        refreshDs2apiStatus();
       }
       if (statusRes.ok) {
         const data = await statusRes.json();
@@ -399,6 +408,57 @@ export default function APIPageClient({ machineId }) {
     patchSetting({ ponytailLevel: level });
   };
 
+
+  // -- DS2API sidecar handlers --
+  const handleDs2apiUrlBlur = async () => {
+    const next = ds2apiUrl.trim() || "http://localhost:5001";
+    setDs2apiUrl(next);
+    await patchSetting({ ds2apiUrl: next });
+    refreshDs2apiStatus();
+  };
+
+  const handleDs2apiEnabled = (value) => {
+    const nextUrl = ds2apiUrl.trim() || "http://localhost:5001";
+    setDs2apiUrl(nextUrl);
+    setDs2apiEnabled(value);
+    patchSetting({ ds2apiEnabled: value, ds2apiUrl: nextUrl });
+  };
+
+  const refreshDs2apiStatus = useCallback(async () => {
+    setDs2apiStatus((s) => ({ ...s, loading: true }));
+    try {
+      const res = await fetch("/api/ds2api/status", { headers: { "Cache-Control": "no-store" } });
+      const data = await res.json();
+      setDs2apiStatus({ ...data, loading: false });
+    } catch {
+      setDs2apiStatus({ installed: false, running: false, loading: false });
+    }
+  }, []);
+
+  const handleDs2apiStart = useCallback(async () => {
+    setDs2apiActionError("");
+    setDs2apiActionLoading(true);
+    try {
+      const res = await fetch("/api/ds2api/start", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to start DS2API");
+      await refreshDs2apiStatus();
+    } catch (e) {
+      setDs2apiActionError(e.message);
+    } finally {
+      setDs2apiActionLoading(false);
+    }
+  }, [refreshDs2apiStatus]);
+
+  const handleDs2apiStop = useCallback(async () => {
+    setDs2apiActionLoading(true);
+    try {
+      await fetch("/api/ds2api/stop", { method: "POST" });
+      await refreshDs2apiStatus();
+    } finally {
+      setDs2apiActionLoading(false);
+    }
+  }, [refreshDs2apiStatus]);
   const fetchData = async () => {
     try {
       const keysRes = await fetch("/api/keys");
@@ -1381,6 +1441,59 @@ export default function APIPageClient({ machineId }) {
         </div>
       </Card>
 
+
+      {/* DS2API Sidecar */}
+      <Card id="ds2api">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">cloud</span>
+            DS2API Sidecar
+          </h2>
+        </div>
+        <div className="flex items-center justify-between py-4 border-b border-border gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="font-medium">
+                Local AI Proxy{" "}
+                <a
+                  href="https://github.com/CJackHwang/ds2api"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-normal text-primary underline hover:opacity-80"
+                >
+                  (DS2API)
+                </a>
+              </p>
+              <span className={`text-xs px-2 py-0.5 rounded ${ds2apiStatus.running ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                {ds2apiStatus.loading ? "Checking\u2026" : ds2apiStatus.running ? "Running" : ds2apiStatus.installed ? "Stopped" : "Not installed"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowDs2apiModal(true)}
+                className="text-xs text-primary underline hover:opacity-80"
+              >
+                {ds2apiStatus.running ? "Manage" : "Setup"}
+              </button>
+            </div>
+            <p className="text-sm text-text-muted mt-1">
+              Local OpenAI-compatible API proxy for multi-provider aggregation
+            </p>
+          </div>
+          <Toggle
+            checked={ds2apiEnabled && ds2apiStatus.running}
+            disabled={!ds2apiStatus.running}
+            onChange={() => handleDs2apiEnabled(!ds2apiEnabled)}
+          />
+        </div>
+        <div className="pt-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-text-muted">Service URL</span>
+              <span className="font-mono text-xs">{ds2apiUrl}</span>
+            </div>
+          </div>
+        </div>
+      </Card>
       {/* Add Key Modal */}
       <Modal
         isOpen={showAddModal}
@@ -1657,6 +1770,66 @@ export default function APIPageClient({ machineId }) {
         </div>
       </Modal>
 
+
+      {/* DS2API Setup Modal */}
+      <Modal
+        isOpen={showDs2apiModal}
+        title={ds2apiStatus.running ? "DS2API Sidecar" : "Setup DS2API"}
+        onClose={() => setShowDs2apiModal(false)}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between text-sm">
+            <span>Status</span>
+            <span className={ds2apiStatus.running ? "text-success" : "text-warning"}>
+              {ds2apiStatus.loading ? "Checking..." : ds2apiStatus.running ? "Running" : ds2apiStatus.installed ? "Stopped" : "Not installed"}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium">Service URL</p>
+            <Input
+              value={ds2apiUrl}
+              onChange={(e) => setDs2apiUrl(e.target.value)}
+              onBlur={handleDs2apiUrlBlur}
+              placeholder="http://localhost:5001"
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-text-muted">
+              DS2API provides an OpenAI-compatible API proxy. Start the local sidecar or connect to an external instance.
+            </p>
+          </div>
+          {ds2apiStatus.managedPid ? (
+            <Button onClick={handleDs2apiStop} variant="ghost" fullWidth disabled={ds2apiActionLoading}>
+              {ds2apiActionLoading ? "Stopping..." : "Stop DS2API"}
+            </Button>
+          ) : ds2apiStatus.running ? (
+            <p className="text-sm text-success">DS2API is reachable. Enable the toggle above to use it as a provider.</p>
+          ) : ds2apiStatus.canStart ? (
+            <Button onClick={handleDs2apiStart} fullWidth disabled={ds2apiActionLoading}>
+              {ds2apiActionLoading ? "Starting..." : "Start DS2API"}
+            </Button>
+          ) : !ds2apiStatus.localUrl ? (
+            <p className="text-sm text-warning">Start DS2API separately at the configured URL, then recheck.</p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium">Build from source:</p>
+              <div className="flex items-center gap-2">
+                <pre className="flex-1 rounded bg-black/5 dark:bg-white/5 p-2 text-xs font-mono overflow-x-auto">cd temp/ds2api && go build -o ds2api.exe ./cmd/ds2api</pre>
+                <Button size="sm" variant="ghost" onClick={() => copy("cd temp/ds2api && go build -o ds2api.exe ./cmd/ds2api")}>
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+              </div>
+              <p className="text-xs text-text-muted mt-1">Requires Go. Then click Start above.</p>
+            </div>
+          )}
+          {ds2apiActionError && (
+            <p className="text-sm text-warning">{ds2apiActionError}</p>
+          )}
+          <div className="flex gap-2">
+            <Button onClick={() => refreshDs2apiStatus()} variant="ghost" fullWidth>Recheck</Button>
+            <Button onClick={() => setShowDs2apiModal(false)} fullWidth>Done</Button>
+          </div>
+        </div>
+      </Modal>
       {/* Confirm Modal */}
       <ConfirmModal
         isOpen={!!confirmState}
@@ -1674,3 +1847,8 @@ export default function APIPageClient({ machineId }) {
 APIPageClient.propTypes = {
   machineId: PropTypes.string.isRequired,
 };
+
+
+
+
+

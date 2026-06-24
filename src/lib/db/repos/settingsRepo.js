@@ -42,6 +42,8 @@ const DEFAULT_SETTINGS = {
   cavemanLevel: "full",
   ponytailEnabled: false,
   ponytailLevel: "full",
+  ds2apiEnabled: false,
+  ds2apiUrl: "http://localhost:5001",
 };
 
 async function readRaw() {
@@ -108,3 +110,4 @@ export async function getCloudUrl() {
 export async function exportSettings() {
   return await readRaw();
 }
+
