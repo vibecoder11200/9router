@@ -1,4 +1,4 @@
-import { getProviderConnectionById, updateProviderConnection } from "@/lib/localDb";
+import { getProviderConnectionById, updateProviderConnection, getSettings } from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
@@ -642,6 +642,21 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
           headers: { Authorization: `Bearer ${connection.apiKey}` },
         }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
+      }
+      case "ds2api": {
+        // Validate the managed caller key against the local sidecar with a 1-token chat.
+        // A 429 means no DeepSeek account is pooled yet; other non-2xx = key/sidecar issue.
+        const settings = await getSettings();
+        const dsBase = String(settings.ds2apiUrl || "http://localhost:5001").replace(/\/$/, "");
+        const res = await fetchWithConnectionProxy(`${dsBase}/v1/chat/completions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${connection.apiKey}` },
+          body: JSON.stringify({ model: "deepseek-v4-flash", messages: [{ role: "user", content: "ping" }], max_tokens: 1, stream: false }),
+        }, effectiveProxy);
+        if (res.ok) return { valid: true, error: null };
+        const errBody = await res.json().catch(() => ({}));
+        const msg = errBody?.error?.message || errBody?.detail || `Sidecar returned ${res.status}`;
+        return { valid: false, error: msg };
       }
       default:
         return { valid: false, error: "Provider test not supported" };

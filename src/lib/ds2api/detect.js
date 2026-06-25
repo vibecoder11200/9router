@@ -7,7 +7,12 @@ const IS_WIN = process.platform === "win32";
 const WHICH_CMD = IS_WIN ? "where" : "which";
 
 const DS2API_DIR = path.join(DATA_DIR, "ds2api");
-const DS2API_BINARY = path.join(DS2API_DIR, IS_WIN ? "ds2api.exe" : "ds2api");
+// Accept either naming convention in DATA_DIR on any platform: `go build -o ds2api`
+// yields `ds2api` everywhere, while Windows releases often ship `ds2api.exe`.
+const DS2API_BINARY_CANDIDATES = [
+  path.join(DS2API_DIR, "ds2api"),
+  path.join(DS2API_DIR, "ds2api.exe"),
+];
 
 const HEALTH_TIMEOUT_MS = 3000;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0"]);
@@ -16,7 +21,9 @@ export const DEFAULT_DS2API_URL = process.env.DS2API_URL || "http://localhost:50
 
 // Resolve the DS2API binary path: first DATA_DIR, then PATH
 export function findDS2APIBinary() {
-  if (fs.existsSync(DS2API_BINARY)) return DS2API_BINARY;
+  for (const candidate of DS2API_BINARY_CANDIDATES) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
   try {
     const out = execSync(`${WHICH_CMD} ds2api`, {
       stdio: ["ignore", "pipe", "ignore"],
@@ -63,4 +70,3 @@ export async function getDS2APIStatus(url) {
   return { installed, path: binaryPath, running, localUrl, canStart: installed && localUrl };
 }
 
-export { DS2API_BINARY, DS2API_DIR };

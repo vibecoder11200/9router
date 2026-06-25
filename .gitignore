@@ -83,3 +83,4 @@ open-sse.old/
 # temp files
 temp/
 
+.playwright-mcp/

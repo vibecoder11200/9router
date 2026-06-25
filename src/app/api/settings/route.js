@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
+import { applyDs2apiUrl } from "@/lib/ds2api/resolve";
 import { resetComboRotation } from "open-sse/services/combo.js";
 import bcrypt from "bcryptjs";
 
@@ -94,6 +95,14 @@ export async function PATCH(request) {
       Object.prototype.hasOwnProperty.call(body, "comboStrategies")
     ) {
       resetComboRotation();
+    }
+
+    // Repoint the ds2api provider at the newly configured service URL (no restart required)
+    if (
+      Object.prototype.hasOwnProperty.call(body, "ds2apiUrl") ||
+      Object.prototype.hasOwnProperty.call(body, "ds2apiEnabled")
+    ) {
+      applyDs2apiUrl(settings.ds2apiUrl);
     }
 
     const { password, oidcClientSecret, ...safeSettings } = settings;

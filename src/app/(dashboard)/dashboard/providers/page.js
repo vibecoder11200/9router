@@ -689,6 +689,20 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {providerId === "ds2api" && (
+              <button
+                type="button"
+                title="Manage DeepSeek Web"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `/dashboard/providers/${providerId}`;
+                }}
+                className="text-text-muted hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+              </button>
+            )}
             {stats.total > 0 && (
               <div
                 className="opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
@@ -829,6 +843,20 @@ function ApiKeyProviderCard({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {providerId === "ds2api" && (
+              <button
+                type="button"
+                title="Manage DeepSeek Web"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `/dashboard/providers/${providerId}`;
+                }}
+                className="text-text-muted hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+              </button>
+            )}
             {stats.total > 0 && (
               <div
                 className="opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
