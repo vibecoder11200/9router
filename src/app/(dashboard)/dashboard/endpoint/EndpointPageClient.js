@@ -21,7 +21,6 @@ import EndpointRow from "./components/EndpointRow";
 import StatusAlert from "./components/StatusAlert";
 import Tooltip from "./components/Tooltip";
 import SecurityWarning from "./components/SecurityWarning";
-import Ds2apiPanel from "./components/Ds2apiPanel";
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1383,8 +1382,6 @@ export default function APIPageClient({ machineId }) {
       </Card>
 
 
-      {/* DS2API (DeepSeek Web sidecar) */}
-      <Ds2apiPanel />
       {/* Add Key Modal */}
       <Modal
         isOpen={showAddModal}

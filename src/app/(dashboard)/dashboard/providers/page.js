@@ -692,11 +692,11 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
             {providerId === "ds2api" && (
               <button
                 type="button"
-                title="Manage DeepSeek accounts"
+                title="Manage DeepSeek Web"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  window.location.href = "/dashboard/endpoint#ds2api";
+                  window.location.href = `/dashboard/providers/${providerId}`;
                 }}
                 className="text-text-muted hover:text-primary transition-colors"
               >
@@ -846,11 +846,11 @@ function ApiKeyProviderCard({
             {providerId === "ds2api" && (
               <button
                 type="button"
-                title="Manage DeepSeek accounts"
+                title="Manage DeepSeek Web"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  window.location.href = "/dashboard/endpoint#ds2api";
+                  window.location.href = `/dashboard/providers/${providerId}`;
                 }}
                 className="text-text-muted hover:text-primary transition-colors"
               >

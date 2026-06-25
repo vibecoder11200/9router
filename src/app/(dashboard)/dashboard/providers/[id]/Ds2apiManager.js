@@ -1,21 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card, Button, Input, Modal } from "@/shared/components";
+import { Card, Button, Input, Modal, Badge } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
-// Self-contained "DeepSeek Web" management panel (powered by the ds2api sidecar).
-// Lifecycle: install → start → manage DeepSeek accounts → use DeepSeek models.
-// All actions go through auth-gated /api/ds2api/* routes; the sidecar itself is invisible.
+// DeepSeek Web management, rendered on the provider detail page.
+// Owns: sidecar install/start/stop, DeepSeek-account pool, available models,
+// and the auto-managed caller key. Powered by the ds2api sidecar (invisible).
 
 const POLL_MS = 5000;
 
-export default function Ds2apiPanel() {
+export default function Ds2apiManager() {
   const { copied, copy } = useCopyToClipboard();
-  const [info, setInfo] = useState(null); // { install, running, version, managedKey, managedKeyPresent }
+  const [info, setInfo] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(false);
-  const [busy, setBusy] = useState(""); // install|start|stop|...
+  const [models, setModels] = useState([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [showManaged, setShowManaged] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -30,13 +32,18 @@ export default function Ds2apiPanel() {
         setAccountsLoading(true);
         const accRes = await fetch("/api/ds2api/accounts", { headers: { "Cache-Control": "no-store" } });
         if (accRes.ok) setAccounts((await accRes.json()).items || []);
+        setModelsLoading(true);
+        const modRes = await fetch("/api/ds2api/models", { headers: { "Cache-Control": "no-store" } });
+        if (modRes.ok) setModels((await modRes.json()).models || []);
       } else {
         setAccounts([]);
+        setModels([]);
       }
     } catch {
       /* ignore poll errors */
     } finally {
       setAccountsLoading(false);
+      setModelsLoading(false);
     }
   }, []);
 
@@ -96,82 +103,104 @@ export default function Ds2apiPanel() {
   const managedKey = info?.managedKeyPresent ? info?.managedKey : null;
 
   return (
-    <Card id="ds2api">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">cloud</span>
-          DeepSeek Web
-        </h2>
-        <span className={`text-xs px-2 py-0.5 rounded ${running ? "bg-success/15 text-success" : install_.installed ? "bg-warning/15 text-warning" : "bg-surface-2 text-text-muted"}`}>
-          {running ? "Running" : install_.installed ? "Stopped" : "Not installed"}
-        </span>
-      </div>
-
-      <p className="text-sm text-text-muted mb-3">
-        Use your DeepSeek account through the web interface. Add your account below and models like
-        <span className="font-mono"> deepseek-v4-pro/flash/vision</span> become usable across 9Router.
-      </p>
-
-      {/* Status row */}
-      <div className="flex flex-wrap items-center gap-2 py-3 border-b border-border">
-        <div className="text-sm text-text-muted mr-auto">
-          {install_.installed ? (
-            <>Version {install_.version}{install_.upToDate ? "" : <span className="text-warning"> (update available: {install_.expectedVersion})</span>}</>
-          ) : (
-            <span>Binary not installed — click Install to download for this platform.</span>
-          )}
+    <div className="flex flex-col gap-6">
+      {/* Sidecar status & control */}
+      <Card>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">cloud</span>
+            <h2 className="text-lg font-semibold">DeepSeek Web engine</h2>
+            <Badge variant={running ? "success" : install_.installed ? "warning" : "default"}>
+              {running ? "Running" : install_.installed ? "Stopped" : "Not installed"}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            {!install_.installed && (
+              <Button size="sm" onClick={install} disabled={!!busy}>{busy === "install" ? "Installing…" : "Install"}</Button>
+            )}
+            {install_.installed && !running && (
+              <Button size="sm" onClick={start} disabled={!!busy}>{busy === "start" ? "Starting…" : "Start"}</Button>
+            )}
+            {running && (
+              <Button size="sm" variant="ghost" onClick={stop} disabled={!!busy}>{busy === "stop" ? "Stopping…" : "Stop"}</Button>
+            )}
+          </div>
         </div>
-        {!install_.installed && (
-          <Button size="sm" onClick={install} disabled={!!busy}>{busy === "install" ? "Installing…" : "Install"}</Button>
-        )}
-        {install_.installed && !running && (
-          <Button size="sm" onClick={start} disabled={!!busy}>{busy === "start" ? "Starting…" : "Start"}</Button>
-        )}
-        {running && (
-          <Button size="sm" variant="ghost" onClick={stop} disabled={!!busy}>{busy === "stop" ? "Stopping…" : "Stop"}</Button>
-        )}
-      </div>
+        <p className="text-sm text-text-muted mt-2">
+          {install_.installed
+            ? <>Engine version {install_.version}{install_.upToDate ? "" : <span className="text-warning"> — update available ({install_.expectedVersion})</span>}</>
+            : "Click Install to download the engine for this platform (no Go toolchain needed)."}
+        </p>
+        <p className="text-xs text-text-muted mt-1">
+          Add at least one DeepSeek account below — the engine routes your requests through it to DeepSeek's web interface.
+        </p>
+        {error && <p className="text-sm text-warning mt-2">{error}</p>}
+      </Card>
 
-      {error && <p className="text-sm text-warning mt-2">{error}</p>}
-
-      {/* Accounts */}
-      {running && (
-        <div className="pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium">DeepSeek Accounts</p>
+      {/* DeepSeek accounts */}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span className="material-symbols-outlined">group</span>
+            DeepSeek accounts
+          </h2>
+          {running && (
             <div className="flex gap-2">
               <Button size="sm" variant="ghost" onClick={testAll} disabled={!!busy}>Test all</Button>
               <Button size="sm" onClick={() => setAddOpen(true)}>Add account</Button>
             </div>
-          </div>
-          {accountsLoading && !accounts.length ? (
-            <p className="text-sm text-text-muted">Loading…</p>
-          ) : accounts.length === 0 ? (
-            <p className="text-sm text-text-muted">No accounts yet. Add a DeepSeek account (email/mobile + password, or a token) to start using DeepSeek models.</p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {accounts.map((a) => (
-                <div key={a.identifier} className="flex items-center gap-2 py-1.5 border-b border-border/50">
-                  <span className={`w-2 h-2 rounded-full ${
-                    a.test_status === "ok" || a.test_status === "success" ? "bg-success"
-                    : a.test_status ? "bg-warning" : "bg-text-muted/40"
-                  }`} title={a.test_status || "not tested"} />
-                  <span className="text-sm font-mono flex-1 min-w-0 truncate">{a.identifier}</span>
-                  {a.name && <span className="text-xs text-text-muted truncate">{a.name}</span>}
-                  <Button size="sm" variant="ghost" onClick={() => testAccount(a.identifier)} disabled={!!busy}>Test</Button>
-                  <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.identifier)} disabled={!!busy}>Delete</Button>
-                </div>
-              ))}
-            </div>
           )}
         </div>
-      )}
+        {!running ? (
+          <p className="text-sm text-text-muted">Start the engine to manage accounts.</p>
+        ) : accountsLoading && !accounts.length ? (
+          <p className="text-sm text-text-muted">Loading…</p>
+        ) : accounts.length === 0 ? (
+          <p className="text-sm text-text-muted">No accounts yet. Add a DeepSeek account (email/mobile + password, or a token) to start using DeepSeek models.</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {accounts.map((a) => (
+              <div key={a.identifier} className="flex items-center gap-2 py-1.5 border-b border-border/50">
+                <span className={`w-2 h-2 rounded-full ${
+                  a.test_status === "ok" || a.test_status === "success" ? "bg-success"
+                  : a.test_status ? "bg-warning" : "bg-text-muted/40"
+                }`} title={a.test_status || "not tested"} />
+                <span className="text-sm font-mono flex-1 min-w-0 truncate">{a.identifier}</span>
+                {a.name && <span className="text-xs text-text-muted truncate">{a.name}</span>}
+                <Button size="sm" variant="ghost" onClick={() => testAccount(a.identifier)} disabled={!!busy}>Test</Button>
+                <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.identifier)} disabled={!!busy}>Delete</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
-      {/* Managed access */}
+      {/* Available models */}
+      <Card>
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+          <span className="material-symbols-outlined">lists</span>
+          Available models
+        </h2>
+        {!running ? (
+          <p className="text-sm text-text-muted">Start the engine to list models.</p>
+        ) : modelsLoading && !models.length ? (
+          <p className="text-sm text-text-muted">Loading…</p>
+        ) : models.length === 0 ? (
+          <p className="text-sm text-text-muted">No models reported. Ensure at least one account is configured.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {models.map((m) => (
+              <Badge key={m.id} variant="default" className="font-mono">{m.id}</Badge>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Managed access key */}
       {running && managedKey && (
-        <div className="pt-4 mt-2 border-t border-border">
+        <Card>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-text-muted">Managed access key</span>
+            <span className="text-text-muted">Internal access key</span>
             <button className="text-xs text-primary underline hover:opacity-80" onClick={() => setShowManaged((s) => !s)}>
               {showManaged ? "Hide" : "Reveal"}
             </button>
@@ -185,7 +214,7 @@ export default function Ds2apiPanel() {
           <p className="text-xs text-text-muted mt-1">
             Auto-generated. 9Router uses it internally to route your requests; copy it only if you want to connect an external client directly.
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Add account modal */}
@@ -215,6 +244,6 @@ export default function Ds2apiPanel() {
           </div>
         </form>
       </Modal>
-    </Card>
+    </div>
   );
 }

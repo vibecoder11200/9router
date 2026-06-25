@@ -20,6 +20,7 @@ import AddApiKeyModal from "./AddApiKeyModal";
 import EditCompatibleNodeModal from "./EditCompatibleNodeModal";
 import AddCustomModelModal from "./AddCustomModelModal";
 import BulkImportCodexModal from "./BulkImportCodexModal";
+import Ds2apiManager from "./Ds2apiManager";
 
 const ONE_BY_ONE_DELAY_MS = 1000;
 
@@ -1220,6 +1221,9 @@ export default function ProviderDetailPage() {
           <p className="text-xs text-red-600 dark:text-yellow-400 leading-relaxed">{providerInfo.deprecationNotice}</p>
         </div>
       )}
+
+      {/* DeepSeek Web (ds2api sidecar): full management lives here */}
+      {providerId === "ds2api" && <Ds2apiManager />}
 
       {providerInfo.notice?.text && !providerInfo.deprecated && (
         <div className="flex flex-col gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 sm:flex-row sm:items-center">

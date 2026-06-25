@@ -197,10 +197,13 @@ Integration is "Tier B" — 9router owns the full lifecycle and configuration:
   to the internal sidecar for advanced/raw access.
 
 Dashboard UI lives in
-`src/app/(dashboard)/dashboard/endpoint/components/Ds2apiPanel.js`; API routes under
-`/api/ds2api/*` are deny-by-default auth-gated (`src/dashboardGuard.js`), and the
-process-spawning routes (`install`/`start`/`stop`) are further restricted to
-localhost via `LOCAL_ONLY_PATHS`.
+`src/app/(dashboard)/dashboard/providers/[id]/Ds2apiManager.js`, rendered on the
+DeepSeek Web provider detail page (`/dashboard/providers/ds2api`), where users
+install/start the engine, manage the DeepSeek-account pool, and see available
+models. API routes under `/api/ds2api/*` are deny-by-default auth-gated
+(`src/dashboardGuard.js`), and the process-spawning routes
+(`install`/`start`/`stop`) are further restricted to localhost via
+`LOCAL_ONLY_PATHS`.
 
 **Security note:** ds2api binds `0.0.0.0:<port>` (hardcoded upstream), so on
 shared/LAN hosts the internal port is technically reachable; 9router reverse-proxies
