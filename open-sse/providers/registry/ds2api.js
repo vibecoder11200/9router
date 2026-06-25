@@ -3,6 +3,10 @@ export default {
   priority: 40,
   alias: "ds2api",
   uiAlias: "DS2",
+  // AI_PROVIDERS uses uiAlias ("DS2") as the storage/model-prefix alias, but the
+  // open-sse resolver only maps `alias`/`aliases`. Include "DS2" so "DS2/<model>"
+  // (used by the model test / disabled-models keys) resolves back to ds2api.
+  aliases: ["DS2"],
   display: {
     name: "DeepSeek Web",
     icon: "cloud",
