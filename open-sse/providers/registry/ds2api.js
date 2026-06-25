@@ -26,6 +26,21 @@ export default {
     modelsFetcher: { url: "http://localhost:5001/v1/models", type: "openai" },
   },
   passthroughModels: true,
+  // Native DeepSeek model ids exposed by the sidecar (GET /v1/models). Declared
+  // statically so they populate the model picker / combos / Available Models even
+  // before the sidecar is running; passthroughModels still lets clients send aliases.
+  models: [
+    { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash" },
+    { id: "deepseek-v4-flash-nothinking", name: "DeepSeek V4 Flash (no thinking)" },
+    { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro" },
+    { id: "deepseek-v4-pro-nothinking", name: "DeepSeek V4 Pro (no thinking)" },
+    { id: "deepseek-v4-flash-search", name: "DeepSeek V4 Flash Search" },
+    { id: "deepseek-v4-flash-search-nothinking", name: "DeepSeek V4 Flash Search (no thinking)" },
+    { id: "deepseek-v4-pro-search", name: "DeepSeek V4 Pro Search" },
+    { id: "deepseek-v4-pro-search-nothinking", name: "DeepSeek V4 Pro Search (no thinking)" },
+    { id: "deepseek-v4-vision", name: "DeepSeek V4 Vision" },
+    { id: "deepseek-v4-vision-nothinking", name: "DeepSeek V4 Vision (no thinking)" },
+  ],
   features: {
     usage: true,
   },

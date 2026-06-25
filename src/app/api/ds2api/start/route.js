@@ -4,7 +4,8 @@ import { startDS2API, getCredentials } from "@/lib/ds2api/process";
 import { DEFAULT_DS2API_URL, isLoopbackDS2APIUrl } from "@/lib/ds2api/detect";
 import { applyDs2apiUrl } from "@/lib/ds2api/resolve";
 import * as admin from "@/lib/ds2api/adminClient";
-import { createProviderConnection } from "@/models";
+import { createProviderConnection, getModelAliases, setModelAlias } from "@/models";
+import { PROVIDER_MODELS } from "open-sse/config/providerModels.js";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,14 @@ export async function POST() {
             isActive: true,
             providerSpecificData: { managed: true },
           });
+          // Route bare DeepSeek model names ("deepseek-v4-flash"…) to this sidecar
+          // so OpenAI clients work without a "ds2api/" prefix. Only fill aliases that
+          // are unset — never overwrite a user's manual alias.
+          const existing = await getModelAliases();
+          const dsModels = PROVIDER_MODELS.ds2api || [];
+          for (const m of dsModels) {
+            if (!existing[m.id]) await setModelAlias(m.id, `ds2api/${m.id}`);
+          }
           injection.injected = true;
         } catch (e) {
           injection.injected = false;
