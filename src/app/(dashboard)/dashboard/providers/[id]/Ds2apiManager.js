@@ -22,6 +22,11 @@ export default function Ds2apiManager() {
   const [showManaged, setShowManaged] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ name: "", loginType: "email", identifier: "", password: "", token: "" });
+  const [queue, setQueue] = useState(null);
+  const [runtime, setRuntime] = useState(null); // {account_max_inflight, account_max_queue, global_max_inflight, token_refresh_interval_hours}
+  const [rtDraft, setRtDraft] = useState(null);
+  const [savingRt, setSavingRt] = useState(false);
+  const [rtError, setRtError] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -35,9 +40,28 @@ export default function Ds2apiManager() {
         setModelsLoading(true);
         const modRes = await fetch("/api/ds2api/models", { headers: { "Cache-Control": "no-store" } });
         if (modRes.ok) setModels((await modRes.json()).models || []);
+        // live concurrency + runtime config
+        const [qRes, sRes] = await Promise.all([
+          fetch("/api/ds2api/queue", { headers: { "Cache-Control": "no-store" } }),
+          fetch("/api/ds2api/settings", { headers: { "Cache-Control": "no-store" } }),
+        ]);
+        if (qRes.ok) setQueue(await qRes.json());
+        if (sRes.ok) {
+          const s = await sRes.json();
+          const rt = s.runtime || {};
+          setRuntime(rt);
+          setRtDraft((prev) => prev && Object.keys(prev).length ? prev : {
+            account_max_inflight: String(rt.account_max_inflight ?? ""),
+            account_max_queue: String(rt.account_max_queue ?? ""),
+            global_max_inflight: String(rt.global_max_inflight ?? ""),
+            token_refresh_interval_hours: String(rt.token_refresh_interval_hours ?? ""),
+          });
+        }
       } else {
         setAccounts([]);
         setModels([]);
+        setQueue(null);
+        setRuntime(null);
       }
     } catch {
       /* ignore poll errors */
@@ -96,6 +120,39 @@ export default function Ds2apiManager() {
     call(`test-${identifier}`, "/api/ds2api/accounts/test", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ identifier }),
     }).catch(() => {});
+  }
+
+  async function saveRuntime(e) {
+    e?.preventDefault?.();
+    setSavingRt(true);
+    setRtError("");
+    try {
+      const num = (v) => { const n = parseInt(String(v).trim(), 10); return Number.isFinite(n) && n > 0 ? n : undefined; };
+      const payload = {
+        account_max_inflight: num(rtDraft.account_max_inflight),
+        account_max_queue: num(rtDraft.account_max_queue),
+        global_max_inflight: num(rtDraft.global_max_inflight),
+        token_refresh_interval_hours: num(rtDraft.token_refresh_interval_hours),
+      };
+      Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+      const res = await fetch("/api/ds2api/settings", {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runtime: payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && !data.success) throw new Error(data.detail || data.error || `Failed (${res.status})`);
+      const rt = data.runtime || payload;
+      setRuntime(rt);
+      setRtDraft({
+        account_max_inflight: String(rt.account_max_inflight ?? ""),
+        account_max_queue: String(rt.account_max_queue ?? ""),
+        global_max_inflight: String(rt.global_max_inflight ?? ""),
+        token_refresh_interval_hours: String(rt.token_refresh_interval_hours ?? ""),
+      });
+    } catch (e2) {
+      setRtError(e2.message);
+    } finally {
+      setSavingRt(false);
+    }
   }
 
   const install_ = info?.install || {};
@@ -175,6 +232,47 @@ export default function Ds2apiManager() {
         )}
       </Card>
 
+      {/* Concurrency & queue */}
+      {running && (
+        <Card>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+            <span className="material-symbols-outlined">sync_alt</span>
+            Concurrency &amp; queue
+          </h2>
+          {queue ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <Stat label="In use" value={queue.in_use} hint={`${queue.total || 0} account(s)`} />
+              <Stat label="Available" value={queue.available} hint={queue.waiting ? `${queue.waiting} waiting` : "no queue"} />
+              <Stat label="Recommended" value={queue.recommended_concurrency} hint="concurrency" />
+              <Stat label="Per-account cap" value={queue.max_inflight_per_account} hint="inflight" />
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted mb-4">Loading queue status…</p>
+          )}
+          {rtDraft && (
+            <form onSubmit={saveRuntime} className="flex flex-col gap-3">
+              <p className="text-sm text-text-muted">Tune how ds2api load-balances across your accounts (hot-reload, no restart).</p>
+              <div className="grid grid-cols-2 gap-3">
+                <NumField label="Per-account inflight (1–256)" value={rtDraft.account_max_inflight} onChange={(v) => setRtDraft({ ...rtDraft, account_max_inflight: v })} />
+                <NumField label="Global inflight (≥ per-account)" value={rtDraft.global_max_inflight} onChange={(v) => setRtDraft({ ...rtDraft, global_max_inflight: v })} />
+                <NumField label="Queue limit" value={rtDraft.account_max_queue} onChange={(v) => setRtDraft({ ...rtDraft, account_max_queue: v })} />
+                <NumField label="Token refresh (hours)" value={rtDraft.token_refresh_interval_hours} onChange={(v) => setRtDraft({ ...rtDraft, token_refresh_interval_hours: v })} />
+              </div>
+              {rtError && <p className="text-sm text-warning">{rtError}</p>}
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" disabled={savingRt}>{savingRt ? "Saving…" : "Apply"}</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => runtime && setRtDraft({
+                  account_max_inflight: String(runtime.account_max_inflight ?? ""),
+                  account_max_queue: String(runtime.account_max_queue ?? ""),
+                  global_max_inflight: String(runtime.global_max_inflight ?? ""),
+                  token_refresh_interval_hours: String(runtime.token_refresh_interval_hours ?? ""),
+                })}>Reset</Button>
+              </div>
+            </form>
+          )}
+        </Card>
+      )}
+
       {/* Available models */}
       <Card>
         <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
@@ -245,5 +343,24 @@ export default function Ds2apiManager() {
         </form>
       </Modal>
     </div>
+  );
+}
+
+function Stat({ label, value, hint }) {
+  return (
+    <div className="rounded-lg bg-black/[0.02] dark:bg-white/[0.03] p-3">
+      <p className="text-xs text-text-muted">{label}</p>
+      <p className="text-xl font-semibold mt-0.5">{value}</p>
+      {hint && <p className="text-[11px] text-text-muted mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+function NumField({ label, value, onChange }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-xs text-text-muted">{label}</span>
+      <Input type="number" min="1" value={value} onChange={(e) => onChange(e.target.value)} className="font-mono text-sm" />
+    </label>
   );
 }
