@@ -171,13 +171,42 @@ Body → RTK compress (tool_result) → Headroom (/v1/compress proxy)
 ### DS2API sidecar provider
 
 **DS2API** (`open-sse/providers/registry/ds2api.js`) is a registered provider that
-exposes DeepSeek web chat as an OpenAI-compatible API via a local sidecar process.
-It is defined with `noAuth: true` and `passthroughModels: true`, and connects to
-`http://localhost:5001` by default. The sidecar lifecycle (binary detection, spawn,
-stop, health probe) is managed by `src/lib/ds2api/process.js` and `detect.js`,
-with dashboard UI for start/stop/status at `/api/ds2api/*`. The `ds2apiEnabled`
-and `ds2apiUrl` settings are persisted in the `settings` table
-(`src/lib/db/repos/settingsRepo.js`).
+exposes DeepSeek web chat as an OpenAI-compatible API via a managed local sidecar
+process (the `ds2api` Go binary, which pools DeepSeek accounts and solves PoW).
+
+Integration is "Tier B" — 9router owns the full lifecycle and configuration:
+
+- **Binary install** (`src/lib/ds2api/install.js`): auto-downloads the matching
+  GitHub release artifact per OS/arch, sha256-verifies it, and extracts it into
+  `DATA_DIR/ds2api` (`DS2API_VERSION`, overridable via env). No Go toolchain needed.
+- **Lifecycle** (`src/lib/ds2api/process.js`, `detect.js`): spawn/stop/health-probe
+  the sidecar. On first start 9router generates strong `adminKey` + caller `apiKey`
+  secrets (`credentials.json`, mode 0600); the admin key is passed via
+  `DS2API_ADMIN_KEY`, config persisted via `DS2API_CONFIG_PATH`.
+- **Config bridge** (`src/lib/ds2api/adminClient.js`): 9router drives ds2api's JWT
+  admin REST API (`/admin/*`) to manage DeepSeek-web accounts, keys, queue, and
+  settings from the 9router dashboard, so the user never touches ds2api's own UI.
+- **Auto-injection**: after start, 9router ensures the managed caller key is in
+  ds2api's `keys` and registers a `ds2api` provider connection carrying it, so the
+  existing executor routes with `Authorization: Bearer <key>` (the registry uses
+  `authType: "apikey"` + `transport.auth`, `passthroughModels: true`).
+- **Routing sync** (`src/lib/ds2api/resolve.js`): `PROVIDERS.ds2api.baseUrl` is
+  patched at runtime from the `ds2apiUrl` setting (loopback default
+  `http://localhost:5001`).
+- **Reverse proxy** (`/api/ds2api/proxy/[...path]`): auth-gated streaming passthrough
+  to the internal sidecar for advanced/raw access.
+
+Dashboard UI lives in
+`src/app/(dashboard)/dashboard/endpoint/components/Ds2apiPanel.js`; API routes under
+`/api/ds2api/*` are deny-by-default auth-gated (`src/dashboardGuard.js`), and the
+process-spawning routes (`install`/`start`/`stop`) are further restricted to
+localhost via `LOCAL_ONLY_PATHS`.
+
+**Security note:** ds2api binds `0.0.0.0:<port>` (hardcoded upstream), so on
+shared/LAN hosts the internal port is technically reachable; 9router reverse-proxies
+browser access, auto-generates strong admin/api keys, and does not advertise the
+port, but a host firewall is recommended on multi-user machines. (A loopback-only
+bind would require forking ds2api.)
 
 ### Web-based/session-based executors
 

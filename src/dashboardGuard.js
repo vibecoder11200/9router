@@ -81,6 +81,9 @@ const LOCAL_ONLY_PATHS = [
   "/api/auth/reset-password",
   "/api/headroom/start",
   "/api/headroom/stop",
+  "/api/ds2api/install",
+  "/api/ds2api/start",
+  "/api/ds2api/stop",
 ];
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);

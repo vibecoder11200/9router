@@ -14,11 +14,14 @@ export default {
     },
   },
   category: "apikey",
-  noAuth: true,
+  authType: "apikey",
   serviceKinds: ["llm", "embedding"],
   transport: {
+    // Default loopback URL; patched at runtime from the ds2apiUrl setting
+    // (see src/lib/ds2api/resolve.js → applyDs2apiUrl).
     baseUrl: "http://localhost:5001/v1/chat/completions",
     format: "openai",
+    auth: { combined: true, header: "Authorization", scheme: "bearer" },
     validateUrl: "http://localhost:5001/v1/models",
     modelsFetcher: { url: "http://localhost:5001/v1/models", type: "openai" },
   },

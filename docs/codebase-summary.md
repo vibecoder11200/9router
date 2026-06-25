@@ -63,7 +63,7 @@
   `migrate.js`, `paths.js`, `repos/` (repository per entity).
 - **`auth/`** — `dashboardSession.js` (JWT + bcrypt), `oidc.js` (PKCE),
   `loginLimiter.js` (rate limiting).
-- **`ds2api/`** — `process.js` (DS2API sidecar lifecycle management), `detect.js`.
+- **`ds2api/`** — DS2API (DeepSeek-Web) managed sidecar: `install.js` (auto-download release binary per OS/arch + sha256 verify + extract), `process.js` (spawn/stop lifecycle + generated admin/api credentials), `detect.js` (binary detection + health probe), `adminClient.js` (JWT admin REST API client), `resolve.js` (runtime `PROVIDERS.ds2api` baseUrl sync), `context.js` (route runtime resolver).
 - **`headroom/`** — `process.js` (Headroom proxy lifecycle management), `detect.js`.
 - **`tunnel/`** — `cloudflare/manager.js`, `tailscale/manager.js`.
 - **`network/`** — `connectionProxy.js`, `proxyTest.js`, `providers.js`.

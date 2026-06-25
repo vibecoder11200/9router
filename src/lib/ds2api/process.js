@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "node:crypto";
 import { spawn } from "child_process";
 import { findDS2APIBinary, getDS2APIDataDir } from "./detect.js";
 
@@ -7,6 +8,7 @@ const DS2API_DIR = getDS2APIDataDir();
 const PID_FILE = path.join(DS2API_DIR, "ds2api.pid");
 const LOG_FILE = path.join(DS2API_DIR, "ds2api.log");
 const CONFIG_FILE = path.join(DS2API_DIR, "config.json");
+const CREDENTIALS_FILE = path.join(DS2API_DIR, "credentials.json");
 const DEFAULT_PORT = 5001;
 const STARTUP_TIMEOUT_MS = 10000;
 
@@ -40,21 +42,44 @@ export function getManagedPid() {
   return pid && isPidAlive(pid) ? pid : null;
 }
 
-// Ensure a minimal config.json exists for DS2API
-function ensureConfig() {
-  if (fs.existsSync(CONFIG_FILE)) return;
-  const config = {
-    admin_key: process.env.DS2API_ADMIN_KEY || "admin",
-    port: DEFAULT_PORT,
+// Strong, auto-generated secrets so 9router can talk to the sidecar's admin API and
+// so callers route through it — the user never handles these. Env override wins.
+function generateCredentials() {
+  return {
+    adminKey: crypto.randomBytes(24).toString("hex"),
+    apiKey: `sk-9r-ds2api-${crypto.randomBytes(18).toString("hex")}`,
   };
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
 }
 
+export function ensureCredentials() {
+  ensureDir();
+  try {
+    if (fs.existsSync(CREDENTIALS_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, "utf8"));
+      if (raw?.adminKey && raw?.apiKey) return raw;
+    }
+  } catch { /* corrupt file — regenerate */ }
+  const creds = generateCredentials();
+  fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(creds, null, 2), { mode: 0o600 });
+  return creds;
+}
+
+export function getCredentials() {
+  try {
+    if (fs.existsSync(CREDENTIALS_FILE)) return JSON.parse(fs.readFileSync(CREDENTIALS_FILE, "utf8"));
+  } catch { /* ignore */ }
+  return null;
+}
+
+// DS2API manages its own config (accounts, api_keys) via its admin API; we point
+// DS2API_CONFIG_PATH at DATA_DIR/ds2api/config.json so it bootstraps an empty
+// file-backed store there (token persistence survives restarts). cwd keeps pid/log
+// co-located. Admin key is the managed credential (env DS2API_ADMIN_KEY overrides).
 export async function startDS2API({ port } = {}) {
   const safePort = Number(port) > 0 && Number(port) < 65536 ? Number(port) : DEFAULT_PORT;
   const binary = findDS2APIBinary();
   if (!binary) {
-    const err = new Error("DS2API binary not found. Build it from temp/ds2api or install via Go");
+    const err = new Error("DS2API binary not installed. Use the dashboard Install action (or set DS2API binary in PATH).");
     err.code = "NOT_INSTALLED";
     throw err;
   }
@@ -63,7 +88,7 @@ export async function startDS2API({ port } = {}) {
   if (existing) return { pid: existing, alreadyRunning: true };
 
   ensureDir();
-  ensureConfig();
+  const { adminKey } = ensureCredentials();
 
   const outFd = fs.openSync(LOG_FILE, "a");
 
@@ -71,10 +96,11 @@ export async function startDS2API({ port } = {}) {
     stdio: ["ignore", outFd, outFd],
     detached: true,
     windowsHide: true,
+    cwd: DS2API_DIR,
     env: {
       ...process.env,
       PORT: String(safePort),
-      DS2API_ADMIN_KEY: process.env.DS2API_ADMIN_KEY || "admin",
+      DS2API_ADMIN_KEY: process.env.DS2API_ADMIN_KEY || adminKey,
       DS2API_CONFIG_PATH: CONFIG_FILE,
     },
   });
