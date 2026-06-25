@@ -4,10 +4,10 @@ export default {
   alias: "ds2api",
   uiAlias: "DS2",
   display: {
-    name: "DS2API",
+    name: "DeepSeek Web",
     icon: "cloud",
     color: "#10B981",
-    textIcon: "DS",
+    textIcon: "DW",
     website: "https://github.com/CJackHwang/ds2api",
     notice: {
       signupUrl: "https://github.com/CJackHwang/ds2api/releases",

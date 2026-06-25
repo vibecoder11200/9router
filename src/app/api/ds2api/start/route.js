@@ -57,7 +57,7 @@ export async function POST() {
           await createProviderConnection({
             provider: "ds2api",
             authType: "apikey",
-            name: "DS2API (managed)",
+            name: "DeepSeek Web (managed)",
             apiKey: creds.apiKey,
             isActive: true,
             providerSpecificData: { managed: true },

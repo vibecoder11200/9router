@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, Button, Input, Modal } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
-// Self-contained DS2API (DeepSeek Web sidecar) management panel.
-// Lifecycle: install → start → manage DeepSeek-web accounts → use DeepSeek models.
-// All actions go through auth-gated /api/ds2api/* routes; ds2api itself is invisible.
+// Self-contained "DeepSeek Web" management panel (powered by the ds2api sidecar).
+// Lifecycle: install → start → manage DeepSeek accounts → use DeepSeek models.
+// All actions go through auth-gated /api/ds2api/* routes; the sidecar itself is invisible.
 
 const POLL_MS = 5000;
 
@@ -100,7 +100,7 @@ export default function Ds2apiPanel() {
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">cloud</span>
-          DeepSeek Web (DS2API)
+          DeepSeek Web
         </h2>
         <span className={`text-xs px-2 py-0.5 rounded ${running ? "bg-success/15 text-success" : install_.installed ? "bg-warning/15 text-warning" : "bg-surface-2 text-text-muted"}`}>
           {running ? "Running" : install_.installed ? "Stopped" : "Not installed"}
@@ -108,10 +108,8 @@ export default function Ds2apiPanel() {
       </div>
 
       <p className="text-sm text-text-muted mb-3">
-        Run a local DeepSeek-Web proxy and pool your DeepSeek accounts. Models like
+        Use your DeepSeek account through the web interface. Add your account below and models like
         <span className="font-mono"> deepseek-v4-pro/flash/vision</span> become usable across 9Router.
-        {" "}
-        <a href="https://github.com/CJackHwang/ds2api" target="_blank" rel="noreferrer" className="text-primary underline hover:opacity-80">About DS2API ↗</a>
       </p>
 
       {/* Status row */}
@@ -185,7 +183,7 @@ export default function Ds2apiPanel() {
             <Button size="sm" variant="ghost" onClick={() => copy(managedKey)}>{copied === managedKey ? "Copied" : "Copy"}</Button>
           </div>
           <p className="text-xs text-text-muted mt-1">
-            Auto-generated. 9Router uses it internally to route through DS2API; copy it only for direct/external clients.
+            Auto-generated. 9Router uses it internally to route your requests; copy it only if you want to connect an external client directly.
           </p>
         </div>
       )}
