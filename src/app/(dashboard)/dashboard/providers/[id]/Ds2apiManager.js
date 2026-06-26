@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card, Button, Input, Modal, Badge } from "@/shared/components";
+import { Card, Button, Input, Modal, Badge, Toggle } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 // DeepSeek Web management, rendered on the provider detail page.
@@ -27,6 +27,10 @@ export default function Ds2apiManager() {
   const [rtDraft, setRtDraft] = useState(null);
   const [savingRt, setSavingRt] = useState(false);
   const [rtError, setRtError] = useState("");
+  const [cif, setCif] = useState(null); // current_input_file {enabled, min_chars}
+  const [cifDraft, setCifDraft] = useState(null);
+  const [savingCif, setSavingCif] = useState(false);
+  const [cifError, setCifError] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -56,12 +60,17 @@ export default function Ds2apiManager() {
             global_max_inflight: String(rt.global_max_inflight ?? ""),
             token_refresh_interval_hours: String(rt.token_refresh_interval_hours ?? ""),
           });
+          const cifVal = { enabled: s.current_input_file?.enabled !== false, min_chars: Number(s.current_input_file?.min_chars ?? 0) || 0 };
+          setCif(cifVal);
+          setCifDraft((prev) => prev && Object.keys(prev).length ? prev : { enabled: cifVal.enabled, min_chars: String(cifVal.min_chars) });
         }
       } else {
         setAccounts([]);
         setModels([]);
         setQueue(null);
         setRuntime(null);
+        setCif(null);
+        setCifDraft(null);
       }
     } catch {
       /* ignore poll errors */
@@ -152,6 +161,35 @@ export default function Ds2apiManager() {
       setRtError(e2.message);
     } finally {
       setSavingRt(false);
+    }
+  }
+
+  // current_input_file: when enabled, ds2api uploads the full context as a file to
+  // DeepSeek (helps long contexts) but the upload can fail on some accounts → 500.
+  // Expose a toggle so users can disable it for reliability.
+  async function saveCif(next) {
+    const enabled = next?.enabled ?? cifDraft?.enabled;
+    const minChars = next?.min_chars ?? cifDraft?.min_chars;
+    setCifDraft({ enabled, min_chars: String(minChars) });
+    setSavingCif(true);
+    setCifError("");
+    try {
+      const payload = { enabled: !!enabled, min_chars: parseInt(String(minChars), 10) || 0 };
+      const res = await fetch("/api/ds2api/settings", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current_input_file: payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      // ds2api echoes current_input_file in the response on some versions; else trust payload.
+      const out = data.current_input_file || payload;
+      const val = { enabled: out.enabled !== false, min_chars: Number(out.min_chars ?? 0) || 0 };
+      setCif(val);
+      setCifDraft({ enabled: val.enabled, min_chars: String(val.min_chars) });
+      if (!res.ok && data.success === false) throw new Error(data.detail || data.error || `Failed (${res.status})`);
+    } catch (e) {
+      setCifError(e.message);
+    } finally {
+      setSavingCif(false);
     }
   }
 
@@ -270,6 +308,41 @@ export default function Ds2apiManager() {
               </div>
             </form>
           )}
+        </Card>
+      )}
+
+      {/* Context file upload (current_input_file) */}
+      {running && cifDraft && (
+        <Card>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <span className="material-symbols-outlined">upload_file</span>
+                Context file upload
+              </h2>
+              <p className="text-sm text-text-muted mt-1">
+                When on, ds2api uploads the full conversation as a context file to DeepSeek (helps long contexts). If your account fails with "upload current user input file", turn this off for reliability.
+              </p>
+            </div>
+            <Toggle
+              checked={!!cifDraft.enabled}
+              onChange={(v) => saveCif({ enabled: v, min_chars: cifDraft.min_chars })}
+              disabled={savingCif}
+              title="Toggle context file upload"
+            />
+          </div>
+          {cifDraft.enabled && (
+            <div className="flex items-end gap-3 mt-3">
+              <label className="flex flex-col gap-1 max-w-[220px]">
+                <span className="text-xs text-text-muted">Min chars (0 = always upload)</span>
+                <Input type="number" min="0" value={cifDraft.min_chars}
+                  onChange={(e) => setCifDraft({ ...cifDraft, min_chars: e.target.value })}
+                  className="font-mono text-sm" />
+              </label>
+              <Button size="sm" onClick={() => saveCif({})} disabled={savingCif}>{savingCif ? "Saving…" : "Apply"}</Button>
+            </div>
+          )}
+          {cifError && <p className="text-sm text-warning mt-2">{cifError}</p>}
         </Card>
       )}
 
