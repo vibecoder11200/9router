@@ -21,7 +21,7 @@ export default function Ds2apiManager() {
   const [error, setError] = useState("");
   const [showManaged, setShowManaged] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", loginType: "email", identifier: "", password: "", token: "" });
+  const [form, setForm] = useState({ name: "", loginType: "email", identifier: "", password: "", token: "", proxyId: "" });
   const [queue, setQueue] = useState(null);
   const [runtime, setRuntime] = useState(null); // {account_max_inflight, account_max_queue, global_max_inflight, token_refresh_interval_hours}
   const [rtDraft, setRtDraft] = useState(null);
@@ -31,6 +31,9 @@ export default function Ds2apiManager() {
   const [cifDraft, setCifDraft] = useState(null);
   const [savingCif, setSavingCif] = useState(false);
   const [cifError, setCifError] = useState("");
+  const [proxies, setProxies] = useState([]);
+  const [proxyForm, setProxyForm] = useState({ name: "", type: "socks5", host: "", port: "", username: "", password: "" });
+  const [proxyError, setProxyError] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -50,6 +53,8 @@ export default function Ds2apiManager() {
           fetch("/api/ds2api/settings", { headers: { "Cache-Control": "no-store" } }),
         ]);
         if (qRes.ok) setQueue(await qRes.json());
+        const pxRes = await fetch("/api/ds2api/proxies", { headers: { "Cache-Control": "no-store" } });
+        if (pxRes.ok) setProxies((await pxRes.json()).items || []);
         if (sRes.ok) {
           const s = await sRes.json();
           const rt = s.runtime || {};
@@ -71,6 +76,7 @@ export default function Ds2apiManager() {
         setRuntime(null);
         setCif(null);
         setCifDraft(null);
+        setProxies([]);
       }
     } catch {
       /* ignore poll errors */
@@ -107,16 +113,44 @@ export default function Ds2apiManager() {
   const start = () => call("start", "/api/ds2api/start", { method: "POST" }).catch(() => {});
   const stop = () => call("stop", "/api/ds2api/stop", { method: "POST" }).catch(() => {});
   const testAll = () => call("testAll", "/api/ds2api/accounts/test-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
+  const clearSessions = () => call("clearSessions", "/api/ds2api/sessions", { method: "DELETE" }).catch(() => {});
+
+  async function addProxy(e) {
+    e?.preventDefault?.();
+    setProxyError("");
+    try {
+      const p = {
+        name: form_proxyName() || `${proxyForm.type}://${proxyForm.host}:${proxyForm.port}`,
+        type: proxyForm.type,
+        host: proxyForm.host.trim(),
+        port: Number(proxyForm.port) || 0,
+        username: proxyForm.username.trim(),
+        password: proxyForm.password,
+      };
+      if (!p.host || !p.port) throw new Error("Host and port are required");
+      await call("addProxy", "/api/ds2api/proxies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) });
+      setProxyForm({ name: "", type: "http", host: "", port: "", username: "", password: "" });
+    } catch (e2) {
+      setProxyError(e2.message);
+    }
+  }
+  // small alias so the inline addProxy builds a default name from host/port
+  function form_proxyName() { return proxyForm.name.trim(); }
+
+  async function deleteProxy(id) {
+    call(`delProxy-${id}`, "/api/ds2api/proxies", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {});
+  }
 
   async function addAccount(e) {
     e.preventDefault();
-    const acc = form.loginType === "token"
+    const base = form.loginType === "token"
       ? { name: form.name, token: form.token }
       : { name: form.name, [form.loginType]: form.identifier, password: form.password };
+    const acc = form.proxyId ? { ...base, proxy_id: form.proxyId } : base;
     try {
       await call("add", "/api/ds2api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(acc) });
       setAddOpen(false);
-      setForm({ name: "", loginType: "email", identifier: "", password: "", token: "" });
+      setForm({ name: "", loginType: "email", identifier: "", password: "", token: "", proxyId: "" });
     } catch { /* error shown */ }
   }
 
@@ -241,6 +275,7 @@ export default function Ds2apiManager() {
           </h2>
           {running && (
             <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={clearSessions} disabled={!!busy} title="Drop remote DeepSeek sessions so ds2api opens fresh ones">Clear sessions</Button>
               <Button size="sm" variant="ghost" onClick={testAll} disabled={!!busy}>Test all</Button>
               <Button size="sm" onClick={() => setAddOpen(true)}>Add account</Button>
             </div>
@@ -269,6 +304,48 @@ export default function Ds2apiManager() {
           </div>
         )}
       </Card>
+
+      {/* Proxies (per-account) */}
+      {running && (
+        <Card>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined">vpn_lock</span>
+            Proxies
+          </h2>
+          <p className="text-sm text-text-muted mb-3">Assign a residential proxy per DeepSeek account to dodge "user is muted" from datacenter/shared IPs. Pick one when adding an account.</p>
+          {proxies.length > 0 && (
+            <div className="flex flex-col gap-1 mb-3">
+              {proxies.map((p) => (
+                <div key={p.id} className="flex items-center gap-2 py-1.5 border-b border-border/50">
+                  <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{p.type}</span>
+                  <span className="text-sm font-mono flex-1 min-w-0 truncate">{p.host}:{p.port}</span>
+                  {p.name && <span className="text-xs text-text-muted truncate">{p.name}</span>}
+                  <Button size="sm" variant="ghost" onClick={() => deleteProxy(p.id)} disabled={!!busy}>Delete</Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <form onSubmit={addProxy} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <Input placeholder="Name (opt)" value={proxyForm.name} onChange={(e) => setProxyForm({ ...proxyForm, name: e.target.value })} className="text-sm" />
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-text-muted">Type</span>
+              <select value={proxyForm.type} onChange={(e) => setProxyForm({ ...proxyForm, type: e.target.value })}
+                className="text-sm rounded border border-border bg-transparent px-2 py-1.5">
+                <option value="socks5">socks5</option>
+                <option value="socks5h">socks5h</option>
+              </select>
+            </label>
+            <Input placeholder="host" value={proxyForm.host} onChange={(e) => setProxyForm({ ...proxyForm, host: e.target.value })} className="font-mono text-sm" />
+            <Input placeholder="port" type="number" value={proxyForm.port} onChange={(e) => setProxyForm({ ...proxyForm, port: e.target.value })} className="font-mono text-sm" />
+            <Input placeholder="username (opt)" value={proxyForm.username} onChange={(e) => setProxyForm({ ...proxyForm, username: e.target.value })} className="text-sm" />
+            <Input placeholder="password (opt)" type="password" value={proxyForm.password} onChange={(e) => setProxyForm({ ...proxyForm, password: e.target.value })} className="text-sm" />
+            <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
+              <Button type="submit" size="sm" disabled={!!busy}>Add proxy</Button>
+              {proxyError && <span className="text-sm text-warning">{proxyError}</span>}
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Concurrency & queue */}
       {running && (
@@ -407,6 +484,18 @@ export default function Ds2apiManager() {
               <Input placeholder={form.loginType === "email" ? "email" : "mobile (CN)"} value={form.identifier} onChange={(e) => setForm({ ...form, identifier: e.target.value })} />
               <Input type="password" placeholder="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </>
+          )}
+          {proxies.length > 0 && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-text-muted">Proxy (optional — residential recommended)</span>
+              <select value={form.proxyId} onChange={(e) => setForm({ ...form, proxyId: e.target.value })}
+                className="text-sm rounded border border-border bg-transparent px-2 py-1.5">
+                <option value="">None (direct)</option>
+                {proxies.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name || `${p.type}://${p.host}:${p.port}`}</option>
+                ))}
+              </select>
+            </label>
           )}
           {error && <p className="text-sm text-warning">{error}</p>}
           <div className="flex gap-2 justify-end">

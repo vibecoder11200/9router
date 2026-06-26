@@ -78,8 +78,23 @@ export async function testAccount(base, adminKey, { identifier, model, message }
 export async function testAllAccounts(base, adminKey, { model } = {}) {
   return adminFetch(base, adminKey, "/admin/accounts/test-all", { method: "POST", body: { model } });
 }
-export async function clearSessions(base, adminKey) {
-  return adminFetch(base, adminKey, "/admin/accounts/sessions/delete-all", { method: "POST", body: {} });
+export async function clearSessions(base, adminKey, identifier) {
+  // ds2api deletes sessions per-account (re-login + drop token sessions).
+  return adminFetch(base, adminKey, "/admin/accounts/sessions/delete-all", { method: "POST", body: { identifier } });
+}
+
+// --- proxies (per-account outbound proxy; helps avoid DeepSeek muting on shared/datacenter IPs) ---
+export async function listProxies(base, adminKey) {
+  return adminFetch(base, adminKey, "/admin/proxies");
+}
+export async function addProxy(base, adminKey, proxy) {
+  return adminFetch(base, adminKey, "/admin/proxies", { method: "POST", body: proxy });
+}
+export async function deleteProxy(base, adminKey, id) {
+  return adminFetch(base, adminKey, `/admin/proxies/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+export async function testProxy(base, adminKey, proxy) {
+  return adminFetch(base, adminKey, "/admin/proxies/test", { method: "POST", body: proxy });
 }
 
 // --- keys (caller api_keys) ---
