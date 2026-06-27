@@ -1,3 +1,38 @@
+# v0.5.12 (2026-06-26)
+
+## Features
+- Add token-saver dashboard page — decolua
+- Add bulk delete for provider connections — teddytkz
+- Resolve GitHub Copilot model catalog from upstream — caiqinzhou
+- Add Venice AI provider — Brokenc0de
+- Add Kiro external_idp import for Microsoft SSO (CLIProxyAPI) — Stevanus Pangau
+- Overhaul Blackbox provider catalog + WebUI test support — suryacagur
+
+## Fixes
+- Provider thinking compatibility (DeepSeek/Gemini) — Mink Nguyen
+- Stop double-counting streaming usage at source — decolua
+- Usage logging dedupe to reduce stats churn — Mink Nguyen
+- Prevent non-JSON SSE lines / duplicate [DONE] from breaking clients (PR #2046) — qianze
+- Resolve Gemini TTS models from catalog — nguyenha935
+- Support Kiro IDC (organization) token import — quanturbo
+- Preserve forced streaming for JSON clients (#2031) — Joseph Yaksich
+- Preserve Responses text format (Codex) — tenglong
+- Support Gemini native TTS generateContent endpoint — nguyenha935
+- Add missing zh-CN endpoint key label (i18n) — weimaozhen
+- CodeBuddy: only send reasoning params when client requests reasoning (#2071) — Rex
+- Show custom provider models in combo picker — Sapto
+- Docker: add docker-compose.yml with headroom enabled by default — nitsuahlabs
+- Clarify token diagnostics vs provider billing (headroom, #1998) — Sutarto Jordan Chrisfivo
+- Translate openai-responses input through OpenAI for compression (#1998) — Ankit
+- Kiro: report 1M context window for claude-opus-4.8 — EdisonPVE
+- Avoid stale redirects after auth changes (#2100) — Emirhan
+- Mark Claude Opus 4.7 (dashed id) as 1M context — Brokenc0de
+- Preserve reasoning effort through Codex translations — ntdung6868
+- Token-saver: full width card layout — decolua
+- Antigravity: retry transient upstream failures — Sutarto Jordan Chrisfivo
+- Param-support: handle strip rules without match/drop (#1960) — Joseph Yaksich
+- Translator: resolve custom provider prefix in debug endpoint (#1083) — hamsa0x7
+
 # v0.5.8 (2026-06-21)
 
 ## Features
