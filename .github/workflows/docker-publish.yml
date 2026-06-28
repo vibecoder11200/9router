@@ -11,7 +11,36 @@ env:
   DOCKERHUB_IMAGE: vibecoder11200/9router
 
 jobs:
+  # Gate: chặn build nếu tag trỏ tới commit thiếu feature định nghĩa fork (gemini-web/ds2api).
+  # Ngăn tình trạng tag vô tình trỏ sang commit upstream thuần (đã từng xảy ra với v0.5.12),
+  # tránh publish image thiếu tính năng local. Checkout mặc định lấy đúng commit được tag trỏ tới.
+  verify-release-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tagged commit contains fork-defining local features
+        run: |
+          set -e
+          ok=1
+          for f in open-sse/providers/registry/gemini-web.js open-sse/providers/registry/ds2api.js; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Tag '${{ github.ref_name }}' (${{ github.sha }}) is missing $f — looks like a bare-upstream commit, not a fork release. Aborting before any image is built or pushed."
+              ok=0
+            else
+              echo "OK: $f present at tag ${{ github.ref_name }}"
+            fi
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::Refusing to build: tag does not point to a fork release commit. Re-create the tag on a commit that includes gemini-web + ds2api."
+            exit 1
+          fi
+          echo "Verified: tag ${{ github.ref_name }} -> ${{ github.sha }} is a fork release (local features present)."
+
   build-and-push:
+    needs: verify-release-tag
     runs-on: ubuntu-latest
     permissions:
       contents: read
