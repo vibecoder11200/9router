@@ -8,7 +8,11 @@ import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 // Owns: sidecar install/start/stop, DeepSeek-account pool, available models,
 // and the auto-managed caller key. Powered by the ds2api sidecar (invisible).
 
-const POLL_MS = 5000;
+// Poll cadence for the live concurrency/queue display. Each tick fires up to 6
+// admin requests against the sidecar, so keep this modest and pause entirely
+// while the tab is hidden (see useEffect below) to avoid needlessly hammering
+// the engine.
+const POLL_MS = 15000;
 
 export default function Ds2apiManager() {
   const { copied, copy } = useCopyToClipboard();
@@ -88,8 +92,21 @@ export default function Ds2apiManager() {
 
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, POLL_MS);
-    return () => clearInterval(id);
+    // Skip the periodic refresh while the tab is hidden so an open-but-unwatched
+    // panel doesn't generate steady background traffic against the sidecar.
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      refresh();
+    };
+    const id = setInterval(tick, POLL_MS);
+    const onVisibility = () => { if (typeof document === "undefined" || !document.hidden) refresh(); };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+    return () => {
+      clearInterval(id);
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [refresh]);
 
   async function call(action, path, opts = {}) {
