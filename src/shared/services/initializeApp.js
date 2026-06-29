@@ -16,6 +16,9 @@ import {
 import { getMitmStatus, startMitm, loadEncryptedPassword, initDbHooks, restoreToolDNS, removeAllDNSEntriesSync } from "@/mitm/manager";
 import { startClaudeAutoPing } from "@/shared/services/claudeAutoPing";
 import { syncToJson as syncMitmAliasCache } from "@/lib/mitmAliasCache";
+import { getInstallStatus } from "@/lib/ds2api/install";
+import { startManagedDS2API } from "@/lib/ds2api/lifecycle";
+import { DEFAULT_DS2API_URL, isLoopbackDS2APIUrl } from "@/lib/ds2api/detect";
 
 // Inject correct paths and DB hooks into manager.js (CJS) from ESM context
 (function bootstrapMitm() {
@@ -89,6 +92,7 @@ export async function initializeApp() {
     startWatchdog();
     startNetworkMonitor();
     autoStartMitm();
+    autoStartDs2api();
     startClaudeAutoPing();
   } catch (error) {
     console.error("[InitApp] Error:", error);
@@ -126,6 +130,29 @@ async function autoStartMitm() {
     console.log("[InitApp] MITM auto-start failed:", err.message);
   } finally {
     g.mitmStartInProgress = false;
+  }
+}
+
+// Auto-start the managed DS2API (DeepSeek Web) sidecar on boot when the user has
+// enabled it — mirrors autoStartMitm. Only acts for the local/loopback managed
+// case; an external sidecar is started outside 9router. Best-effort: never throws.
+async function autoStartDs2api() {
+  try {
+    const settings = await getSettings();
+    if (!settings.ds2apiEnabled) return;
+    const url = settings.ds2apiUrl || DEFAULT_DS2API_URL;
+    if (!isLoopbackDS2APIUrl(url)) return;
+    if (!getInstallStatus().installed) {
+      console.log("[InitApp] DS2API enabled but engine not installed, skipping auto-start");
+      return;
+    }
+    console.log("[InitApp] DS2API was enabled, auto-starting...");
+    const result = await startManagedDS2API();
+    const inj = result.injection.skipped ? "skipped (already running)"
+      : result.injection.injected ? "injected" : "no-change";
+    console.log(`[InitApp] DS2API auto-started (pid ${result.pid}, injection: ${inj})`);
+  } catch (err) {
+    console.log("[InitApp] DS2API auto-start failed:", err.message);
   }
 }
 
