@@ -9,7 +9,7 @@ import { pipeline } from "node:stream/promises";
 import { execFileSync } from "child_process";
 import { DATA_DIR } from "@/lib/dataDir.js";
 
-export const DS2API_VERSION = process.env.DS2API_VERSION || "v4.6.1-httpproxy";
+export const DS2API_VERSION = process.env.DS2API_VERSION || "v4.6.2-rotation";
 
 const DS2API_DIR = path.join(DATA_DIR, "ds2api");
 const VERSION_FILE = path.join(DS2API_DIR, ".installed_version");

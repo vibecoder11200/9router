@@ -102,6 +102,33 @@ export async function setAccountProxy(base, adminKey, identifier, proxyId) {
   return adminFetch(base, adminKey, `/admin/accounts/${encodeURIComponent(identifier)}/proxy`, { method: "PUT", body: { proxy_id: proxyId || "" } });
 }
 
+// Set the full proxy configuration (mode + optional fixed proxy/group) on an
+// existing account. Mirrors sidecar PUT /admin/accounts/{identifier}.
+export async function setAccountProxyConfig(base, adminKey, identifier, { mode, proxyId, groupId } = {}) {
+  return adminFetch(base, adminKey, `/admin/accounts/${encodeURIComponent(identifier)}`, {
+    method: "PUT",
+    body: {
+      proxy_mode: mode || "",
+      proxy_id: proxyId || "",
+      proxy_group_id: groupId || "",
+    },
+  });
+}
+
+// --- proxy groups (named list of proxies rotated by strategy) ---
+export async function listProxyGroups(base, adminKey) {
+  return adminFetch(base, adminKey, "/admin/proxy-groups");
+}
+export async function addProxyGroup(base, adminKey, group) {
+  return adminFetch(base, adminKey, "/admin/proxy-groups", { method: "POST", body: group });
+}
+export async function updateProxyGroup(base, adminKey, id, group) {
+  return adminFetch(base, adminKey, `/admin/proxy-groups/${encodeURIComponent(id)}`, { method: "PUT", body: group });
+}
+export async function deleteProxyGroup(base, adminKey, id) {
+  return adminFetch(base, adminKey, `/admin/proxy-groups/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 // --- keys (caller api_keys) ---
 // There is no GET /admin/keys; keys are listed via GET /admin/config (fields `keys`
 // = string[], `api_keys` = [{key,name,remark}]). addKey rejects duplicates (400).

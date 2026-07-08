@@ -43,6 +43,9 @@ export default function Ds2apiManager() {
   const [batchText, setBatchText] = useState("");
   const [batchDefaultType, setBatchDefaultType] = useState("socks5");
   const [batchBusy, setBatchBusy] = useState(false);
+  const [proxyGroups, setProxyGroups] = useState([]);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupForm, setGroupForm] = useState({ id: "", name: "", strategy: "round-robin", sticky: "1", proxy_ids: [] });
 
   const refresh = useCallback(async () => {
     try {
@@ -64,6 +67,8 @@ export default function Ds2apiManager() {
         if (qRes.ok) setQueue(await qRes.json());
         const pxRes = await fetch("/api/ds2api/proxies", { headers: { "Cache-Control": "no-store" } });
         if (pxRes.ok) setProxies((await pxRes.json()).items || []);
+        const pgRes = await fetch("/api/ds2api/proxy-groups", { headers: { "Cache-Control": "no-store" } });
+        if (pgRes.ok) setProxyGroups((await pgRes.json()).items || []);
         if (sRes.ok) {
           const s = await sRes.json();
           const rt = s.runtime || {};
@@ -86,6 +91,7 @@ export default function Ds2apiManager() {
         setCif(null);
         setCifDraft(null);
         setProxies([]);
+        setProxyGroups([]);
       }
     } catch {
       /* ignore poll errors */
@@ -259,10 +265,46 @@ export default function Ds2apiManager() {
     call("del", `/api/ds2api/accounts/${encodeURIComponent(identifier)}`, { method: "DELETE" }).catch(() => {});
   }
 
-  async function setAccountProxy(identifier, proxyId) {
+  // Apply a full proxy config to an account: mode (none|fixed|group) plus the
+  // bound proxy_id (fixed) or proxy_group_id (group). The route accepts the
+  // legacy { proxy_id } shape too, but sending { mode, ... } lets the engine
+  // switch strategies without ambiguity.
+  async function setAccountProxyConfig(identifier, { mode, proxyId, groupId }) {
     call(`px-${identifier}`, `/api/ds2api/accounts/${encodeURIComponent(identifier)}/proxy`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ proxy_id: proxyId || "" }),
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode, proxy_id: proxyId || "", proxy_group_id: groupId || "" }),
     }).catch(() => {});
+  }
+
+  async function saveGroup(e) {
+    e?.preventDefault?.();
+    setProxyError("");
+    const g = {
+      ...(groupForm.id ? { id: groupForm.id } : {}),
+      name: groupForm.name.trim(),
+      strategy: groupForm.strategy,
+      sticky: groupForm.strategy === "round-robin" ? (Number(groupForm.sticky) || 1) : 0,
+      proxy_ids: groupForm.proxy_ids,
+    };
+    if (!g.name) { setProxyError("Group name is required"); return; }
+    if (!g.proxy_ids.length) { setProxyError("Select at least one proxy"); return; }
+    try {
+      const path = "/api/ds2api/proxy-groups";
+      const method = g.id ? "PUT" : "POST";
+      const url = g.id ? `${path}/${encodeURIComponent(g.id)}` : path;
+      await call(g.id ? "upGroup" : "addGroup", url, {
+        method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(g),
+      });
+      setShowGroupModal(false);
+      setGroupForm({ id: "", name: "", strategy: "round-robin", sticky: "1", proxy_ids: [] });
+    } catch (e2) {
+      setProxyError(e2.message);
+    }
+  }
+
+  async function deleteGroup(id) {
+    if (!confirm("Delete this proxy group? Accounts using it will fall back to direct/no proxy.")) return;
+    call(`delGroup-${id}`, `/api/ds2api/proxy-groups/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
   }
 
   async function testAccount(identifier) {
@@ -403,20 +445,64 @@ export default function Ds2apiManager() {
                 }`} title={a.test_status || "not tested"} />
                 <span className="text-sm font-mono flex-1 min-w-[120px] truncate">{a.identifier}</span>
                 {a.name && <span className="text-xs text-text-muted truncate">{a.name}</span>}
-                {proxies.length > 0 && (
-                  <select
-                    value={a.proxy_id || ""}
-                    onChange={(e) => setAccountProxy(a.identifier, e.target.value)}
-                    disabled={!!busy}
-                    title="Outbound proxy for this account"
-                    className="text-xs rounded border border-border bg-transparent px-1.5 py-1 max-w-[180px]"
-                  >
-                    <option value="">no proxy</option>
-                    {proxies.map((p) => (
-                      <option key={p.id} value={p.id}>{p.type}://{p.host}:{p.port}</option>
-                    ))}
-                  </select>
-                )}
+                {(proxies.length > 0 || proxyGroups.length > 0) && (() => {
+                  // Resolve the account's effective proxy mode. Legacy accounts
+                  // with a ProxyID but no mode read back as "fixed".
+                  const mode = a.proxy_mode || (a.proxy_id ? "fixed" : "none");
+                  return (
+                    <>
+                      <select
+                        value={mode}
+                        onChange={(e) => {
+                          const m = e.target.value;
+                          if (m === "none") setAccountProxyConfig(a.identifier, { mode: "none" });
+                          else if (m === "fixed") {
+                            const first = proxies[0]?.id || "";
+                            setAccountProxyConfig(a.identifier, { mode: "fixed", proxyId: first });
+                          } else if (m === "group") {
+                            const first = proxyGroups[0]?.id || "";
+                            setAccountProxyConfig(a.identifier, { mode: "group", groupId: first });
+                          }
+                        }}
+                        disabled={!!busy}
+                        title="Proxy mode for this account"
+                        className="text-xs rounded border border-border bg-transparent px-1.5 py-1"
+                      >
+                        <option value="none">direct</option>
+                        <option value="fixed">fixed</option>
+                        <option value="group">group</option>
+                      </select>
+                      {mode === "fixed" && (
+                        <select
+                          value={a.proxy_id || ""}
+                          onChange={(e) => setAccountProxyConfig(a.identifier, { mode: "fixed", proxyId: e.target.value })}
+                          disabled={!!busy}
+                          title="Fixed proxy for this account"
+                          className="text-xs rounded border border-border bg-transparent px-1.5 py-1 max-w-[180px]"
+                        >
+                          <option value="">no proxy</option>
+                          {proxies.map((p) => (
+                            <option key={p.id} value={p.id}>{p.type}://{p.host}:{p.port}</option>
+                          ))}
+                        </select>
+                      )}
+                      {mode === "group" && (
+                        <select
+                          value={a.proxy_group_id || ""}
+                          onChange={(e) => setAccountProxyConfig(a.identifier, { mode: "group", groupId: e.target.value })}
+                          disabled={!!busy}
+                          title="Proxy group for this account"
+                          className="text-xs rounded border border-border bg-transparent px-1.5 py-1 max-w-[180px]"
+                        >
+                          <option value="">no group</option>
+                          {proxyGroups.map((g) => (
+                            <option key={g.id} value={g.id}>{g.name} ({g.strategy})</option>
+                          ))}
+                        </select>
+                      )}
+                    </>
+                  );
+                })()}
                 <Button size="sm" variant="ghost" onClick={() => testAccount(a.identifier)} disabled={!!busy}>Test</Button>
                 <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.identifier)} disabled={!!busy}>Delete</Button>
               </div>
@@ -433,7 +519,10 @@ export default function Ds2apiManager() {
               <span className="material-symbols-outlined">vpn_lock</span>
               Proxies
             </h2>
-            <Button size="sm" variant="ghost" onClick={() => setShowBatchImport(true)} icon="playlist_add">Batch import</Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setShowBatchImport(true)} icon="playlist_add">Batch import</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setGroupForm({ id: "", name: "", strategy: "round-robin", sticky: "1", proxy_ids: [] }); setShowGroupModal(true); }} icon="shuffle">New group</Button>
+            </div>
           </div>
           <p className="text-sm text-text-muted mb-3">Assign a proxy per DeepSeek account to dodge &quot;user is muted&quot; from datacenter/shared IPs. Supports socks5, socks5h, http, https. Pick one when adding an account.</p>
           {proxies.length > 0 && (
@@ -456,6 +545,20 @@ export default function Ds2apiManager() {
                   </div>
                 );
               })}
+            </div>
+          )}
+          {proxyGroups.length > 0 && (
+            <div className="flex flex-col gap-1 mb-3 mt-2 pt-3 border-t border-border/50">
+              <p className="text-xs text-text-muted uppercase tracking-wide mb-1">Proxy groups (rotating)</p>
+              {proxyGroups.map((g) => (
+                <div key={g.id} className="flex items-center gap-2 py-1.5 border-b border-border/50 flex-wrap">
+                  <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-primary/15 text-primary">{g.strategy}</span>
+                  <span className="text-sm flex-1 min-w-0 truncate">{g.name}</span>
+                  <span className="text-xs text-text-muted truncate">{g.proxy_ids?.length || 0} proxy{(g.proxy_ids?.length || 0) !== 1 ? "ies" : ""}{g.strategy === "round-robin" && g.sticky ? ` · sticky ${g.sticky}` : ""}</span>
+                  <Button size="sm" variant="ghost" onClick={() => { setGroupForm({ id: g.id, name: g.name, strategy: g.strategy, sticky: String(g.sticky || 1), proxy_ids: [...(g.proxy_ids || [])] }); setShowGroupModal(true); }} disabled={!!busy}>Edit</Button>
+                  <Button size="sm" variant="ghost" onClick={() => deleteGroup(g.id)} disabled={!!busy}>Delete</Button>
+                </div>
+              ))}
             </div>
           )}
           <form onSubmit={addProxy} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -674,6 +777,62 @@ export default function Ds2apiManager() {
             <Button variant="ghost" onClick={() => setShowBatchImport(false)} disabled={batchBusy}>Cancel</Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Proxy group (rotation) create/edit modal */}
+      <Modal isOpen={showGroupModal} title={groupForm.id ? "Edit proxy group" : "New proxy group"} onClose={() => setShowGroupModal(false)} size="full">
+        <form onSubmit={saveGroup} className="flex flex-col gap-4">
+          <Input placeholder="Group name" value={groupForm.name} onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })} />
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-text-muted">Strategy</span>
+              <select value={groupForm.strategy} onChange={(e) => setGroupForm({ ...groupForm, strategy: e.target.value })}
+                className="text-sm rounded border border-border bg-transparent px-2 py-1.5">
+                <option value="round-robin">round-robin (cycle)</option>
+                <option value="random">random</option>
+                <option value="failover">failover (retry on error)</option>
+              </select>
+            </label>
+            {groupForm.strategy === "round-robin" && (
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-text-muted">Sticky (requests before rotating)</span>
+                <Input type="number" min="1" value={groupForm.sticky} onChange={(e) => setGroupForm({ ...groupForm, sticky: e.target.value })} className="font-mono text-sm" />
+              </label>
+            )}
+          </div>
+          <div>
+            <span className="text-xs text-text-muted">Proxies in group ({groupForm.proxy_ids.length} selected)</span>
+            {proxies.length === 0 ? (
+              <p className="text-sm text-warning mt-1">Add proxies first (above) before creating a group.</p>
+            ) : (
+              <div className="flex flex-col gap-1 mt-1 max-h-48 overflow-y-auto">
+                {proxies.map((p) => (
+                  <label key={p.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={groupForm.proxy_ids.includes(p.id)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...groupForm.proxy_ids, p.id]
+                          : groupForm.proxy_ids.filter((x) => x !== p.id);
+                        setGroupForm({ ...groupForm, proxy_ids: next });
+                      }}
+                      className="accent-primary"
+                    />
+                    <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{p.type}</span>
+                    <span className="text-sm font-mono">{p.host}:{p.port}</span>
+                    {p.username && <span className="text-xs text-text-muted">{p.username}</span>}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          {proxyError && <p className="text-sm text-warning whitespace-pre-line">{proxyError}</p>}
+          <div className="flex gap-2 justify-end">
+            <Button type="button" variant="ghost" onClick={() => setShowGroupModal(false)}>Cancel</Button>
+            <Button type="submit" disabled={!!busy}>{groupForm.id ? "Save" : "Create"}</Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

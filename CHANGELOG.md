@@ -6,6 +6,11 @@
 ## Fixes
 - **"Local only: CLI token required" over a tunnel** — local-only routes (DeepSeek Web install/start/stop, etc.) were blocked when the dashboard was reached through a tunnel, because `isLocalRequest()` deliberately returns `false` for proxied requests and the browser cannot present a CLI token. The guard now admits these routes over a recognized tunnel when the user has opted into *Allow dashboard access via tunnel* **and** is authenticated. Strict secret-handling routes (`reset-password`, `cowork-settings`) stay loopback-only even with tunnel access enabled, since they expose host secrets / the internal CLI token. Shared tunnel-host detection (`isKnownTunnelHost`) now also recognizes `externalTunnelUrl` in both the guard and the login route.
 
+# v0.5.22 (2026-07-08)
+
+## Features
+- **DeepSeek Web (ds2api): proxy groups with rotation strategies** — an account can now reference a proxy group (a named list of proxies) instead of a single fixed proxy, and each request picks a proxy by the group's strategy: **round-robin** (advance every N requests via "sticky"), **random** (uniform per request), or **failover** (retry on the next proxy on transport error or 5xx/408/429, replaying the request body). The DeepSeek Web provider page gains a "Proxy groups (rotating)" section with create/edit/delete (choose name, strategy, sticky count, and pick multiple proxies), and each account row now has a proxy-mode selector (`direct` / `fixed` / `group`) plus a target dropdown. Accounts with a legacy fixed proxy keep working unchanged. The engine is pulled from `vibecoder11200/ds2api` release `v4.6.2-rotation` (6 platform binaries).
+
 # v0.5.21 (2026-07-08)
 
 ## Features
