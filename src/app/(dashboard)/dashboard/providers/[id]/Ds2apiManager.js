@@ -38,6 +38,11 @@ export default function Ds2apiManager() {
   const [proxies, setProxies] = useState([]);
   const [proxyForm, setProxyForm] = useState({ name: "", type: "socks5", host: "", port: "", username: "", password: "" });
   const [proxyError, setProxyError] = useState("");
+  const [proxyTests, setProxyTests] = useState({}); // { [id]: { ok, msg, time } }
+  const [showBatchImport, setShowBatchImport] = useState(false);
+  const [batchText, setBatchText] = useState("");
+  const [batchDefaultType, setBatchDefaultType] = useState("socks5");
+  const [batchBusy, setBatchBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -146,7 +151,7 @@ export default function Ds2apiManager() {
       };
       if (!p.host || !p.port) throw new Error("Host and port are required");
       await call("addProxy", "/api/ds2api/proxies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) });
-      setProxyForm({ name: "", type: "http", host: "", port: "", username: "", password: "" });
+      setProxyForm({ name: "", type: "socks5", host: "", port: "", username: "", password: "" });
     } catch (e2) {
       setProxyError(e2.message);
     }
@@ -156,6 +161,84 @@ export default function Ds2apiManager() {
 
   async function deleteProxy(id) {
     call(`delProxy-${id}`, "/api/ds2api/proxies", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {});
+  }
+
+  async function testProxy(id) {
+    setProxyTests((t) => ({ ...t, [id]: { loading: true } }));
+    try {
+      const res = await fetch("/api/ds2api/proxies/test", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ proxy_id: id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.detail || `Failed (${res.status})`);
+      setProxyTests((t) => ({
+        ...t,
+        [id]: { ok: data.success, msg: data.message, time: data.response_time },
+      }));
+    } catch (e) {
+      setProxyTests((t) => ({ ...t, [id]: { ok: false, msg: e.message } }));
+    }
+  }
+
+  // Parse a single proxy line into ds2api field shape {type,host,port,username,password}.
+  // Accepts: protocol://user:pass@host:port | host:port:user:pass | host:port
+  function parseProxyLine(line, fallbackType) {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes("://")) {
+      const parsed = new URL(trimmed);
+      if (!parsed.hostname || !parsed.port) throw new Error("Invalid URL: missing host/port");
+      const scheme = parsed.protocol.replace(":", "").toLowerCase();
+      const type = ["http", "https", "socks5", "socks5h"].includes(scheme) ? scheme : fallbackType;
+      return { type, host: parsed.hostname, port: Number(parsed.port) || 0, username: decodeURIComponent(parsed.username || ""), password: decodeURIComponent(parsed.password || "") };
+    }
+    const parts = trimmed.split(":");
+    if (parts.length === 4) {
+      const [host, port, username, password] = parts;
+      if (!host || !port) throw new Error("Invalid host:port:user:pass");
+      return { type: fallbackType, host, port: Number(port) || 0, username, password };
+    }
+    if (parts.length === 2) {
+      const [host, port] = parts;
+      if (!host || !port) throw new Error("Invalid host:port");
+      return { type: fallbackType, host, port: Number(port) || 0, username: "", password: "" };
+    }
+    throw new Error("Unsupported format");
+  }
+
+  async function handleBatchImport() {
+    const lines = batchText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) { setProxyError("Paste at least one proxy line."); return; }
+
+    const parsed = [];
+    const invalid = [];
+    lines.forEach((line, i) => {
+      try { const p = parseProxyLine(line, batchDefaultType); if (p) parsed.push({ ...p, line: i + 1 }); }
+      catch (e) { invalid.push(`Line ${i + 1}: ${e.message}`); }
+    });
+    if (invalid.length) { setProxyError(invalid.join("\n")); return; }
+
+    setProxyError("");
+    setBatchBusy(true);
+    const existingKeys = new Set(proxies.map((p) => `${p.type}|${p.host}|${p.port}|${p.username}`));
+    let created = 0, skipped = 0, failed = 0;
+    for (const p of parsed) {
+      const key = `${p.type}|${p.host}|${p.port}|${p.username}`;
+      if (existingKeys.has(key)) { skipped++; continue; }
+      try {
+        const res = await fetch("/api/ds2api/proxies", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: `${p.type}://${p.host}:${p.port}`, ...p }),
+        });
+        if (res.ok) { created++; existingKeys.add(key); } else { failed++; }
+      } catch { failed++; }
+    }
+    await refresh();
+    setBatchBusy(false);
+    setShowBatchImport(false);
+    setBatchText("");
+    setError("");
+    setProxyError(created || skipped ? `Imported: ${created} added, ${skipped} skipped${failed ? `, ${failed} failed` : ""}` : `Import failed: ${failed} lines`);
   }
 
   async function addAccount(e) {
@@ -174,6 +257,12 @@ export default function Ds2apiManager() {
   async function deleteAccount(identifier) {
     if (!confirm(`Remove account ${identifier}?`)) return;
     call("del", `/api/ds2api/accounts/${encodeURIComponent(identifier)}`, { method: "DELETE" }).catch(() => {});
+  }
+
+  async function setAccountProxy(identifier, proxyId) {
+    call(`px-${identifier}`, `/api/ds2api/accounts/${encodeURIComponent(identifier)}/proxy`, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ proxy_id: proxyId || "" }),
+    }).catch(() => {});
   }
 
   async function testAccount(identifier) {
@@ -278,7 +367,7 @@ export default function Ds2apiManager() {
             : "Click Install to download the engine for this platform (no Go toolchain needed)."}
         </p>
         <p className="text-xs text-text-muted mt-1">
-          Add at least one DeepSeek account below — the engine routes your requests through it to DeepSeek's web interface.
+          Add at least one DeepSeek account below — the engine routes your requests through it to DeepSeek&apos;s web interface.
         </p>
         {error && <p className="text-sm text-warning mt-2">{error}</p>}
       </Card>
@@ -307,13 +396,27 @@ export default function Ds2apiManager() {
         ) : (
           <div className="flex flex-col gap-1">
             {accounts.map((a) => (
-              <div key={a.identifier} className="flex items-center gap-2 py-1.5 border-b border-border/50">
+              <div key={a.identifier} className="flex items-center gap-2 py-1.5 border-b border-border/50 flex-wrap">
                 <span className={`w-2 h-2 rounded-full ${
                   a.test_status === "ok" || a.test_status === "success" ? "bg-success"
                   : a.test_status ? "bg-warning" : "bg-text-muted/40"
                 }`} title={a.test_status || "not tested"} />
-                <span className="text-sm font-mono flex-1 min-w-0 truncate">{a.identifier}</span>
+                <span className="text-sm font-mono flex-1 min-w-[120px] truncate">{a.identifier}</span>
                 {a.name && <span className="text-xs text-text-muted truncate">{a.name}</span>}
+                {proxies.length > 0 && (
+                  <select
+                    value={a.proxy_id || ""}
+                    onChange={(e) => setAccountProxy(a.identifier, e.target.value)}
+                    disabled={!!busy}
+                    title="Outbound proxy for this account"
+                    className="text-xs rounded border border-border bg-transparent px-1.5 py-1 max-w-[180px]"
+                  >
+                    <option value="">no proxy</option>
+                    {proxies.map((p) => (
+                      <option key={p.id} value={p.id}>{p.type}://{p.host}:{p.port}</option>
+                    ))}
+                  </select>
+                )}
                 <Button size="sm" variant="ghost" onClick={() => testAccount(a.identifier)} disabled={!!busy}>Test</Button>
                 <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.identifier)} disabled={!!busy}>Delete</Button>
               </div>
@@ -325,21 +428,34 @@ export default function Ds2apiManager() {
       {/* Proxies (per-account) */}
       {running && (
         <Card>
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-1">
-            <span className="material-symbols-outlined">vpn_lock</span>
-            Proxies
-          </h2>
-          <p className="text-sm text-text-muted mb-3">Assign a residential proxy per DeepSeek account to dodge "user is muted" from datacenter/shared IPs. Pick one when adding an account.</p>
+          <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span className="material-symbols-outlined">vpn_lock</span>
+              Proxies
+            </h2>
+            <Button size="sm" variant="ghost" onClick={() => setShowBatchImport(true)} icon="playlist_add">Batch import</Button>
+          </div>
+          <p className="text-sm text-text-muted mb-3">Assign a proxy per DeepSeek account to dodge &quot;user is muted&quot; from datacenter/shared IPs. Supports socks5, socks5h, http, https. Pick one when adding an account.</p>
           {proxies.length > 0 && (
             <div className="flex flex-col gap-1 mb-3">
-              {proxies.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 py-1.5 border-b border-border/50">
-                  <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{p.type}</span>
-                  <span className="text-sm font-mono flex-1 min-w-0 truncate">{p.host}:{p.port}</span>
-                  {p.name && <span className="text-xs text-text-muted truncate">{p.name}</span>}
-                  <Button size="sm" variant="ghost" onClick={() => deleteProxy(p.id)} disabled={!!busy}>Delete</Button>
-                </div>
-              ))}
+              {proxies.map((p) => {
+                const t = proxyTests[p.id];
+                return (
+                  <div key={p.id} className="flex items-center gap-2 py-1.5 border-b border-border/50 flex-wrap">
+                    <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{p.type}</span>
+                    <span className="text-sm font-mono flex-1 min-w-0 truncate">{p.host}:{p.port}</span>
+                    {p.username && <span className="text-xs text-text-muted truncate">{p.username}</span>}
+                    {p.name && <span className="text-xs text-text-muted truncate">{p.name}</span>}
+                    {t && !t.loading && (
+                      <span className={`text-xs ${t.ok ? "text-success" : "text-warning"} truncate max-w-[220px]`} title={t.msg}>
+                        {t.ok ? "✓" : "✗"}{t.time != null ? ` ${t.time}ms` : ""}
+                      </span>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => testProxy(p.id)} disabled={t?.loading || !!busy}>{t?.loading ? "…" : "Test"}</Button>
+                    <Button size="sm" variant="ghost" onClick={() => deleteProxy(p.id)} disabled={!!busy}>Delete</Button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <form onSubmit={addProxy} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -350,6 +466,8 @@ export default function Ds2apiManager() {
                 className="text-sm rounded border border-border bg-transparent px-2 py-1.5">
                 <option value="socks5">socks5</option>
                 <option value="socks5h">socks5h</option>
+                <option value="http">http</option>
+                <option value="https">https</option>
               </select>
             </label>
             <Input placeholder="host" value={proxyForm.host} onChange={(e) => setProxyForm({ ...proxyForm, host: e.target.value })} className="font-mono text-sm" />
@@ -358,7 +476,7 @@ export default function Ds2apiManager() {
             <Input placeholder="password (opt)" type="password" value={proxyForm.password} onChange={(e) => setProxyForm({ ...proxyForm, password: e.target.value })} className="text-sm" />
             <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
               <Button type="submit" size="sm" disabled={!!busy}>Add proxy</Button>
-              {proxyError && <span className="text-sm text-warning">{proxyError}</span>}
+              {proxyError && <span className="text-sm text-warning whitespace-pre-line">{proxyError}</span>}
             </div>
           </form>
         </Card>
@@ -415,7 +533,7 @@ export default function Ds2apiManager() {
                 Context file upload
               </h2>
               <p className="text-sm text-text-muted mt-1">
-                When on, ds2api uploads the full conversation as a context file to DeepSeek (helps long contexts). If your account fails with "upload current user input file", turn this off for reliability.
+                When on, ds2api uploads the full conversation as a context file to DeepSeek (helps long contexts). If your account fails with &quot;upload current user input file&quot;, turn this off for reliability.
               </p>
             </div>
             <Toggle
@@ -520,6 +638,42 @@ export default function Ds2apiManager() {
             <Button type="submit" disabled={!!busy}>{busy === "add" ? "Adding…" : "Add"}</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Batch import proxies modal */}
+      <Modal isOpen={showBatchImport} title="Batch import proxies" onClose={() => !batchBusy && setShowBatchImport(false)} size="full">
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-text-muted">Default type (used when the line has no protocol)</span>
+            <select value={batchDefaultType} onChange={(e) => setBatchDefaultType(e.target.value)}
+              className="text-sm rounded border border-border bg-transparent px-2 py-1.5 w-fit">
+              <option value="socks5">socks5</option>
+              <option value="socks5h">socks5h</option>
+              <option value="http">http</option>
+              <option value="https">https</option>
+            </select>
+          </label>
+          <div>
+            <label className="text-sm font-medium text-text-main mb-1 block">Paste proxy list (one per line)</label>
+            <textarea
+              value={batchText}
+              onChange={(e) => setBatchText(e.target.value)}
+              placeholder={"http://user:pass@127.0.0.1:7897\nsocks5h://user:pass@10.0.0.5:1080\n127.0.0.1:7890\nhost:port:user:pass"}
+              className="w-full min-h-[200px] py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all font-mono"
+            />
+            <p className="text-xs text-text-muted mt-1">
+              Formats: <code>protocol://user:pass@host:port</code>, <code>host:port:user:pass</code>, <code>host:port</code>.
+              Protocols: http, https, socks5, socks5h.
+            </p>
+          </div>
+          {proxyError && <p className="text-sm text-warning whitespace-pre-line">{proxyError}</p>}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button onClick={handleBatchImport} disabled={!batchText.trim() || batchBusy}>
+              {batchBusy ? "Importing…" : "Import"}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowBatchImport(false)} disabled={batchBusy}>Cancel</Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

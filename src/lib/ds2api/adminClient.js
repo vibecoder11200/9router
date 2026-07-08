@@ -96,6 +96,11 @@ export async function deleteProxy(base, adminKey, id) {
 export async function testProxy(base, adminKey, proxy) {
   return adminFetch(base, adminKey, "/admin/proxies/test", { method: "POST", body: proxy });
 }
+// Assign (or clear, with proxy_id="") an outbound proxy to an existing account.
+// Mirrors sidecar PUT /admin/accounts/{identifier}/proxy.
+export async function setAccountProxy(base, adminKey, identifier, proxyId) {
+  return adminFetch(base, adminKey, `/admin/accounts/${encodeURIComponent(identifier)}/proxy`, { method: "PUT", body: { proxy_id: proxyId || "" } });
+}
 
 // --- keys (caller api_keys) ---
 // There is no GET /admin/keys; keys are listed via GET /admin/config (fields `keys`

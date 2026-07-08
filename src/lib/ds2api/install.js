@@ -9,7 +9,7 @@ import { pipeline } from "node:stream/promises";
 import { execFileSync } from "child_process";
 import { DATA_DIR } from "@/lib/dataDir.js";
 
-export const DS2API_VERSION = process.env.DS2API_VERSION || "v4.6.1";
+export const DS2API_VERSION = process.env.DS2API_VERSION || "v4.6.1-httpproxy";
 
 const DS2API_DIR = path.join(DATA_DIR, "ds2api");
 const VERSION_FILE = path.join(DS2API_DIR, ".installed_version");
@@ -20,7 +20,10 @@ export const BINARY_NAME = IS_WIN ? "ds2api.exe" : "ds2api";
 export const BINARY_PATH = path.join(DS2API_DIR, BINARY_NAME);
 export const STATIC_ADMIN_DIR = path.join(DS2API_DIR, "static", "admin");
 
-const RELEASE_BASE = "https://github.com/CJackHwang/ds2api/releases/download";
+// ds2api is forked at vibecoder11200/ds2api to add HTTP/HTTPS proxy support.
+// Release binaries are published there (open source, AGPL-3.0); the upstream
+// CJackHwang/ds2api only ships socks5 and would override this fork's patch.
+const RELEASE_BASE = "https://github.com/vibecoder11200/ds2api/releases/download";
 
 // Map current Node platform/arch → ds2api release asset label + archive extension.
 // Asset naming confirmed in temp/ds2api/scripts/{release-targets.sh,build-release-archives.sh}.
