@@ -1,5 +1,10 @@
 # Unreleased
 
+# v0.5.25 (2026-07-10)
+
+## Features
+- **Genspark Web provider** — integrates the Genspark Copilot MOA backend as a web-cookie provider, including image generation via the COPILOT_MOA_IMAGE flow. Adds unit-test coverage for chat, image, search, and reasoning paths.
+
 # v0.5.24 (2026-07-09)
 
 ## Features
