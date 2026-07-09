@@ -18,6 +18,13 @@ import { handleBypassRequest } from "open-sse/utils/bypassHandler.js";
 import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import { detectFormatByEndpoint } from "open-sse/translator/formats.js";
 import * as log from "../utils/logger.js";
+import { markProxyEntryCooldown } from "@/models";
+import {
+  isProxyRotatableError,
+  proxyCooldownForError,
+  groupHasAvailableEntry,
+} from "@/lib/network/proxyRotation.js";
+import { getProxyPoolById } from "@/models";
 import { updateProviderCredentials, checkAndRefreshToken } from "../services/tokenRefresh.js";
 import { getProjectIdForConnection } from "open-sse/services/projectId.js";
 
@@ -201,6 +208,9 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
 
   // Try with available accounts (fallback on errors)
   const excludeConnectionIds = new Set();
+  // Proxy-group entries already tried this request (cleared per request, not
+  // per account) — prevents re-picking a cooled-down entry within one rotation.
+  const excludedProxyEntryIds = new Set();
   let lastError = null;
   let lastStatus = null;
 
@@ -275,6 +285,42 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
     });
 
     if (result.success) return result.response;
+
+    // --- Proxy-group rotation on rotatable errors (429/rate-limit/5xx/...) ---
+    // When a request fails through a proxy-group entry with an error that's
+    // often IP-specific, cool down that entry and retry the SAME account with a
+    // different proxy from the group — rather than burning the whole account.
+    // Only fall back to the next account once the group has no entries left.
+    const psd = refreshedCredentials?.providerSpecificData || {};
+    const usedPoolId = psd.connectionProxyPoolId || null;
+    const usedEntryId = psd.connectionProxyEntryId || null;
+    const rotatable = isProxyRotatableError(result.status, result.error);
+
+    if (rotatable && usedPoolId && usedEntryId) {
+      // Cool down the entry that just failed.
+      const cdMs = proxyCooldownForError(result.status, result.error);
+      await markProxyEntryCooldown(usedPoolId, usedEntryId, cdMs, result.error).catch(() => {});
+      log.warn("PROXY", `Entry ${usedEntryId} in group ${usedPoolId} cooled down ${cdMs}ms (${result.status})`);
+
+      // Track which entries we've already tried this request so re-resolve
+      // skips them even before their cooldown timestamp lands in the DB.
+      excludedProxyEntryIds.add(usedEntryId);
+
+      // Is there still a usable entry in the group? If so, retry the SAME
+      // account without excluding it — the next loop iteration will re-resolve
+      // (getProviderCredentials picks a fresh entry) and we also override the
+      // proxy fields directly to be safe for the no-auth path.
+      const pool = await getProxyPoolById(usedPoolId).catch(() => null);
+      if (pool && groupHasAvailableEntry(pool, excludedProxyEntryIds)) {
+        lastError = result.error;
+        lastStatus = result.status;
+        // Don't exclude the connection — keep the account, switch the proxy.
+        // Re-resolve will pick the next available entry from the group.
+        continue;
+      }
+      // Group exhausted → fall through to account fallback below.
+      log.warn("PROXY", `Group ${usedPoolId} exhausted, falling back to next account`);
+    }
 
     // Mark account unavailable (auto-calculates cooldown with exponential backoff, or precise resetsAtMs)
     const { shouldFallback } = await markAccountUnavailable(credentials.connectionId, result.status, result.error, provider, model, result.resetsAtMs);

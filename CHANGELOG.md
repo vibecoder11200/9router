@@ -1,5 +1,10 @@
 # Unreleased
 
+# v0.5.23 (2026-07-09)
+
+## Features
+- **Proxy Pools: rotating proxy groups** — a proxy pool can now be a "group" holding multiple proxy entries (plus an optional "direct" entry that uses the server's own IP). On each request the resolver picks one entry by rotation mode: **rotate on error** (least-recently-used, the default — spreads load and skips the entry that just failed), **round-robin** (cycle every request), or **random**. When a request fails with a rotatable error (429 / rate-limit / quota / capacity / overloaded / 5xx / 408), the current entry is cooled down (60s for rate-limits, 30s for 5xx) and the next available entry is tried on the SAME account — only falling back to the next account once the group is exhausted. This is especially useful for free providers (opencode, mimo-free, etc.) that rate-limit by IP: put several proxies + the server IP in a group and bind it to the connection / provider strategy. The Proxy Pools page gains a "Rotating proxy group" toggle in the create/edit form with an entries editor (+proxy / +direct buttons) and a rotation-mode selector; the list shows a group badge with mode, entry count, and cooldown summary. Backward compatible — legacy single-proxy pools are unchanged. Also fixes a bug where editing a Deno relay pool downgraded its type to http.
+
 ## Features
 - **External tunnel URL** — register a tunnel the app does not manage itself (e.g. a `cloudflared` systemd service, or any reverse proxy) under **Endpoint → External tunnel URL**. Combined with *Allow dashboard access via tunnel*, this lets local-only actions — installing/starting/stopping the DeepSeek Web engine, Tailscale & tunnel controls, Headroom, MITM tooling — run over that tunnel after login. See `gitbook/content/en/deployment/cloud.md` → *Cloudflare Tunnel (external / systemd)*.
 

@@ -1,4 +1,5 @@
-import { getProxyPoolById } from "@/models";
+import { getProxyPoolById, updateProxyPool } from "@/models";
+import { pickProxyGroupEntry } from "./proxyRotation.js";
 
 // Safely normalize any value into a trimmed string.
 function normalizeString(value) {
@@ -67,6 +68,52 @@ export async function resolveConnectionProxyConfig(
         proxyUrl;
 
       if (isValidPool) {
+        /**
+         * Proxy group (rotating): pick one entry from the group now. The entry
+         * is chosen by rotationMode and skips cooled-down/inactive entries.
+         * Falls through to the standard/legacy path if no entry is available.
+         */
+        if (proxyPool.isGroup === true) {
+          const excludeEntryIds = providerSpecificData?._excludedProxyEntryIds
+            ? new Set(providerSpecificData._excludedProxyEntryIds)
+            : new Set();
+          const picked = pickProxyGroupEntry(proxyPool, excludeEntryIds);
+          if (picked) {
+            // Persist lastUsedAt / rrCounter stamp so concurrent + subsequent
+            // picks spread load. Best-effort: a failure here must not break the
+            // request.
+            updateProxyPool(proxyPoolId, {
+              entries: picked.updatedPool.entries,
+              rrCounter: picked.updatedPool.rrCounter,
+            }).catch(() => {});
+            const entry = picked.entry;
+            // "direct" entry → use the server's own IP (no proxy).
+            if (entry.type === "direct") {
+              return {
+                source: "group-direct",
+                proxyPoolId,
+                proxyPool,
+                proxyEntryId: entry.id,
+                connectionProxyEnabled: false,
+                connectionProxyUrl: "",
+                connectionNoProxy: noProxy,
+                strictProxy: proxyPool.strictProxy === true,
+              };
+            }
+            return {
+              source: "group",
+              proxyPoolId,
+              proxyPool,
+              proxyEntryId: entry.id,
+              connectionProxyEnabled: true,
+              connectionProxyUrl: normalizeString(entry.proxyUrl),
+              connectionNoProxy: noProxy,
+              strictProxy: proxyPool.strictProxy === true,
+            };
+          }
+          // No usable entry → fall through to legacy/none.
+        }
+
         /**
          * Vercel/Cloudflare relay proxies use base URL rewriting
          * instead of HTTP_PROXY environment variables.

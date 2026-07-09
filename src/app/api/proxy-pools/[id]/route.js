@@ -19,9 +19,7 @@ function normalizeProxyPoolUpdate(body = {}) {
 
   if (Object.prototype.hasOwnProperty.call(body, "proxyUrl")) {
     const proxyUrl = typeof body?.proxyUrl === "string" ? body.proxyUrl.trim() : "";
-    if (!proxyUrl) {
-      return { error: "Proxy URL is required" };
-    }
+    // proxyUrl may be empty for a group pool (entries hold the proxies).
     updates.proxyUrl = proxyUrl;
   }
 
@@ -38,8 +36,40 @@ function normalizeProxyPoolUpdate(body = {}) {
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "type")) {
-    const validTypes = ["http", "vercel", "cloudflare"];
+    // Fixed: "deno" was missing here, so editing a deno pool downgraded it to http.
+    const validTypes = ["http", "vercel", "cloudflare", "deno"];
     updates.type = validTypes.includes(body?.type) ? body.type : "http";
+  }
+
+  // Proxy-group fields
+  if (Object.prototype.hasOwnProperty.call(body, "isGroup")) {
+    updates.isGroup = body?.isGroup === true;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "rotationMode")) {
+    updates.rotationMode = ["on-error", "round-robin", "random"].includes(body?.rotationMode)
+      ? body.rotationMode
+      : "on-error";
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "entries")) {
+    const rawEntries = Array.isArray(body?.entries) ? body.entries : [];
+    updates.entries = rawEntries
+      .map((e, i) => {
+        const entryType = e?.type === "direct" ? "direct" : "http";
+        const entryUrl = typeof e?.proxyUrl === "string" ? e.proxyUrl.trim() : "";
+        if (entryType !== "direct" && !entryUrl) return null;
+        return {
+          id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
+          name: typeof e?.name === "string" ? e.name.trim() : (entryType === "direct" ? "Direct (server IP)" : entryUrl),
+          type: entryType,
+          proxyUrl: entryUrl,
+          isActive: e?.isActive !== false,
+          // Preserve runtime state when the entry already has an id.
+          cooldownUntil: e?.cooldownUntil ?? null,
+          lastError: e?.lastError ?? null,
+          lastUsedAt: e?.lastUsedAt ?? null,
+        };
+      })
+      .filter(Boolean);
   }
 
   return { updates };

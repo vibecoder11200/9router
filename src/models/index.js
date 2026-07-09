@@ -15,6 +15,7 @@ export {
   createProxyPool,
   updateProxyPool,
   deleteProxyPool,
+  markProxyEntryCooldown,
   deleteProviderConnectionsByProvider,
   getCombos,
   getComboById,
