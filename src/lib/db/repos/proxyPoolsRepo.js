@@ -73,6 +73,13 @@ export async function createProxyPool(data) {
     createdAt: now,
     updatedAt: now,
   };
+  // Proxy-group fields (additive; absent for legacy single-proxy pools).
+  if (data.isGroup === true) {
+    pool.isGroup = true;
+    pool.rotationMode = data.rotationMode || "on-error";
+    pool.entries = Array.isArray(data.entries) ? data.entries : [];
+    pool.rrCounter = 0;
+  }
   upsert(db, pool);
   return pool;
 }
@@ -100,4 +107,37 @@ export async function deleteProxyPool(id) {
     db.run(`DELETE FROM proxyPools WHERE id = ?`, [id]);
   });
   return removed;
+}
+
+/**
+ * Cool down a single entry within a proxy-group pool after a rotatable error.
+ * Stamps cooldownUntil/lastError on the matching entry and persists the pool.
+ * No-op (returns null) if the pool isn't a group or the entry id isn't found.
+ *
+ * @param {string} poolId
+ * @param {string} entryId
+ * @param {number} cooldownMs - how long to keep the entry out of rotation
+ * @param {string} errorText - the upstream error that triggered the cooldown
+ * @returns {object|null} the updated pool, or null if nothing changed
+ */
+export async function markProxyEntryCooldown(poolId, entryId, cooldownMs, errorText) {
+  if (!poolId || !entryId) return null;
+  const db = await getAdapter();
+  let result = null;
+  db.transaction(() => {
+    const row = db.get(`SELECT * FROM proxyPools WHERE id = ?`, [poolId]);
+    if (!row) return;
+    const pool = rowToPool(row);
+    if (!pool || pool.isGroup !== true || !Array.isArray(pool.entries)) return;
+    const until = Date.now() + (cooldownMs || 0);
+    const entries = pool.entries.map((e) =>
+      e.id === entryId
+        ? { ...e, cooldownUntil: until, lastError: (errorText || "").slice(0, 300) || null }
+        : e
+    );
+    const merged = { ...pool, entries, updatedAt: new Date().toISOString() };
+    upsert(db, merged);
+    result = merged;
+  });
+  return result;
 }

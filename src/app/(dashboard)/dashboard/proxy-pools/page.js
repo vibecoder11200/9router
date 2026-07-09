@@ -24,6 +24,17 @@ function normalizeFormData(data = {}) {
     noProxy: data.noProxy || "",
     isActive: data.isActive !== false,
     strictProxy: data.strictProxy === true,
+    isGroup: data.isGroup === true,
+    rotationMode: data.rotationMode || "on-error",
+    entries: Array.isArray(data.entries) ? data.entries.map((e) => ({
+      id: e.id || "",
+      name: e.name || "",
+      type: e.type || "http",
+      proxyUrl: e.proxyUrl || "",
+      isActive: e.isActive !== false,
+      cooldownUntil: e.cooldownUntil || null,
+      lastError: e.lastError || null,
+    })) : [],
   };
 }
 
@@ -108,13 +119,34 @@ export default function ProxyPoolsPage() {
   const handleSave = async () => {
     const payload = {
       name: formData.name.trim(),
-      proxyUrl: formData.proxyUrl.trim(),
       noProxy: formData.noProxy.trim(),
       isActive: formData.isActive === true,
       strictProxy: formData.strictProxy === true,
     };
 
-    if (!payload.name || !payload.proxyUrl) return;
+    if (formData.isGroup) {
+      payload.isGroup = true;
+      payload.rotationMode = formData.rotationMode;
+      payload.entries = formData.entries
+        .filter((e) => e.type === "direct" || e.proxyUrl.trim())
+        .map((e) => ({
+          id: e.id || undefined,
+          name: e.name.trim(),
+          type: e.type,
+          proxyUrl: e.type === "direct" ? "" : e.proxyUrl.trim(),
+          isActive: e.isActive !== false,
+        }));
+      if (!payload.entries.length) {
+        notify.error("A proxy group needs at least one entry");
+        return;
+      }
+    } else {
+      payload.proxyUrl = formData.proxyUrl.trim();
+      payload.isGroup = false;
+    }
+
+    if (!payload.name) return;
+    if (!formData.isGroup && !payload.proxyUrl) return;
 
     setSaving(true);
     try {
@@ -722,11 +754,21 @@ export default function ProxyPoolsPage() {
                     {pool.type === "cloudflare" && (
                       <Badge variant="default" size="sm">cloudflare relay</Badge>
                     )}
+                    {pool.isGroup && (
+                      <Badge variant="primary" size="sm">group · {pool.rotationMode} · {pool.entries?.length || 0} entries</Badge>
+                    )}
                     <Badge variant="default" size="sm">
                       {pool.boundConnectionCount || 0} bound
                     </Badge>
                   </div>
-                  <p className="text-xs text-text-muted truncate mt-1">{pool.proxyUrl}</p>
+                  {pool.isGroup ? (
+                    <p className="text-xs text-text-muted truncate mt-1">
+                      {pool.entries?.filter((e) => e.type === "direct").length || 0} direct + {pool.entries?.filter((e) => e.type !== "direct").length || 0} proxy
+                      {pool.entries?.some((e) => e.cooldownUntil && e.cooldownUntil > Date.now()) ? ` · ${pool.entries.filter((e) => e.cooldownUntil && e.cooldownUntil > Date.now()).length} cooling down` : ""}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-text-muted truncate mt-1">{pool.proxyUrl}</p>
+                  )}
                   {pool.noProxy ? (
                     <p className="text-xs text-text-muted truncate">No proxy: {pool.noProxy}</p>
                   ) : null}
@@ -988,6 +1030,7 @@ export default function ProxyPoolsPage() {
         isOpen={showFormModal}
         title={editingProxyPool ? "Edit Proxy Pool" : "Add Proxy Pool"}
         onClose={closeFormModal}
+        size="full"
       >
         <div className="flex flex-col gap-4">
           <Input
@@ -996,12 +1039,102 @@ export default function ProxyPoolsPage() {
             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Office Proxy"
           />
-          <Input
-            label="Proxy URL"
-            value={formData.proxyUrl}
-            onChange={(e) => setFormData((prev) => ({ ...prev, proxyUrl: e.target.value }))}
-            placeholder="http://127.0.0.1:7897"
-          />
+
+          {/* Pool type toggle: single proxy vs rotating group */}
+          <div className="flex flex-col gap-2 rounded-lg border border-border/50 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Rotating proxy group</p>
+                <p className="text-xs text-text-muted">Hold multiple proxies + rotate on rate-limit (429). Includes a &quot;direct&quot; option to use the server IP.</p>
+              </div>
+              <Toggle
+                checked={formData.isGroup === true}
+                onChange={() => setFormData((prev) => ({ ...prev, isGroup: !prev.isGroup }))}
+                disabled={saving}
+              />
+            </div>
+          </div>
+
+          {formData.isGroup ? (
+            <div className="flex flex-col gap-3">
+              {/* Rotation mode */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-text-muted">Rotation mode</span>
+                <select
+                  value={formData.rotationMode}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, rotationMode: e.target.value }))}
+                  className="text-sm rounded border border-border bg-transparent px-2 py-1.5"
+                >
+                  <option value="on-error">Rotate on error (least-recently-used, default)</option>
+                  <option value="round-robin">Round-robin (cycle every request)</option>
+                  <option value="random">Random</option>
+                </select>
+              </label>
+
+              {/* Entries editor */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Proxy entries ({formData.entries.length})</span>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => setFormData((prev) => ({
+                      ...prev,
+                      entries: [...prev.entries, { id: "", name: "", type: "http", proxyUrl: "", isActive: true }],
+                    }))} disabled={saving}>+ Proxy</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setFormData((prev) => ({
+                      ...prev,
+                      entries: [...prev.entries, { id: "", name: "Direct (server IP)", type: "direct", proxyUrl: "", isActive: true }],
+                    }))} disabled={saving}>+ Direct</Button>
+                  </div>
+                </div>
+                {formData.entries.map((entry, idx) => (
+                  <div key={idx} className="flex items-center gap-2 rounded border border-border/50 p-2 flex-wrap">
+                    <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{entry.type}</span>
+                    {entry.type === "direct" ? (
+                      <span className="text-sm flex-1 text-text-muted italic">Uses server IP (no proxy)</span>
+                    ) : (
+                      <>
+                        <input
+                          className="text-sm bg-transparent border border-border rounded px-2 py-1 flex-1 min-w-[140px] font-mono"
+                          placeholder="http://user:pass@host:port"
+                          value={entry.proxyUrl}
+                          onChange={(e) => setFormData((prev) => ({
+                            ...prev,
+                            entries: prev.entries.map((x, i) => i === idx ? { ...x, proxyUrl: e.target.value } : x),
+                          }))}
+                        />
+                        <input
+                          className="text-sm bg-transparent border border-border rounded px-2 py-1 w-28"
+                          placeholder="label (opt)"
+                          value={entry.name}
+                          onChange={(e) => setFormData((prev) => ({
+                            ...prev,
+                            entries: prev.entries.map((x, i) => i === idx ? { ...x, name: e.target.value } : x),
+                          }))}
+                        />
+                      </>
+                    )}
+                    <button
+                      className="text-text-muted hover:text-warning text-sm px-1"
+                      title="Remove entry"
+                      onClick={() => setFormData((prev) => ({ ...prev, entries: prev.entries.filter((_, i) => i !== idx) }))}
+                      type="button"
+                    >✕</button>
+                  </div>
+                ))}
+                {formData.entries.length === 0 && (
+                  <p className="text-sm text-warning">Add at least one proxy or direct entry.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Input
+              label="Proxy URL"
+              value={formData.proxyUrl}
+              onChange={(e) => setFormData((prev) => ({ ...prev, proxyUrl: e.target.value }))}
+              placeholder="http://127.0.0.1:7897"
+            />
+          )}
+
           <Input
             label="No Proxy"
             value={formData.noProxy}
@@ -1038,7 +1171,7 @@ export default function ProxyPoolsPage() {
             <Button
               fullWidth
               onClick={handleSave}
-              disabled={!formData.name.trim() || !formData.proxyUrl.trim() || saving}
+              disabled={!formData.name.trim() || (!formData.isGroup && !formData.proxyUrl.trim()) || saving}
             >
               {saving ? "Saving..." : "Save"}
             </Button>
