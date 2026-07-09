@@ -98,6 +98,7 @@ import p95 from "./xiaomi-tokenplan.js";
 import p96 from "./youcom.js";
 import p97 from "./gemini-web.js";
 import p98 from "./ds2api.js";
+import p99 from "./genspark-web.js";
 
 export default [
   p0,
@@ -198,5 +199,6 @@ export default [
   p95,
   p96,
   p97,
-  p98
+  p98,
+  p99
 ];
