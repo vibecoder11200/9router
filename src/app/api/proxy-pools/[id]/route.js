@@ -6,6 +6,38 @@ import {
   updateProxyPool,
 } from "@/models";
 
+const VALID_PROXY_SCHEMES = ["http:", "https:", "socks5:", "socks5h:", "socks4:", "socks4a:"];
+
+function normalizeGroupEntry(e, i) {
+  if (e?.type === "direct") {
+    return {
+      id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
+      name: typeof e?.name === "string" && e.name.trim() ? e.name.trim() : "Direct (server IP)",
+      type: "direct",
+      proxyUrl: "",
+      isActive: e?.isActive !== false,
+      cooldownUntil: e?.cooldownUntil ?? null,
+      lastError: e?.lastError ?? null,
+      lastUsedAt: e?.lastUsedAt ?? null,
+    };
+  }
+  const entryUrl = typeof e?.proxyUrl === "string" ? e.proxyUrl.trim() : "";
+  if (!entryUrl) return null;
+  let scheme = "";
+  try { scheme = new URL(entryUrl).protocol; } catch { return null; }
+  if (!VALID_PROXY_SCHEMES.includes(scheme)) return null;
+  return {
+    id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
+    name: typeof e?.name === "string" && e.name.trim() ? e.name.trim() : entryUrl,
+    type: scheme.replace(":", ""),
+    proxyUrl: entryUrl,
+    isActive: e?.isActive !== false,
+    cooldownUntil: e?.cooldownUntil ?? null,
+    lastError: e?.lastError ?? null,
+    lastUsedAt: e?.lastUsedAt ?? null,
+  };
+}
+
 function normalizeProxyPoolUpdate(body = {}) {
   const updates = {};
 
@@ -52,24 +84,7 @@ function normalizeProxyPoolUpdate(body = {}) {
   }
   if (Object.prototype.hasOwnProperty.call(body, "entries")) {
     const rawEntries = Array.isArray(body?.entries) ? body.entries : [];
-    updates.entries = rawEntries
-      .map((e, i) => {
-        const entryType = e?.type === "direct" ? "direct" : "http";
-        const entryUrl = typeof e?.proxyUrl === "string" ? e.proxyUrl.trim() : "";
-        if (entryType !== "direct" && !entryUrl) return null;
-        return {
-          id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
-          name: typeof e?.name === "string" ? e.name.trim() : (entryType === "direct" ? "Direct (server IP)" : entryUrl),
-          type: entryType,
-          proxyUrl: entryUrl,
-          isActive: e?.isActive !== false,
-          // Preserve runtime state when the entry already has an id.
-          cooldownUntil: e?.cooldownUntil ?? null,
-          lastError: e?.lastError ?? null,
-          lastUsedAt: e?.lastUsedAt ?? null,
-        };
-      })
-      .filter(Boolean);
+    updates.entries = rawEntries.map(normalizeGroupEntry).filter(Boolean);
   }
 
   return { updates };

@@ -9,6 +9,41 @@ function toBoolean(value) {
 
 const VALID_PROXY_TYPES = ["http", "vercel", "cloudflare", "deno"];
 
+// Proxy schemes accepted at the network layer (undici ProxyAgent / env proxy).
+// Group entries can use any of these; "direct" means no proxy (server IP).
+const VALID_PROXY_SCHEMES = ["http:", "https:", "socks5:", "socks5h:", "socks4:", "socks4a:"];
+
+function normalizeGroupEntry(e, i) {
+  if (e?.type === "direct") {
+    return {
+      id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
+      name: typeof e?.name === "string" && e.name.trim() ? e.name.trim() : "Direct (server IP)",
+      type: "direct",
+      proxyUrl: "",
+      isActive: e?.isActive !== false,
+      cooldownUntil: null,
+      lastError: null,
+      lastUsedAt: null,
+    };
+  }
+  const entryUrl = typeof e?.proxyUrl === "string" ? e.proxyUrl.trim() : "";
+  if (!entryUrl) return null;
+  // Derive the scheme from the URL; reject unsupported schemes.
+  let scheme = "";
+  try { scheme = new URL(entryUrl).protocol; } catch { return null; }
+  if (!VALID_PROXY_SCHEMES.includes(scheme)) return null;
+  return {
+    id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
+    name: typeof e?.name === "string" && e.name.trim() ? e.name.trim() : entryUrl,
+    type: scheme.replace(":", ""),
+    proxyUrl: entryUrl,
+    isActive: e?.isActive !== false,
+    cooldownUntil: null,
+    lastError: null,
+    lastUsedAt: null,
+  };
+}
+
 function normalizeProxyPoolInput(body = {}) {
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const proxyUrl = typeof body?.proxyUrl === "string" ? body.proxyUrl.trim() : "";
@@ -28,26 +63,9 @@ function normalizeProxyPoolInput(body = {}) {
       ? body.rotationMode
       : "on-error";
     const rawEntries = Array.isArray(body?.entries) ? body.entries : [];
-    const entries = rawEntries
-      .map((e, i) => {
-        const entryType = e?.type === "direct" ? "direct" : "http";
-        const entryUrl = typeof e?.proxyUrl === "string" ? e.proxyUrl.trim() : "";
-        // "direct" entries need no URL; "http" entries require one.
-        if (entryType !== "direct" && !entryUrl) return null;
-        return {
-          id: typeof e?.id === "string" && e.id ? e.id : `entry_${Date.now()}_${i}`,
-          name: typeof e?.name === "string" ? e.name.trim() : (entryType === "direct" ? "Direct (server IP)" : entryUrl),
-          type: entryType,
-          proxyUrl: entryUrl,
-          isActive: e?.isActive !== false,
-          cooldownUntil: null,
-          lastError: null,
-          lastUsedAt: null,
-        };
-      })
-      .filter(Boolean);
+    const entries = rawEntries.map(normalizeGroupEntry).filter(Boolean);
     if (entries.length === 0) {
-      return { error: "A proxy group needs at least one entry" };
+      return { error: "A proxy group needs at least one valid entry" };
     }
     return { name, proxyUrl: "", noProxy, isActive, strictProxy, type: "http", isGroup: true, rotationMode, entries, rrCounter: 0 };
   }

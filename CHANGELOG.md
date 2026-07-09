@@ -1,5 +1,10 @@
 # Unreleased
 
+# v0.5.24 (2026-07-09)
+
+## Features
+- **Proxy Pools: group entries now support all proxy protocols + batch import** — rotating proxy group entries accept http, https, socks5, socks5h, socks4, and socks4a (matching the full network-layer support), not just http. The entry protocol is auto-detected from the URL. The group form gains a **Batch import** button: paste a proxy list (`protocol://user:pass@host:port` or `host:port:user:pass`) and all valid lines are appended to the group's entries in one go.
+
 # v0.5.23 (2026-07-09)
 
 ## Features
