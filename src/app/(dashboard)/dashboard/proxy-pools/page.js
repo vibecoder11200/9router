@@ -62,6 +62,8 @@ export default function ProxyPoolsPage() {
   const [healthProgress, setHealthProgress] = useState({ current: 0, total: 0 });
   const [bulkBusy, setBulkBusy] = useState(false);
   const [confirmState, setConfirmState] = useState(null);
+  const [showGroupBatchImport, setShowGroupBatchImport] = useState(false);
+  const [groupBatchText, setGroupBatchText] = useState("");
   const relayMenuRef = useRef(null);
   const notify = useNotificationStore();
 
@@ -590,6 +592,34 @@ export default function ProxyPoolsPage() {
     }
   };
 
+  // Batch import proxies directly into the current group form's entries list.
+  // Reuses the same parseProxyLine logic but appends to formData.entries.
+  const handleGroupBatchImport = () => {
+    const lines = groupBatchText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) {
+      notify.warning("Paste at least one proxy line.");
+      return;
+    }
+    const newEntries = [];
+    let failed = 0;
+    for (const line of lines) {
+      try {
+        const parsed = parseProxyLine(line);
+        if (parsed?.proxyUrl) newEntries.push({ id: "", name: parsed.name || "", proxyUrl: parsed.proxyUrl, type: "http", isActive: true });
+      } catch {
+        failed++;
+      }
+    }
+    if (newEntries.length === 0) {
+      notify.error("No valid proxy lines found.");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, entries: [...prev.entries, ...newEntries] }));
+    setGroupBatchText("");
+    setShowGroupBatchImport(false);
+    notify.success(`Added ${newEntries.length} entr${newEntries.length === 1 ? "y" : "ies"}${failed ? `, ${failed} skipped` : ""}`);
+  };
+
   const activeCount = useMemo(
     () => proxyPools.filter((pool) => pool.isActive === true).length,
     [proxyPools]
@@ -1073,9 +1103,10 @@ export default function ProxyPoolsPage() {
 
               {/* Entries editor */}
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-sm font-medium">Proxy entries ({formData.entries.length})</span>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-wrap">
+                    <Button size="sm" variant="ghost" icon="playlist_add" onClick={() => setShowGroupBatchImport(true)} disabled={saving}>Batch import</Button>
                     <Button size="sm" variant="ghost" onClick={() => setFormData((prev) => ({
                       ...prev,
                       entries: [...prev.entries, { id: "", name: "", type: "http", proxyUrl: "", isActive: true }],
@@ -1086,16 +1117,21 @@ export default function ProxyPoolsPage() {
                     }))} disabled={saving}>+ Direct</Button>
                   </div>
                 </div>
-                {formData.entries.map((entry, idx) => (
+                <p className="text-xs text-text-muted">Supported: http, https, socks5, socks5h, socks4, socks4a, direct.</p>
+                {formData.entries.map((entry, idx) => {
+                  // Derive the displayed protocol from the URL for non-direct entries.
+                  const displayType = entry.type === "direct" ? "direct"
+                    : (() => { try { return new URL(entry.proxyUrl).protocol.replace(":", "") || entry.type; } catch { return entry.type || "?"; } })();
+                  return (
                   <div key={idx} className="flex items-center gap-2 rounded border border-border/50 p-2 flex-wrap">
-                    <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{entry.type}</span>
+                    <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2">{displayType}</span>
                     {entry.type === "direct" ? (
                       <span className="text-sm flex-1 text-text-muted italic">Uses server IP (no proxy)</span>
                     ) : (
                       <>
                         <input
                           className="text-sm bg-transparent border border-border rounded px-2 py-1 flex-1 min-w-[140px] font-mono"
-                          placeholder="http://user:pass@host:port"
+                          placeholder="socks5://user:pass@host:port"
                           value={entry.proxyUrl}
                           onChange={(e) => setFormData((prev) => ({
                             ...prev,
@@ -1120,7 +1156,8 @@ export default function ProxyPoolsPage() {
                       type="button"
                     >✕</button>
                   </div>
-                ))}
+                  );
+                })}
                 {formData.entries.length === 0 && (
                   <p className="text-sm text-warning">Add at least one proxy or direct entry.</p>
                 )}
@@ -1191,6 +1228,34 @@ export default function ProxyPoolsPage() {
         message={confirmState?.message}
         variant="danger"
       />
+
+      {/* Batch import into group form entries */}
+      <Modal
+        isOpen={showGroupBatchImport}
+        title="Batch import into group"
+        onClose={() => setShowGroupBatchImport(false)}
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium text-text-main mb-1 block">Paste proxy list (one per line)</label>
+            <textarea
+              value={groupBatchText}
+              onChange={(e) => setGroupBatchText(e.target.value)}
+              placeholder={"http://user:pass@127.0.0.1:7897\nsocks5://user:pass@10.0.0.5:1080\n127.0.0.1:7890:user:pass"}
+              className="w-full min-h-[180px] py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all font-mono"
+            />
+            <p className="text-xs text-text-muted mt-1">
+              Formats: protocol://user:pass@host:port, host:port:user:pass. Protocols: http, https, socks5, socks5h, socks4, socks4a.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button fullWidth onClick={handleGroupBatchImport} disabled={!groupBatchText.trim()}>
+              Add to group
+            </Button>
+            <Button fullWidth variant="ghost" onClick={() => setShowGroupBatchImport(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
