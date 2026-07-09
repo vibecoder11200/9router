@@ -138,6 +138,10 @@ export default function Ds2apiManager() {
   }
 
   const install = () => call("install", "/api/ds2api/install", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
+  // Update re-downloads the engine (force) and safely cycles a running engine
+  // through stop → reinstall → restart. The orchestration lives in the backend
+  // route so the frontend doesn't have to sequence multiple calls itself.
+  const update = () => call("update", "/api/ds2api/update", { method: "POST" }).catch(() => {});
   const start = () => call("start", "/api/ds2api/start", { method: "POST" }).catch(() => {});
   const stop = () => call("stop", "/api/ds2api/stop", { method: "POST" }).catch(() => {});
   const testAll = () => call("testAll", "/api/ds2api/accounts/test-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
@@ -394,6 +398,9 @@ export default function Ds2apiManager() {
           <div className="flex items-center gap-2">
             {!install_.installed && (
               <Button size="sm" onClick={install} disabled={!!busy}>{busy === "install" ? "Installing…" : "Install"}</Button>
+            )}
+            {install_.installed && !install_.upToDate && (
+              <Button size="sm" onClick={update} disabled={!!busy}>{busy === "update" ? "Updating…" : "Update"}</Button>
             )}
             {install_.installed && !running && (
               <Button size="sm" onClick={start} disabled={!!busy}>{busy === "start" ? "Starting…" : "Start"}</Button>

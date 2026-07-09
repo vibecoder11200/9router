@@ -1,5 +1,10 @@
 # Unreleased
 
+# v0.5.26 (2026-07-10)
+
+## Features
+- **DeepSeek Web: update engine button** — the ds2api provider page now shows an **Update** button when a newer engine version is available (previously the "update available" text appeared with no action to take). Clicking it stops a running engine, waits for the process to release the binary lock (important on Windows), force-re-downloads the latest release, and restarts the engine if it was running. A new `POST /api/ds2api/update` route orchestrates the safe stop → reinstall → restart cycle; the legacy `POST /api/ds2api/install` route is unchanged.
+
 # v0.5.25 (2026-07-10)
 
 ## Features
