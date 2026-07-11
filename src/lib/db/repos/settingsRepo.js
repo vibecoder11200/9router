@@ -48,6 +48,10 @@ const DEFAULT_SETTINGS = {
   ponytailLevel: "full",
   ds2apiEnabled: false,
   ds2apiUrl: "http://localhost:5001",
+  pxpipeEnabled: false,
+  pxpipeAutoInstall: true,
+  pxpipeMinChars: 25000,
+  pxpipeTimeoutMs: 15000,
 };
 
 async function readRaw() {

@@ -6,6 +6,10 @@ import pkg from "../../../../package.json" with { type: "json" };
 const GH_OWNER = "vibecoder11200";
 const GH_REPO = "9router";
 const RELEASES_LATEST_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/releases/latest`;
+const VERSION_CACHE_TTL_MS = 3600000; // cache GitHub latest lookup for 1h
+
+// Survive hot reload; one cache per process
+const versionCache = (global.__ghVersionCache ??= { value: null, fetchedAt: 0 });
 
 // Fetch latest version tag from GitHub Releases (fork). Returns null on any
 // failure so the dashboard gracefully shows "no update" instead of crashing.
@@ -48,8 +52,20 @@ function compareVersions(a, b) {
   return 0;
 }
 
+async function getLatestVersionCached() {
+  if (versionCache.value && Date.now() - versionCache.fetchedAt < VERSION_CACHE_TTL_MS) {
+    return versionCache.value;
+  }
+  const latest = await fetchLatestVersion();
+  if (latest) {
+    versionCache.value = latest;
+    versionCache.fetchedAt = Date.now();
+  }
+  return latest;
+}
+
 export async function GET() {
-  const latestVersion = await fetchLatestVersion();
+  const latestVersion = await getLatestVersionCached();
   const currentVersion = pkg.version;
   const hasUpdate = latestVersion ? compareVersions(latestVersion, currentVersion) > 0 : false;
 
