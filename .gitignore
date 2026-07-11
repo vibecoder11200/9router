@@ -88,3 +88,4 @@ temp/
 
 .graphifyignore
 graphify-out/*
+.next-analyze/*
