@@ -89,10 +89,19 @@ export async function resolveConnectionProxyConfig(
       const proxyUrl = normalizeString(proxyPool?.proxyUrl);
       const noProxy = normalizeString(proxyPool?.noProxy);
 
+      // A pool is usable if it is active AND either:
+      //   - has a single proxyUrl (standard/relay pool), or
+      //   - is a group with at least one entry (rotating pool — proxyUrl is
+      //     intentionally empty; the resolver picks one entry below).
+      const hasGroupEntries =
+        proxyPool?.isGroup === true &&
+        Array.isArray(proxyPool.entries) &&
+        proxyPool.entries.length > 0;
+
       const isValidPool =
         proxyPool &&
         proxyPool.isActive === true &&
-        proxyUrl;
+        (proxyUrl || hasGroupEntries);
 
       if (isValidPool) {
         /**

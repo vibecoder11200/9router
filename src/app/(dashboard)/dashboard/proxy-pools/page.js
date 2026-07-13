@@ -214,7 +214,18 @@ export default function ProxyPoolsPage() {
       }
 
       await fetchProxyPools();
-      notify.success(data.ok ? "Proxy test passed" : "Proxy test failed");
+      // For group pools the API returns a per-entry breakdown; surface it so
+      // the user can see how many entries passed/failed instead of a binary.
+      if (data.group) {
+        const { passed, failed, total } = data.group;
+        if (data.ok) {
+          notify.success(`Proxy group: ${passed}/${total} entries reachable${failed ? `, ${failed} failed` : ""}`);
+        } else {
+          notify.error(`Proxy group: all ${total} entries failed`);
+        }
+      } else {
+        notify.success(data.ok ? "Proxy test passed" : "Proxy test failed");
+      }
     } catch (error) {
       console.log("Error testing proxy pool:", error);
       notify.error("Failed to test proxy");

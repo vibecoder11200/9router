@@ -1,5 +1,14 @@
 # Unreleased
 
+# v0.5.32 (2026-07-13)
+
+## Fixes
+- **Proxy-Pools**: rotating proxy groups (e.g. "Webshare") were silently ignored at runtime. `resolveConnectionProxyConfig` required a non-empty `proxyUrl`, but group pools intentionally leave `proxyUrl` empty (entries hold the proxies). The validity check now accepts groups with at least one entry.
+- **Proxy-Pools (test)**: the `/proxy-pools/:id/test` endpoint always tested `pool.proxyUrl` and failed with "proxyUrl is required" for groups. Group pools now test each entry in parallel, report a per-entry breakdown (`passed/failed/total`), and auto-cool down failed entries.
+- **Proxy-Pools (no-auth)**: the auto-rotate pool picker for no-auth free providers filtered pools by `proxyUrl`, excluding groups. Groups are now eligible candidates.
+- **Proxy-Pools (strictProxy)**: `strictProxy` was dropped between `resolveConnectionProxyConfig`, `auth.js`, and `chatCore.js`, so a failing proxy silently fell back to direct instead of failing hard. It now propagates end-to-end.
+- **Providers UI**: a bound rotating group now shows `Group: name · N entries` instead of an empty proxy URL.
+
 # v0.5.31 (2026-07-12)
 
 ## Features

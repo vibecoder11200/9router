@@ -17,7 +17,9 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
   const hasLegacyProxy = connection.providerSpecificData?.connectionProxyEnabled === true && !!connection.providerSpecificData?.connectionProxyUrl;
   const hasAnyProxy = !!boundProxyPoolId || hasLegacyProxy;
   const proxyDisplayText = boundProxyPool
-    ? `Pool: ${boundProxyPool.name}`
+    ? (boundProxyPool.isGroup
+        ? `Group: ${boundProxyPool.name} · ${boundProxyPool.entries?.length || 0} entries · ${boundProxyPool.rotationMode || "on-error"}`
+        : `Pool: ${boundProxyPool.name}`)
     : boundProxyPoolId
       ? `Pool: ${boundProxyPoolId} (inactive/missing)`
       : hasLegacyProxy

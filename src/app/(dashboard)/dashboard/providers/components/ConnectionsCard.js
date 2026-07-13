@@ -43,7 +43,9 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
   const hasAnyProxy = !!boundProxyPoolId || hasLegacyProxy;
 
   const proxyDisplayText = boundProxyPool
-    ? `Pool: ${boundProxyPool.name}`
+    ? (boundProxyPool.isGroup
+        ? `Group: ${boundProxyPool.name} · ${boundProxyPool.entries?.length || 0} entries`
+        : `Pool: ${boundProxyPool.name}`)
     : boundProxyPoolId ? `Pool: ${boundProxyPoolId} (inactive/missing)`
     : hasLegacyProxy ? `Legacy: ${connection.providerSpecificData?.connectionProxyUrl}` : "";
 
