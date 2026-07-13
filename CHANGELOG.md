@@ -3,6 +3,7 @@
 # v0.5.32 (2026-07-13)
 
 ## Fixes
+- **CLI version sync**: the v0.5.32 release bumped `package.json` but left `cli/package.json` at `0.5.31`. Because the CLI launcher reads its own version from `cli/package.json`, it reported `v0.5.31` in the menu and permanently showed "★ Update to v0.5.32" (a false update loop — reinstalling pulled the same mismatched tarball). Both `package.json` files now ship at `0.5.32`, and the release SOP in `CLAUDE.md` documents that the two must move in lockstep.
 - **Proxy-Pools**: rotating proxy groups (e.g. "Webshare") were silently ignored at runtime. `resolveConnectionProxyConfig` required a non-empty `proxyUrl`, but group pools intentionally leave `proxyUrl` empty (entries hold the proxies). The validity check now accepts groups with at least one entry.
 - **Proxy-Pools (test)**: the `/proxy-pools/:id/test` endpoint always tested `pool.proxyUrl` and failed with "proxyUrl is required" for groups. Group pools now test each entry in parallel, report a per-entry breakdown (`passed/failed/total`), and auto-cool down failed entries.
 - **Proxy-Pools (no-auth)**: the auto-rotate pool picker for no-auth free providers filtered pools by `proxyUrl`, excluding groups. Groups are now eligible candidates.

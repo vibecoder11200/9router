@@ -88,4 +88,56 @@ Pre-translate hooks that compress `tool_result` content in-place to cut tokens. 
 - `custom-server.js` wraps the Next standalone server to derive client IP from the TCP socket and strip attacker-controlled `X-Forwarded-For` — trusting forwarding headers only from a loopback reverse proxy. Preserve this when touching request/IP/rate-limit code.
 - Security-sensitive env: `JWT_SECRET` (session cookie), `INITIAL_PASSWORD` (default `123456` — must override), `API_KEY_SECRET`, `MACHINE_ID_SALT`. Full env contract in `.env.example` and ARCHITECTURE.md's env matrix.
 - Binary/protobuf upstreams (kiro EventStream, cursor protobuf, commandcode NDJSON) don't round-trip through OpenAI — they're handled inside their own executor, not the translator.
-- Versioning: root and `cli/` are versioned independently; changes are logged in `CHANGELOG.md`. Commit style is Conventional Commits (`fix(translator): …`, `feat(...)`).
+- Versioning: **root `package.json` and `cli/package.json` MUST stay in sync** (see Release SOP below). They are *built* independently but ship at the *same* version. Commit style is Conventional Commits (`fix(translator): …`, `feat(...)`).
+
+## Release SOP (cutting a new version)
+
+This fork ships via **GitHub Releases** (not npm). The CLI launcher (`cli/cli.js`) reads its own version from `cli/package.json` (`pkg.version`) and compares it against the latest GitHub Release tag to decide whether an update is available. **If the two `package.json` versions drift, the update check loops forever** ("Update to vX (current: vY)" with Y < X even after reinstall). This is exactly the v0.5.31→v0.5.32 bug.
+
+### Version files that MUST move together
+
+On every release, bump **both** to the new version, in the same commit:
+
+| File | Purpose | Read by |
+| --- | --- | --- |
+| `package.json` (root, `9router-app`) | Dashboard/gateway package | build, dashboard "about" |
+| `cli/package.json` (`9router`) | CLI launcher package | `cli/cli.js` menu, `--version`, update check |
+
+Also add a `# vX.Y.Z (date)` entry at the top of `CHANGELOG.md` (move it out of `# Unreleased` if it was staged there).
+
+### The exact release sequence
+
+```bash
+# 1. Bump BOTH package.json files + CHANGELOG entry, in ONE commit
+#    (e.g. 0.5.32 -> 0.5.33)
+git add package.json cli/package.json CHANGELOG.md
+git commit -m "chore(release): vX.Y.Z"
+
+# 2. Tag that commit (annotated, with the v prefix)
+git tag -a vX.Y.Z -m "vX.Y.Z"
+
+# 3. Push both — the tag push triggers .github/workflows/cli-release.yml,
+#    which builds the CLI tarball and attaches it to the GitHub Release
+git push origin master
+git push origin vX.Y.Z
+```
+
+`cli-release.yml` then builds `9router-<version>.tgz` + the stable alias `9router.tgz` and attaches both to the release. Users upgrade by re-running the install one-liner, which always pulls `releases/latest/download/9router.tgz`.
+
+### Pre-flight checklist before tagging
+
+- [ ] `package.json` version == `cli/package.json` version (run `grep '"version"' package.json cli/package.json` — the two numbers MUST match)
+- [ ] `CHANGELOG.md` has a `# vX.Y.Z (date)` entry at the top
+- [ ] Tagged commit contains fork-defining files (`open-sse/providers/registry/gemini-web.js`, `…/ds2api.js`) — `cli-release.yml`'s `verify-release-tag` job refuses to build a bare-upstream commit, so don't tag a pre-merge upstream commit
+
+### If you need to re-release the same version (tarball was wrong)
+
+Don't create a new tag. Force-move the existing tag onto the fixed commit:
+
+```bash
+git tag -f -a vX.Y.Z -m "vX.Y.Z"   # -f moves the existing tag
+git push origin master
+git push -f origin vX.Y.Z           # -f overwrites the remote tag, re-triggers the build
+```
+
+This re-runs `cli-release.yml` and re-uploads `9router.tgz` (`--clobber`). Existing users on that version see no change; users on an older version get the fixed tarball on next install.
