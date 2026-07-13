@@ -16,6 +16,8 @@
   [![License](https://img.shields.io/npm/l/9router.svg)](https://github.com/decolua/9router/blob/main/LICENSE)
   
   [🚀 快速开始](#-quick-start) • [💡 特性](#-key-features) • [📖 设置](#-setup) • [🌐 网站](https://9router.com)
+
+  > 🔀 **这是 [decolua/9router](https://github.com/decolua/9router)（`v0.5.30`）的功能增强 fork**，新增 **DeepSeek Web (DS2API) sidecar**、**轮换代理池**、**Genspark/Gemini web-cookie 提供商**、**外部隧道 URL** 等。通过 [GitHub Releases](https://github.com/vibecoder11200/9router/releases) 分发（不在 npm 上）。详见下方的 [⭐ Fork 功能](#-fork-功能)。
 </div>
 
 ---
@@ -58,10 +60,50 @@
        │   ↓ quota exhausted
        ├─→ [Tier 2: CHEAP] GLM ($0.6/1M), MiniMax ($0.2/1M)
        │   ↓ budget limit
-       └─→ [Tier 3: FREE] iFlow, Qwen, Kiro (unlimited)
+       └─→ [Tier 3: FREE] Kiro, OpenCode Free, Vertex (unlimited)
 
 Result: Never stop coding, minimal cost
 ```
+
+---
+
+## ⭐ Fork 功能
+
+> **本 fork**（`vibecoder11200/9router`）在 upstream 之上的新增功能。全部可选，默认关闭。
+
+| 功能 | 新增内容 | 启用位置 |
+|---------|--------------|----------|
+| 🐬 **DeepSeek Web (DS2API)** | 本地 Go sidecar，托管安装/启动/停止/更新；每账户代理组（round-robin/random/failover + sticky）。引擎来自 vibecoder11200/ds2api `v4.6.2-rotation`，模型前缀 `ds2api/` | Dashboard → DeepSeek Web (DS2API) |
+| 🔀 **代理池与轮换组** | 单代理池或轮换组（条目 + 可选 `direct` 服务器 IP 槽位）。轮换模式：on-error（默认，LRU）/ round-robin / random。支持 http/https/socks5/socks5h/socks4/socks4a，批量导入，`strictProxy` | Dashboard → Proxy Pools |
+| 🌐 **无认证提供商轮换** | 将免费无认证提供商（OpenCode Free、mimo-free）绑定到一个轮换组。Rotation Strategy round-robin/random（需 ≥2 个池）。每个提供商 OPT-IN，非自动 | 提供商页面 |
+| 🤖 **Genspark Web** | cookie 提供商，Copilot MOA + 图像生成（`COPILOT_MOA_IMAGE`）。前缀 `genspark-web/`（别名 `gspark`），追加 `-search` 启用 web grounding | Dashboard → Providers |
+| ♊ **Gemini Web** | 基于 cookie 的 gemini.google.com，内部 RPC，cookie 池最多 5 个轮换，15 分钟健康检查。支持 LLM + 图像 + 视频 + 音频。前缀 `gemini-web/`（别名 `gweb`） | Dashboard → Providers |
+| 🔗 **外部隧道 URL** | 注册一个不由本应用管理的隧道（例如 cloudflared systemd）。设置 `externalTunnelUrl` + `tunnelDashboardAccess` 开关。允许登录后通过隧道执行本地操作 | Dashboard → Settings |
+
+> 以及 **upstream v0.5.30** 的全部内容：PXPipe、Grok CLI、Perplexity Agent API、Featherless、Headroom extras —— 详见下方各节。
+
+<details>
+<summary><b>📖 两个代理组系统有何不同</b></summary>
+
+9Router fork 中有**两套独立的代理组系统**，用途不同：
+
+**🔀 9Router Proxy Pools（通用代理池）**
+- 用于任意提供商的出站请求。
+- 单代理池，或由多个条目 + 可选 `direct`（服务器 IP）槽位组成的轮换组。
+- 轮换模式：`on-error`（默认，LRU 最近最少使用）、`round-robin`、`random`。
+- 运行时冷却：速率限制冷却 60s，5xx 错误冷却 30s，同账户内自动重试。
+- 全协议支持：`http`、`https`、`socks5`、`socks5h`、`socks4`、`socks4a`。
+- 配置入口：**Dashboard → Proxy Pools**。
+
+**🐬 DS2API proxy groups（DeepSeek Web 每账户代理组）**
+- 仅作用于 DeepSeek Web (DS2API) sidecar，绑定到**单个账户**。
+- 轮换模式：`round-robin`、`random`、`failover`，并可启用 **sticky**（同一会话粘滞到同一代理）。
+- 引擎来自 vibecoder11200/ds2api `v4.6.2-rotation`。
+- 配置入口：**Dashboard → DeepSeek Web (DS2API) → 账户设置**。
+
+简而言之：Proxy Pools 是全局的、面向所有提供商的通用轮换；DS2API proxy groups 是 DeepSeek Web 账户级的、带 sticky 的专用轮换。
+
+</details>
 
 ---
 
@@ -86,8 +128,10 @@ npm install -g 9router
 Claude Code/Codex/Gemini CLI/OpenClaw/Cursor/Cline 设置:
   Endpoint: http://localhost:20128/v1
   API Key: [从仪表板复制]
-  Model: if/kimi-k2-thinking
+  Model: kr/claude-sonnet-4.5
 ```
+
+> **注意：** iFlow、Qwen 和 Gemini CLI 的免费层已于 2026 年停止。请改用 Kiro / OpenCode Free / Vertex。
 
 **就是这样！** 开始使用免费 AI 模型编程。
 
@@ -236,25 +280,49 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
   <table>
     <tr>
       <td align="center" width="150">
-        <img src="../public/providers/iflow.png" width="70" alt="iFlow"/><br/>
-        <b>iFlow AI</b><br/>
-        <sub>8+ 模型 无限制</sub>
-      </td>
-      <td align="center" width="150">
-        <img src="../public/providers/qwen.png" width="70" alt="Qwen"/><br/>
-        <b>Qwen Code</b><br/>
-        <sub>3+ 模型 • 无限制</sub>
-      </td>
-      <td align="center" width="150">
-        <img src="../public/providers/gemini-cli.png" width="70" alt="Gemini CLI"/><br/>
-        <b>Gemini CLI</b><br/>
-        <sub>180K/月 免费</sub>
-      </td>
-      <td align="center" width="150">
         <img src="../public/providers/kiro.png" width="70" alt="Kiro"/><br/>
         <b>Kiro AI</b><br/>
         <sub>Claude • 无限制</sub>
       </td>
+      <td align="center" width="150">
+        <img src="../public/providers/opencode.png" width="70" alt="OpenCode Free"/><br/>
+        <b>OpenCode Free</b><br/>
+        <sub>无需认证</sub>
+      </td>
+      <td align="center" width="150">
+        <img src="../public/providers/gemini.png" width="70" alt="Vertex"/><br/>
+        <b>Vertex</b><br/>
+        <sub>$300 免费额度</sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+> **注意：** iFlow、Qwen 和 Gemini CLI 的免费层已于 2026 年停止。请改用 Kiro / OpenCode Free / Vertex。
+
+### 🍪 Web-Cookie 提供商 · fork
+
+<div align="center">
+  <table>
+    <tr>
+      <th>提供商</th>
+      <th>前缀</th>
+      <th>可获得的功能</th>
+    </tr>
+    <tr>
+      <td align="center">♊ Gemini Web</td>
+      <td align="center"><code>gemini-web/</code>（别名 <code>gweb</code>）</td>
+      <td>基于 cookie 的 gemini.google.com，内部 RPC，cookie 池最多 5 个轮换，15 分钟健康检查。LLM + 图像 + 视频 + 音频</td>
+    </tr>
+    <tr>
+      <td align="center">🤖 Genspark Web</td>
+      <td align="center"><code>genspark-web/</code>（别名 <code>gspark</code>）</td>
+      <td>cookie 提供商，Copilot MOA + 图像生成（<code>COPILOT_MOA_IMAGE</code>）。追加 <code>-search</code> 启用 web grounding</td>
+    </tr>
+    <tr>
+      <td align="center">🐬 DeepSeek Web</td>
+      <td align="center"><code>ds2api/</code></td>
+      <td>DS2API sidecar，托管安装/启动/停止/更新，每账户代理组（round-robin/random/failover + sticky）</td>
     </tr>
   </table>
 </div>
@@ -342,7 +410,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
       </td>
     </tr>
   </table>
-  <p><i>...以及 20+ 更多提供商，包括 Nebius, Chutes, Hyperbolic 和自定义 OpenAI/Anthropic 兼容端点</i></p>
+  <p><i>...以及 20+ 更多提供商，包括 Grok CLI (OAuth)、Perplexity Agent API、Featherless、Cloudflare AI、Nebius, Chutes, Hyperbolic 和自定义 OpenAI/Anthropic 兼容端点</i></p>
 </div>
 
 ---
@@ -361,6 +429,10 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 | 💾 **云端同步** | 跨设备同步配置 | 到处都是相同的设置 |
 | 📊 **使用分析** | 追踪 Token、成本、趋势 | 优化支出 |
 | 🌐 **随处部署** | 本地主机、VPS、Docker、Cloudflare Workers | 灵活的部署选项 |
+| 🖼️ **PXPipe** | 进程内多模态压缩，将 Claude 上下文重新渲染为图像 | 大幅削减多模态 token 成本 |
+| 🐬 **DeepSeek Web** · fork | DS2API Go sidecar，托管生命周期，每账户代理组 | 通过 DeepSeek 网页账户接入 |
+| 🔀 **代理池** · fork | 单代理池/轮换组，on-error/round-robin/random，批量导入 | 出站代理轮换与冗余 |
+| 🤖 **Web-Cookie 提供商** · fork | Gemini Web、Genspark Web 等 cookie 提供商 | 通过网页 cookie 接入更多模型 |
 
 <details>
 <summary><b>📖 特性详情</b></summary>
@@ -373,7 +445,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 Combo: "my-coding-stack"
   1. cc/claude-opus-4-6        (your subscription)
   2. glm/glm-4.7               (cheap backup, $0.6/1M)
-  3. if/kimi-k2-thinking       (free fallback)
+  3. kr/claude-sonnet-4.5      (free fallback via Kiro)
 
 → Auto switches when quota runs out or errors occur
 ```
@@ -445,8 +517,8 @@ Combo: "my-coding-stack"
 > 使用分析中显示的“成本”**仅用于追踪和比较目的**。
 > 9Router 本身**从不向您收费**。您只需直接向提供商付款（如果使用付费服务）。
 > 
-> **示例：** 如果您的仪表板在使用 iFlow 模型时显示“$290 总成本”，这代表
-> 您直接使用付费 API 时需要支付的金额。您的实际成本 = **$0**（iFlow 是免费无限制的）。
+> **示例：** 如果您的仪表板在使用 Kiro 模型时显示“$290 总成本”，这代表
+> 您直接使用付费 API 时需要支付的金额。您的实际成本 = **$0**（Kiro 是免费无限制的）。
 > 
 > 将其视为“节省追踪器”，显示您通过使用免费模型或
 > 通过 9Router 路由节省了多少！
@@ -473,11 +545,13 @@ Combo: "my-coding-stack"
 | **💰 廉价** | GLM-4.7 | $0.6/1M | 每日 10AM | 预算备份 |
 | | MiniMax M2.1 | $0.2/1M | 5 小时滚动 | 最便宜选项 |
 | | Kimi K2 | $9/月固定 | 10M tokens/月 | 可预测成本 |
-| **🆓 免费** | iFlow | $0 | 无限制 | 8 个模型免费 |
-| | Qwen | $0 | 无限制 | 3 个模型免费 |
-| | Kiro | $0 | 无限制 | Claude 免费 |
+| **🆓 免费** | Kiro | $0 | 无限制 | Claude 免费 |
+| | OpenCode Free | $0 | 无限制 | 无需认证 |
+| | Vertex | $0 | $300 额度 | Google 免费额度 |
 
-**💡 专业提示：** 从 Gemini CLI（180K 免费/月）+ iFlow（无限制免费）组合开始 = $0 成本！
+> **注意：** iFlow、Qwen 和 Gemini CLI 的免费层已于 2026 年停止。请改用 Kiro / OpenCode Free / Vertex。
+
+**💡 专业提示：** 从 Kiro（无限制免费 Claude）+ Vertex（$300 免费额度）组合开始 = $0 成本！
 
 ---
 
@@ -488,7 +562,7 @@ Combo: "my-coding-stack"
 ✅ **9Router 软件 = 永远免费**开源，从不收费）  
 ✅ **仪表板“成本” = 仅显示/追踪**（非实际账单）  
 ✅ **您直接向提供商付款**（订阅或 API 费用）  
-✅ **免费提供商保持免费**（iFlow, Kiro, Qwen = $0 无限制）  
+✅ **免费提供商保持免费**（Kiro, OpenCode Free, Vertex = $0）  
 ❌ **9Router 从不发送发票**或向您的卡收费
 
 **成本显示如何工作：**
@@ -502,7 +576,7 @@ Combo: "my-coding-stack"
 • 显示成本：$290
 
 现实检查：
-• 提供商：iFlow（免费无限制）
+• 提供商：Kiro（免费无限制）
 • 实际付款：$0.00
 • $290 的含义：您通过使用免费模型节省的金额！
 ```
@@ -510,7 +584,7 @@ Combo: "my-coding-stack"
 **付款规则：**
 - **订阅提供商**（Claude Code, Codex）：通过他们的网站直接向他们付款
 - **廉价提供商**（GLM, MiniMax）：直接向他们付款，9Router 只是路由
-- **免费**（iFlow, Kiro, Qwen）：真正永远免费，没有隐藏费用
+- **免费**（Kiro, OpenCode Free, Vertex）：真正永远免费，没有隐藏费用
 - **9Router**：从不收取任何费用，永远
 
 ---
@@ -526,7 +600,7 @@ Combo: "my-coding-stack"
 Combo: "maximize-claude"
   1. cc/claude-opus-4-6        (use subscription fully)
   2. glm/glm-4.7               (cheap backup when quota out)
-  3 if/kimi-k2-thinking       (free emergency fallback)
+  3. kr/claude-sonnet-4.5      (free emergency fallback)
 
 Monthly cost: $20 (subscription) + ~$5 (backup) = $25 total
 vs. $20 + hitting limits = frustration
@@ -539,9 +613,9 @@ vs. $20 + hitting limits = frustration
 **解决方案：**
 ```
 Combo: "free-forever"
-  1. gc/gemini-3-flash         (180K free/month)
-  2. if/kimi-k2-thinking       (unlimited free)
-  3. qw/qwen3-c-plus       (unlimited free)
+  1. kr/claude-sonnet-4.5      (通过 Kiro 免费 Claude 4.5)
+  2. oc/<auto>                 (OpenCode Free，无需认证)
+  3. vertex/gemini-3.1-pro-preview ($300 免费额度)
 
 Monthly cost: $0
 Quality: Production-ready models
@@ -558,7 +632,7 @@ Combo: "always-on"
   2. cx/gpt-5.2-codex          (second subscription)
   3. glm/glm-4.7               (cheap, resets daily)
   4. minimaxMiniMax-M2.1      (cheapest, 5h reset)
-  5. if/kimi-k2-thinking       (free unlimited)
+  5. kr/claude-sonnet-4.5      (free unlimited)
 
 Result: 5 layers of fallback = zero downtime
 Monthly cost: $20-200 (subscriptions) + $10-20 (backup)
@@ -571,9 +645,9 @@ Monthly cost: $20-200 (subscriptions) + $10-20 (backup)
 **解决方案：**
 ```
 Combo: "openclaw-free"
-  1. if/glm-4.7                (unlimited free)
-  2. if/minimax-m2.1           (unlimited free)
-  3. if/kimi-k2-thinking       (unlimited free)
+  1. kr/claude-sonnet-4.5      (unlimited free)
+  2. kr/claude-haiku-4.5       (unlimited free)
+  3. oc/<auto>                 (unlimited free, no auth)
 
 Monthly cost: $0
 Access via: WhatsApp, Telegram, Slack, Discord, iMessage, Signal...
@@ -590,7 +664,7 @@ Access via: WhatsApp, Telegram, Slack, Discord, iMessage, Signal...
 
 **示例：**
 - **仪表板显示：**“$290 总成本”
-- **现实：** 您正在使用 iFlow（免费无限制）
+- **现实：** 您正在使用 Kiro（免费无限制）
 - **您的实际成本：** **$0.00**
 - **$290 的含义：** 您通过使用免费模型而不是付费 API **节省**的金额！
 
@@ -615,14 +689,16 @@ Access via: WhatsApp, Telegram, Slack, Discord, iMessage, Signal...
 <details>
 <summary><b>🆓 免费提供商真的无限制吗？</b></summary>
 
-**是的！** 标记为免费（iFlow, Kiro, Qwen）的提供商是真正无限制的，**没有隐藏费用**。
+**是的！** 标记为免费（Kiro, OpenCode Free, Vertex）的提供商是真正无限制的，**没有隐藏费用**。
 
 这些是各自公司提供的免费服务：
-- **iFlow**：通过 OAuth 免费无限制访问 8+ 模型
 - **Kiro**：通过 AWS Builder ID 免费无限制 Claude 模型
-- **Qwen**：通过设备认证免费无限制访问 Qwen 模型
+- **OpenCode Free**：无需认证即可免费使用
+- **Vertex**：Google 提供 $300 免费额度
 
 Router 只是将您的请求路由到它们 - 没有“陷阱”或未来计费。它们是真正的免费服务，9Router 使它们易于使用并支持回退。
+
+> **注意：** iFlow、Qwen 和 Gemini CLI 的免费层已于 2026 年停止。请改用 Kiro / OpenCode Free / Vertex。
 
 **注意：** 一些订阅提供商（Antigravity, GitHub Copilot）可能有免费预览期，后来可能变成付费，但这会由这些提供商明确宣布，而不是 9Router。
 
@@ -635,9 +711,9 @@ Router 只是将您的请求路由到它们 - 没有“陷阱”或未来计费�
 
 1. **从 100% 免费组合开始：**
    ```
-   1. gc/gini-3-flash (180K/month free from Google)
-   2. if/kimi-k2-thinking (unlimited free from iFlow)
-   3. qw/qwen3-coder-plus (unlimited free from Qwen)
+   1. kr/claude-sonnet-4.5 (通过 Kiro 免费 Claude 4.5)
+   2. oc/<auto> (OpenCode Free，无需认证)
+   3. vertex/gemini-3.1-pro-preview ($300 免费额度)
    ```
    **成本：$0/月**
 
@@ -778,7 +854,9 @@ Models:
 <details>
 <summary><b>🆓 免费提供商（紧急备份）</b></summary>
 
-### i（8 个免费模型）
+### iFlow（8 个免费模型）
+
+> ⛔ **已停止（2026）**：iFlow 的免费层已于 2026 年停止，不再可用。以下内容仅作历史参考。请改用 **Kiro** / **OpenCode Free** / **Vertex**。
 
 ```bash
 Dashboard → Connect iFlow
@@ -794,6 +872,8 @@ Models:
 ```
 
 ### Qwen（3 个免费模型）
+
+> ⛔ **已停止（2026）**：Qwen 的免费层已于 2026 年停止，不再可用。以下内容仅作历史参考。请改用 **Kiro** / **OpenCode Free** / **Vertex**。
 
 ```bash
 Dashboard → Connect Qwen
@@ -845,12 +925,111 @@ Monthly cost example (100M tokens):
 ```
 Name: free-combo
 Models:
-  1. gc/gemini-3-flash-preview (180K free/month)
-  2. if/kimi-k2-thinking (unlimited)
-  3. qw/qwen3-coder-plus (unlimited)
+  1. kr/claude-sonnet-4.5 (通过 Kiro 免费 Claude 4.5)
+  2. oc/<auto> (OpenCode Free，无需认证)
+  3. vertex/gemini-3.1-pro-preview ($300 免费额度)
 
 Cost: $0 forever!
 ```
+
+</details>
+
+<details>
+<summary><b>🖼️ Token Saver / Headroom（含 PXPipe）</b></summary>
+
+### 🖼️ PXPipe（进程内多模态压缩 · upstream v0.5.30）
+
+PXPipe 是一个**进程内**的多模态 token 节省器：它将 Claude 的上下文**重新渲染为图像**，从而大幅减少多模态 token 数量。
+
+- **仅限 Claude**：当前仅对 Claude 系列请求生效。
+- **默认关闭**：`pxpipeEnabled` 默认为 `false`。
+- **阈值**：仅在上下文超过 `pxpipeMinChars`（默认 **25000** 字符）时触发压缩。
+- 配置入口：**Dashboard → Token Saver**。
+
+启用方式：在 Dashboard → Token Saver 中打开 `pxpipeEnabled`，并按需调整 `pxpipeMinChars` 阈值。
+
+### 🧠 Headroom（外部 token 节省引擎）
+
+Headroom 是一个外部的 token 节省服务，9Router 通过环境变量 `HEADROOM_URL` 接入。
+
+- **自动检测**：9Router 通过 `pip list` 自动检测本机是否已安装 Headroom，无需手动声明。
+- **extras**：Headroom 提供可选的扩展模块：
+  - `code` = 基于 **tree-sitter** 的代码结构压缩
+  - `ml` = **Kompress-v2** 机器学习压缩
+
+配置入口：设置 `HEADROOM_URL` 指向您运行的 Headroom 实例。
+
+</details>
+
+<details>
+<summary><b>🔀 代理池与轮换组 · fork</b></summary>
+
+### 创建池
+
+**Dashboard → Proxy Pools** 支持两种形态：
+
+- **单代理池**：只有一个条目（或一个 `direct` 槽位）。
+- **轮换组**：由多个条目 + 可选的 `direct`（使用服务器本机 IP）槽位组成。
+
+每个条目支持全部协议：`http`、`https`、`socks5`、`socks5h`、`socks4`、`socks4a`。
+
+### 轮换模式
+
+- `on-error`（默认，LRU 最近最少使用）：出错时切换到下一个。
+- `round-robin`：按顺序循环。
+- `random`：随机选取。
+
+### 条目与选项
+
+- **条目 + direct**：在轮换组中可加入一个 `direct` 槽位，以便在所有代理都失败时回退到服务器本机 IP。
+- **`strictProxy`**：开启后，仅允许通过池内代理出站；池为空时请求直接失败，不会泄漏本机 IP。
+- **批量导入**：支持一次性粘贴/导入多条代理。
+
+### 绑定到连接
+
+在提供商或连接设置中，将某个池绑定到该连接，该连接的出站请求即通过该池。
+
+### 无认证提供商轮换卡片
+
+对于无认证的免费提供商（OpenCode Free、mimo-free），可在**提供商页面**为其绑定一个轮换组：
+- Rotation Strategy 可选 `round-robin` / `random`（需 ≥2 个池）。
+- 这是**每个提供商 OPT-IN**，不会自动应用到其他提供商。
+
+### 运行时冷却行为
+
+- 速率限制（rate-limit）：代理冷却 **60s**。
+- 5xx 错误：代理冷却 **30s**。
+- 同一账户的请求会在冷却期间自动重试其他可用条目。
+
+</details>
+
+<details>
+<summary><b>🐬 DeepSeek Web (DS2API) · fork</b></summary>
+
+DeepSeek Web 通过本地 Go sidecar（DS2API）接入。引擎来自 vibecoder11200/ds2api `v4.6.2-rotation`，模型前缀 `ds2api/`。
+
+### 设置
+
+1. **安装引擎**：在 Dashboard → DeepSeek Web (DS2API) 中点击安装，下载并安装 DS2API Go 引擎。
+2. **添加账户**：添加一个 DeepSeek 网页账户（按提示完成登录/cookie 录入）。
+3. **启动**：启动 sidecar（可由本应用托管 启动/停止/更新）。
+4. **启用**：确认 DS2API 已启用，即可使用 `ds2api/` 前缀的模型。
+
+### 每账户代理与轮换组
+
+每个 DS2API 账户可绑定自己的代理组：
+
+- 轮换模式：`round-robin`、`random`、`failover`，并可启用 **sticky**（同一会话粘滞到同一代理）。
+- 与通用 Proxy Pools 独立，仅作用于该账户的 DeepSeek Web 请求。
+
+### 引擎与环境变量
+
+| 变量 | 说明 |
+|----------|------|
+| `DS2API_URL` | DS2API sidecar 的基础 URL |
+| `DS2API_VERSION` | 引擎版本（例如 `v4.6.2-rotation`） |
+| `DS2API_ADMIN_KEY` | sidecar 管理 API 的密钥 |
+| `DS2API_CONFIG_PATH` | sidecar 配置文件路径 |
 
 </details>
 
@@ -903,7 +1082,7 @@ Dashboard → CLI Tools →Claw → Select Model → Apply
   "agents": {
     "defaults": {
       "model": {
-        "primary": "9router/if/glm-4.7"
+        "primary": "9router/kr/claude-sonnet-4.5"
       }
     }
   },
@@ -915,8 +1094,8 @@ Dashboard → CLI Tools →Claw → Select Model → Apply
         "api": "openai-completions",
         "models": [
           {
-            "id": "if/glm-4.7",
-            "name": "glm-4.7"
+            "id": "kr/claude-sonnet-4.5",
+            "name": "claude-sonnet-4.5"
           }
         ]
       }
@@ -1031,6 +1210,10 @@ docker stop 9router && docker rm 9router
 | `AUTH_COOKIE_SECURE` | `false` | 强制 `Secure` 认证 cookie（在 HTTPS 反向代理后设置 `true`） |
 | `REQUIRE_API_KEY` | `false` | 在 `/v1/*` 路由上强制执行 Bearer API key推荐用于暴露在互联网的部署） |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY` | 空 | 上游提供商调用的可选出站代理 |
+| `DS2API_URL` | 空 | DS2API sidecar 的基础 URL（DeepSeek Web · fork） |
+| `DS2API_VERSION` | 空 | DS2API 引擎版本（例如 `v4.6.2-rotation`） |
+| `DS2API_ADMIN_KEY` | 空 | DS2API sidecar 管理 API 密钥 |
+| `HEADROOM_URL` | 空 | 外部 Headroom token 节省引擎的基础 URL（通过 `pip list` 自动检测） |
 
 注意：
 - 也支持小写代理变量：`http_proxy`, `https_proxy`, `all_proxy`, `no_proxy`。
@@ -1076,18 +1259,39 @@ docker stop 9router && docker rm 9router
 **MiniMax (`minimax/`)** - $0.2/1M:
 - `imax/MiniMax-M2.1`
 
-**iFlow (`if/`)** - 免费:
+**iFlow (`if/`)** - ⛔ 已停止（2026）:
 - `if/kimi-k2-thinking`
 - `if/qwen3-coder-plus`
 - `if/deepseek-r1`
 
-**Qwen (`qw/`)** - 免费:
+**Qwen (`qw/`)** - ⛔ 已停止（2026）:
 - `qw/qwen3-coder-plus`
 - `qw/qwen3-coder-flash`
 
 **Kiro (`kr/`)** - 免费:
 - `kr/claude-sonnet-4.5`
 - `kr/claude-haiku-4.5`
+
+**Grok CLI (`gcli/`)** · upstream v0.5.30 - OAuth device-code:
+- `gcli/grok-4.5`
+- `gcli/grok-4.5-high`
+- `gcli/grok-4.5-medium`
+- `gcli/grok-4.5-low`
+
+**Perplexity Agent (`perplexity-agent/`)** · upstream v0.5.30 - Agent API (Responses API, 跨厂商):
+- `perplexity-agent/<model>`
+
+**Featherless (`featherless/`)** · upstream v0.5.30 - API Key:
+- `featherless/<model>`
+
+**Gemini Web (`gemini-web/`，别名 `gweb`)** · fork - cookie 提供商:
+- `gemini-web/<model>`
+
+**Genspark Web (`genspark-web/`，别名 `gspark`)** · fork - cookie 提供商:
+- `genspark-web/<model>`（追加 `-search` 启用 web grounding）
+
+**DeepSeek Web (`ds2api/`)** · fork - DS2API sidecar:
+- `ds2api/<model>`
 
 </details>
 
@@ -1101,7 +1305,7 @@ docker stop 9router && docker rm 9router
 
 **速率限制**
 - 订阅配额用完 → 回退到 GLM/MiniMax
-- 添加组合：`cc/claude-opus-4-6 → glm/glm-4.7 → if/kimi-k2-thinking`
+- 添加组合：`cc/claude-opus-4-6 → glm/glm-4.7 → kr/claude-sonnet-4.5`
 
 **OAuth token 过期**
 - 由 9Router 自动刷新
@@ -1110,7 +1314,7 @@ docker stop 9router && docker rm 9router
 **高成本**
 - 在仪表板中检查使用统计
 - 将主要模型切换为 GLM/MiniMax
-- 对非关键任务使用免费层（Gemini CLI, iFlow）
+- 对非关键任务使用免费层（Kiro, OpenCode Free）
 
 **仪表板在错误的端口打开**
 - 设置 `PORT=20128` 和 `NEXT_PUBLIC_BASE_URL=http://localhost:20128`
@@ -1284,6 +1488,8 @@ OPENAI_API_KEY="your-cloud-key" bash tester/security/test-cloud-openai-compatibl
 ---
 
 ## 🔀 分支
+
+**[vibecoder11200/9router](https://github.com/vibecoder11200/9router)** — 功能增强 fork（基于 upstream `v0.5.30`），新增 **DeepSeek Web (DS2API) sidecar**、**轮换代理池**、**Genspark/Gemini web-cookie 提供商**、**外部隧道 URL** 等。通过 [GitHub Releases](https://github.com/vibecoder11200/9router/releases) 分发（不在 npm 上）。变更详情见 [`CHANGELOG.md`](../CHANGELOG.md)。
 
 **[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — 9Router 的全功能 TypeScript 分支。添加了 36+ 提供商、4 层自动回退、多模态 API（图像、嵌入、音频、TTS）、熔断器、语义缓存、LLM 评估和精美的仪表板。8+ 单元测试。通过 npm 和 Docker 可用。
 

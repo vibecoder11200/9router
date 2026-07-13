@@ -16,6 +16,10 @@
   [![License](https://img.shields.io/npm/l/9router.svg)](https://github.com/decolua/9router/blob/main/LICENSE)
   
   [🚀 Быстрый старт](#-quick-start) • [💡 Возможности](#-key-features) • [📖 Установка](#-setup-guide) • [🌐 Сайт](https://9router.com)
+
+  [🇻🇳 Tiếng Việt](./README.vi.md) • [🇨🇳 中文](./README.zh-CN.md) • [🇯🇵 日本語](./README.ja-JP.md) • [🇺🇸 English](../README.md)
+
+  > 🔀 **Это форк с расширенным функционалом** [decolua/9router](https://github.com/decolua/9router) (`v0.5.30`), добавляющий **сайдкар DeepSeek Web (DS2API)**, **ротацию пулов прокси**, **веб-cookie провайдеры Genspark/Gemini**, **внешний URL туннеля** и многое другое. Распространяется через [GitHub Releases](https://github.com/vibecoder11200/9router/releases) (не через npm). См. [⭐ Возможности форка](#-возможности-форка) ниже.
 </div>
 
 ---
@@ -58,10 +62,37 @@
        │   ↓ quota exhausted
        ├─→ [Tier 2: CHEAP] GLM ($0.6/1M), MiniMax ($0.2/1M)
        │   budget limit
-       └─→ [Tier 3: FREE] iFlow, Qwen, Kiro (unlimited)
+       └─→ [Tier 3: FREE] Kiro, OpenCode Free, Vertex (unlimited)
 
 Result: Never stop coding, minimal cost
 ```
+
+---
+
+## ⭐ Возможности форка
+
+> Дополнения в **этом форке** (`vibecoder11200/9router`) поверх upstream. Все опциональны и по умолчанию выключены.
+
+| Возможность | Что добавляет | Где включить |
+| --- | --- | --- |
+| 🐬 **DeepSeek Web (DS2API)** | Запускает локальный Go-сайдкар, превращающий вашу сессию DeepSeek Web в OpenAI-совместимый эндпоинт. Управляемый start/stop/install/**update**, прокси для каждого аккаунта + **ротация групп прокси** (round-robin/random/failover). Движок из [`vibecoder11200/ds2api`](https://github.com/vibecoder11200/ds2api) `v4.6.2-rotation`. | Панель управления → **DeepSeek Web** |
+| 🔀 **Пулы прокси и ротация групп** | Пулы из одного прокси **или** ротация групп (много прокси + опциональный слот «direct» с IP сервера). Ротация на каждый запрос: **on-error** (LRU) / **round-robin** / **random**. Все протоколы (http, https, socks5/5h/4/4a). Массовый импорт. `strictProxy` для жёсткого отказа. Авто-кулдаун (60s при rate-limit, 30s при 5xx). Привязка к любому подключению провайдера. | Панель управления → **Proxy Pools** |
+| 🌐 **Ротация для провайдеров без авторизации** | Бесплатные провайдеры без авторизации (OpenCode Free, mimo-free…) можно привязать к ротационной группе пула со страницы провайдера — задайте **Rotation Strategy** round-robin/random (нужно ≥2 активных пулов), чтобы распределить запросы по IP. | Страница провайдера → карточка **Proxy / Rotation** |
+| 🤖 **Genspark Web** | Cookie-бэкенд Genspark Copilot MOA. Чат + **генерация изображений** (`COPILOT_MOA_IMAGE`). Добавьте `-search` к любой модели для веб-поиска. Префикс `genspark-web/` (`gspark`). | Панель управления → Providers → **Genspark Web** |
+| ♊ **Gemini Web** | Cookie-доступ к `gemini.google.com` (внутренний `StreamGenerate` RPC). Пул cookie до 5, round-robin, проверки здоровья каждые 15 мин, автоотключение мёртвых cookie. LLM + изображения + видео + аудио. Префикс `gemini-web/` (`gweb`). | Панель управления → Providers → **Gemini Web** |
+| 🔗 **Внешний URL туннеля** | Регистрация туннеля, который приложение **не** контролирует (например, `cloudflared` через systemd или любой reverse proxy). В сочетании с *Allow dashboard access via tunnel* локальные действия (установка/start/stop DS2API, управление туннелем, Headroom, MITM) выполняются через этот туннель после входа. Настройка `externalTunnelUrl`. | Панель управления → Endpoint → **External tunnel URL** |
+
+> Плюс всё из **upstream v0.5.30**: PXPipe, Grok CLI, Perplexity Agent API, Featherless, Headroom extras — подробно в разделах ниже.
+
+<details>
+<summary><b>📖 Чем отличаются две системы прокси-групп</b></summary>
+
+В этом форке **две независимые** системы прокси-групп. Их легко перепутать:
+
+- **9Router Proxy Pools** (Панель управления → Proxy Pools) — собственная система 9Router. Режимы: `on-error` / `round-robin` / `random`. Применяется к **любому** подключению провайдера. Кулдаунит падающие записи и пробует другую запись **на том же аккаунте** перед резервированием на другой аккаунт. Код: `src/lib/network/proxyRotation.js`.
+- **DS2API proxy groups** (Панель управления → DeepSeek Web) — управляются **внутри Go-сайдкара DS2API** и выводятся через панель. Режимы: `round-robin` / `random` / `failover` (+ счётчик `sticky`). Применяется **только** к аккаунтам DeepSeek Web. Код: `temp/ds2api/internal/config`.
+
+</details>
 
 ---
 
@@ -86,7 +117,7 @@ npm install -g 9router
 Настройки Claude Code/Codex/Gemini CLI/OpenClaw/Cursor/Cline:
   Endpoint: http://localhost:20128/v1
   API Key: [скопируйте из панели управления]
-  Model: if/kimi-k2-thinking
+  Model: kr/claude-sonnet-4.5
 ```
 
 **Готово!** Начинайте кодить с БЕСПЛАТНЫМИ AI-моделями.
@@ -236,28 +267,37 @@ URL по умолчанию:
   <table>
     <tr>
       <td align="center" width="150">
-        <img src="../public/providers/iflow.png" width="70" alt="iFlow"/><br/>
-        <b>iFlow AI</b><br/>
-        <sub>8+ моделей • Без ограничений</sub>
-      </td>
-      <td align="center" width="150">
-        <img src="../public/providers/qwen.png" width="70" alt="Qwen"/><br/>
-        <b>Qwen Code</b><br/>
-        <sub>3+ моделей • Без ограничений</sub>
-      </td>
-      <td align="center" width="150">
-        <img src="../public/providers/gemini-cli.png" width="70" alt="Gemini CLI"/><br/>
-        <b>Gemini CLI</b><br/>
-        <sub>180K/мес БЕСПЛАТНО</sub>
-      </td>
-      <td align="center" width="150">
         <img src="../public/providers/kiro.png" width="70" alt="Kiro"/><br/>
         <b>Kiro AI</b><br/>
-        <sub>Claude • Без ограничений</sub>
+        <sub>Claude 4.5 + GLM-5 + MiniMax<br/>Без ограничений БЕСПЛАТНО</sub>
+      </td>
+      <td align="center" width="150">
+        <img src="../public/providers/opencode.png" width="70" alt="OpenCode Free"/><br/>
+        <b>OpenCode Free</b><br/>
+        <sub>Без авторизации • Автовыбор моделей<br/>Без ограничений БЕСПЛАТНО</sub>
+      </td>
+      <td align="center" width="150">
+        <img src="../public/providers/gemini.png" width="70" alt="Vertex AI"/><br/>
+        <b>Vertex AI</b><br/>
+        <sub>Gemini 3 Pro + GLM-5 + DeepSeek<br/>$300 кредитов БЕСПЛАТНО</sub>
       </td>
     </tr>
   </table>
 </div>
+
+> **Примечание:** Бесплатные уровни iFlow, Qwen и Gemini CLI были прекращены в 2026 году. Используйте Kiro / OpenCode Free / Vertex.
+
+### 🍪 Веб-Cookie провайдеры · *fork*
+
+> Аутентификация через **session cookie** браузера вместо API-ключа — превращает веб-only AI в OpenAI-совместимый эндпоинт. *Добавлено этим форком.*
+
+| Провайдер | Префикс | Что вы получаете |
+| --- | --- | --- |
+| **Gemini Web** | `gemini-web/` (`gweb`) | `gemini.google.com` через внутренний RPC. LLM + изображения + видео + аудио. Пул cookie (до 5, round-robin, проверки здоровья каждые 15 мин, автоотключение мёртвых cookie). |
+| **Genspark Web** | `genspark-web/` (`gspark`) | Genspark Copilot MOA чат + **генерация изображений** (`COPILOT_MOA_IMAGE`). Добавьте `-search` к любой модели для веб-поиска. |
+| **DeepSeek Web** | `ds2api/` | Ваша сессия DeepSeek Web через управляемый локальный сайдкар. См. [⭐ Возможности форка](#-возможности-форка). |
+
+**Настройка:** откройте провайдера в Панель управления → Providers, вставьте session cookie (JSON из cookie-редактора или просто значение `session_id`), и модели появятся автоматически.
 
 ### 🔑 Провайдеры с API Key (40+)
 
@@ -342,7 +382,7 @@ URL по умолчанию:
       </td>
     </tr>
   </table>
-  <p><i>...и более 20 других провайдеров, включая Nebius, Chutes, Hyperbolic и пользовательские OpenAI/Anthropic-совместимые эндпоинты</i></p>
+  <p><i>...и более 20 других провайдеров, включая Grok CLI (OAuth), Perplexity Agent API, Featherless, Cloudflare AI, Nebius, Chutes, Hyperbolic и пользовательские OpenAI/Anthropic-совместимые эндпоинты</i></p>
 </div>
 
 ---
@@ -351,6 +391,10 @@ URL по умолчанию:
 
 | Возможность | Что делает | Почему это важно |
 |---------|--------------|----------------|
+| 🖼️ **PXPipe** | Мультиmodal сжатие **в процессе** — перерисовывает Claude контекст как плотные изображения (Anthropic тарифицирует изображения по пикселям, а не по длине текста) | Экономит токены контекста на длинных Claude-запросах |
+| 🐬 **DeepSeek Web (DS2API)** · *fork* | Локальный Go-сайдкар превращает вашу сессию DeepSeek Web в OpenAI-эндпоинт | Используйте DeepSeek Web из любого CLI-инструмента |
+| 🔀 **Пулы прокси** · *fork* | Пулы из одного прокси **или** ротация групп (on-error/round-robin/random + слот direct) | Распределяет нагрузку, обходит IP rate-limits |
+| 🤖 **Веб-Cookie провайдеры** · *fork* | Genspark (MOA + изображения), Gemini Web (мультимодал, пул cookie) | Доступ к веб-only AI из любого CLI-инструмента |
 | 🎯 **Smart 3-Tier Fallback** | Авто-маршрутизация: Подписка → Дёшево → Бесплатно | Никогда не прекращайте кодить, нулевой простой |
 | 📊 **Отслеживание квоты в реальном времени** | Живой подсчёт токенов + обратный отсчёт до сброса | Максимум ценности из подписки |
 | 🔄 **Трансляция форматов** | OpenAI ↔ Claude ↔ Gemini бесшовно | Работает с любым CLI-инструментом |
@@ -365,6 +409,43 @@ URL по умолчанию:
 <details>
 <summary><b>📖 Подробности о возможностях</b></summary>
 
+### 🧠 Headroom Token Saver
+
+Headroom опционален и работает отдельно. 9Router вызывает локальный эндпоинт Headroom `/v1/compress`, а затем сохраняет обычную маршрутизацию, резервирование, аутентификацию и учёт использования:
+
+```
+Клиент → 9Router → Headroom /v1/compress → 9Router → провайдер
+```
+
+Локальная установка:
+
+```bash
+pip install "headroom-ai[proxy]"
+headroom proxy --port 8787
+```
+
+Включите в Панель управления → Endpoint → Token Saver → Headroom. URL по умолчанию: `http://localhost:8787` (переопределяется через `HEADROOM_URL`).
+
+**Опциональные extras** (устанавливаются из той же карточки Headroom в панели):
+
+- **`code`** — AST-сжатие кода на базе tree-sitter.
+- **`ml`** — сжатие моделью Kompress-v2 от HuggingFace.
+
+Панель автообнаружает установленные extras через `pip list` и предлагает установку/удаление в один клик с живым логом. Другие extras (image, voice, otel, …) не отслеживаются, так как не помогают сжатию токенов.
+
+Если Headroom недоступен или возвращает ошибку, 9Router не падает и отправляет исходный запрос.
+
+### 🖼️ PXPipe Token Saver
+
+PXPipe — **мультимодальный** компрессор: он перерисовывает плотный текстовый контекст в формате Claude в компактные изображения. Anthropic тарифицирует изображения по **пикселям** (pixels/750), а не по длине закодированного текста, поэтому длинный контекст может стоить меньше токенов как изображение, чем как текст.
+
+- **В процессе** — работает как библиотека внутри 9Router (отдельный демон/порт не нужен). npm-пакет устанавливается при первом включении.
+- **Только Claude** — трансформирует только запросы в формате Claude выше порога размера (`pxpipeMinChars`, по умолчанию 25000 символов).
+- **Fail-open** — любая ошибка/тайм-аут оставляет запрос нетронутым.
+- **По умолчанию выкл** — включите в Панель управления → **Token Saver** (переключатель `pxpipeEnabled`). Статистика и проверка здоровья — в Панель управления → **Pxpipe**.
+
+Стекуется с RTK (запускается первым и убирает агентный шум) и Headroom (внешнее сжатие текста).
+
 ### 🎯 Smart 3-Tier Fallback
 
 Создавайте комбо с автоматическим резервированием:
@@ -373,7 +454,7 @@ URL по умолчанию:
 Combo: "my-coding-stack"
   1. cc/claude-opus-4-6        (ваша подписка)
   2. glm/glm-4.7               (дешёвый бэкап, $0.6/1M)
-  3. if/kimi-k2-thinking       (бесплатное резервирование)
+  3. kr/claude-sonnet-4.5      (бесплатное резервирование)
 
 → Автопереключение при исчерпании квоты или ошибке
 ```
@@ -445,8 +526,8 @@ Combo: "my-coding-stack"
 > «Затраты», показанные в Аналитике использования, предназначены **только для отслеживания и сравнения**. 
 > Сам 9Router **никогда ничего не взимает** с вас. Вы платите напрямую провайдерам (если используете платные сервисы).
 > 
-> **Пример:** Если на панели показано «общие затраты $290» при использовании моделей iFlow, это представляет 
-> сумму, которую вы заплатили бы при прямом использовании платного API. Ваши фактические затраты = **$0** (iFlow бесплатен без ограничений).
+> **Пример:** Если на панели показано «общие затраты $290» при использовании моделей Kiro, это представляет
+> сумму, которую вы заплатили бы при прямом использовании платного API. Ваши фактические затраты = **$0** (Kiro бесплатен без ограничений).
 > 
 > Считайте это «трекером экономии», показывающим, сколько вы экономите, используя бесплатные модели или 
 > маршрутизацию через 9Router!
@@ -468,16 +549,17 @@ Combo: "my-coding-stack"
 |------|----------|------|-------------|----------|
 | **💳 ПОДПИСКА** | Claude Code (Pro) | $20/мес | 5ч + еженедельно | Уже подписаны |
 | | Codex (Plus/Pro) | $20-200/мес | 5ч + еженедельно | Пользователи OpenAI |
-| | Gemini CLI | **БЕСПЛАТНО** | 180K/мес + 1K/день | Для всех! |
 | | GitHub Copilot | $10-19/мес | Ежемесячно | Пользователи GitHub |
 | **💰 ДЁШЕВО** | GLM-4.7 | $0.6/1M | 10:00 ежедневно | Бюджетный бэкап |
 | | MiniMax M2.1 | $0.2/1M | Скользящие 5 часов | Самый дешёвый вариант |
 | | Kimi K2 | $9/мес фикс. | 10M токенов/мес | Предсказуемая стоимость |
-| **🆓 БЕСПЛАТНО** | iFlow | $0 | Без ограничений | 8 бесплатных моделей |
-| | Qwen | $0 | Без ограничений | 3 бесплатные модели |
-| | Kiro | $0 | Без ограничений | Claude бесплатно |
+| **🆓 БЕСПЛАТНО** | Kiro | $0 | Без ограничений | Claude 4.5 + GLM-5 + MiniMax |
+| | OpenCode Free | $0 | Без ограничений | Без авторизации, авто-выбор моделей |
+| | Vertex AI | $300 кредитов | 90 дней | Gemini 3 Pro + GLM-5 + DeepSeek |
 
-**💡 Профи-совет:** Начните с комбо Gemini CLI (180K бесплатно/мес) + iFlow (без ограничений бесплатно) = $0 затрат!
+> **Примечание:** Бесплатные уровни iFlow, Qwen и Gemini CLI были прекращены в 2026 году. Используйте Kiro / OpenCode Free / Vertex.
+
+**💡 Профи-совет:** Начните с комбо Kiro (Claude 4.5 без ограничений) + Vertex AI ($300 бесплатных кредитов) = $0 затрат!
 
 ---
 
@@ -488,7 +570,7 @@ Combo: "my-coding-stack"
 ✅ **Софт 9Router = БЕСПЛАТНО навсегда** (открытый код, никогда не взимает плату)  
 ✅ **«Затраты» на панели = Только для отображения/отслеживания** (не реальный счёт)  
 ✅ **Вы платите напрямую провайдерам** (подписка или плата за API)  
-✅ **БЕСПЛАТНЫЕ провайдеры остаются БЕСПЛАТНЫМИ** (iFlow, Kiro, Qwen = $0 без ограничений)  
+✅ **БЕСПЛАТНЫЕ провайдеры остаются БЕСПЛАТНЫМИ** (Kiro, OpenCode Free, Vertex = $0)
 ❌ **9Router никогда не выставляет счёт** и не списывает с вашей карты
 
 **Как работает отображение затрат:**
@@ -503,7 +585,7 @@ Combo: "my-coding-stack"
 • Отображаемые затраты: $290
 
 Реальная проверка:
-• Провайдер: iFlow (БЕСПЛАТНО без ограничений)
+• Провайдер: Kiro (БЕСПЛАТНО без ограничений)
 • Фактическая оплата: $0.00
 • Значение $290: Сумма, которую вы СЭКОНОМИЛИ, используя бесплатные модели!
 ```
@@ -511,7 +593,7 @@ Combo: "my-coding-stack"
 **Правила оплаты:**
 - **Провайдеры подписки** (Claude Code, Codex): Платите им напрямую через их сайт
 - **Дешёвые провайдеры** (GLM, MiniMax): Платите им напрямую, 9Router только маршрутизирует
-- **БЕСПЛАТНЫЕ провайдеры** (iFlow, Kiro, Qwen): Действительно бесплатны навсегда, без скрытых платежей
+- **БЕСПЛАТНЫЕ провайдеры** (Kiro, OpenCode Free, Vertex): Действительно бесплатны навсегда, без скрытых платежей
 - **9Router**: Никогда ничего не взимает, никогда
 
 ---
@@ -527,7 +609,7 @@ Combo: "my-coding-stack"
 Combo: "maximize-claude"
   1. cc/claude-opus-4-6        (полное использование подписки)
   2. glm/glm-4.7               (дешёвый бэкап при исчерпании квоты)
-  3. if/kimi-k2-thinking       (бесплатное аварийное резервирование)
+  3. kr/claude-sonnet-4.5      (бесплатное аварийное резервирование)
 
 Месячная стоимость: $20 (подписка) + ~$5 (бэкап) = $25 итого
 против $20 + упирание в лимит = разочарование
@@ -540,9 +622,9 @@ Combo: "maximize-claude"
 **Решение:**
 ```
 Combo: "free-forever"
-  1. gc/gemini-3-flash         (180K бесплатно/мес)
-  2. if/kimi-k2-thinking       (без ограничений бесплатно)
-  3. qw/qwen3-coder-plus       (без ограничений бесплатно)
+  1. kr/claude-sonnet-4.5      (бесплатный Claude 4.5 через Kiro)
+  2. oc/<auto>                 (OpenCode Free, без авторизации)
+  3. vertex/gemini-3.1-pro-preview ($300 бесплатных кредитов)
 
 Месячная стоимость: $0
 Качество: Production-ready модели
@@ -559,7 +641,7 @@ Combo: "always-on"
   2. cx/gpt-5.2-codex          (вторая подписка)
   3. glm/glm-4.7               (дёшево, ежедневный сброс)
   4. minimax/MiniMax-M2.1      (самый дешёвый, сброс 5ч)
-  5. if/kimi-k2-thinking       (бесплатно без ограничений)
+  5. kr/claude-sonnet-4.5      (бесплатно без ограничений)
 
 Результат: 5 слоёв резервирования = нулевой простой
 Месячная стоимость: $20-200 (подписки) + $10-20 (бэкап)
@@ -572,9 +654,9 @@ Combo: "always-on"
 **Решение:**
 ```
 Combo: "openclaw-free"
-  1. if/glm-4.7                (без ограничений бесплатно)
-  2. if/minimax-m2.1           (без ограничений бесплатно)
-  3. if/kimi-k2-thinking       (без ограничений бесплатно)
+  1. kr/glm-5                  (без ограничений бесплатно)
+  2. kr/MiniMax-M2.5           (без ограничений бесплатно)
+  3. kr/claude-sonnet-4.5      (без ограничений бесплатно)
 
 Месячная стоимость: $0
 Доступ через: WhatsApp, Telegram, Slack, Discord, iMessage, Signal...
@@ -591,7 +673,7 @@ Combo: "openclaw-free"
 
 **Пример:**
 - **Панель показывает:** «Общие затраты $290»
-- **Реальность:** Вы используете iFlow (БЕСПЛАТНО без ограничений)
+- **Реальность:** Вы используете Kiro (БЕСПЛАТНО без ограничений)
 - **Ваши фактические затраты:** **$0.00**
 - **Значение $290:** Сумма, которую вы **экономите**, используя бесплатные модели вместо платного API!
 
@@ -616,14 +698,16 @@ Combo: "openclaw-free"
 <details>
 <summary><b>🆓 Действительно ли БЕСПЛАТНЫЕ провайдеры безлимитны?</b></summary>
 
-**Да!** Провайдеры, отмеченные как БЕСПЛАТНЫЕ (iFlow, Kiro, Qwen), действительно безлимитны и **без скрытых платежей**. 
+**Да!** Провайдеры, отмеченные как БЕСПЛАТНЫЕ (Kiro, OpenCode Free, Vertex), действительно безлимитны/щедры и **без скрытых платежей**.
 
 Это бесплатные сервисы, предоставляемые соответствующими компаниями:
-- **iFlow**: Бесплатный безлимитный доступ к 8+ моделям через OAuth
-- **Kiro**: Бесплатные безлимитные модели Claude через AWS Builder ID  
-- **Qwen**: Бесплатный безлимитный доступ к моделям Qwen через аутентификацию устройства
+- **Kiro**: Бесплатные безлимитные модели Claude, GLM, MiniMax, Qwen, DeepSeek через AWS Builder ID
+- **OpenCode Free**: Бесплатный безлимитный доступ, авто-выбор моделей без авторизации
+- **Vertex AI**: $300 бесплатных кредитов на 90 дней от Google Cloud (Gemini 3 Pro, GLM-5, DeepSeek)
 
 9Router только маршрутизирует ваши запросы к ним — никаких «ловушек» или будущих платежей. Это действительно бесплатные сервисы, а 9Router облегчает их использование с поддержкой резервирования.
+
+> **Примечание:** Бесплатные уровни iFlow, Qwen и Gemini CLI были прекращены в 2026 году. Используйте Kiro / OpenCode Free / Vertex.
 
 **Примечание:** Некоторые провайдеры подписки (Antigravity, GitHub Copilot) могут иметь бесплатные пробные периоды, которые позже становятся платными, но об этом чётко уведомляют сами провайдеры, а не 9Router.
 
@@ -636,9 +720,9 @@ Combo: "openclaw-free"
 
 1. **Начните со 100% бесплатного комбо:**
    ```
-   1. gc/gemini-3-flash (180K/мес бесплатно от Google)
-   2. if/kimi-k2-thinking (без ограничений бесплатно от iFlow)
-   3. qw/qwen3-coder-plus (без ограничений бесплатно от Qwen)
+   1. kr/claude-sonnet-4.5 (безлимитный Claude 4.5 от Kiro)
+   2. oc/<auto> (без ограничений бесплатно от OpenCode Free)
+   3. vertex/gemini-3.1-pro-preview ($300 бесплатных кредитов от Vertex)
    ```
    **Стоимость: $0/мес**
 
@@ -712,6 +796,8 @@ Combo: "openclaw-free"
 
 ### Gemini CLI (БЕСПЛАТНО 180K/мес!)
 
+> ⛔ **ПРЕКРАЩЕНО (2026)** — бесплатный уровень Gemini CLI закрыт в 2026 году. Этот подраздел сохранён для справки. Используйте **Kiro**, **OpenCode Free** или **Vertex** вместо него.
+
 ```bash
 Панель управления → Providers → Подключить Gemini CLI
 → Google OAuth
@@ -781,6 +867,8 @@ Combo: "openclaw-free"
 
 ### iFlow (8 БЕСПЛАТНЫХ моделей)
 
+> ⛔ **ПРЕКРАЩЕНО (2026)** — бесплатный уровень iFlow закрыт в 2026 году. Этот подраздел сохранён для справки. Используйте **Kiro**, **OpenCode Free** или **Vertex** вместо него.
+
 ```bash
 Панель управления → Подключить iFlow
 → Вход через OAuth iFlow
@@ -795,6 +883,8 @@ Combo: "openclaw-free"
 ```
 
 ### Qwen (3 БЕСПЛАТНЫЕ модели)
+
+> ⛔ **ПРЕКРАЩЕНО (2026)** — бесплатный уровень Qwen закрыт в 2026 году. Этот подраздел сохранён для справки. Используйте **Kiro**, **OpenCode Free** или **Vertex** вместо него.
 
 ```bash
 Панель управления → Подключить Qwen
@@ -848,12 +938,96 @@ Combo: "openclaw-free"
 ```
 Имя: free-combo
 Модели:
-  1. gc/gemini-3-flash-preview (180K бесплатно/мес)
-  2. if/kimi-k2-thinking (без ограничений)
-  3. qw/qwen3-coder-plus (без ограничений)
+  1. kr/claude-sonnet-4.5 (Claude 4.5 бесплатно)
+  2. oc/<auto> (без ограничений)
+  3. vertex/gemini-3.1-pro-preview ($300 бесплатных кредитов)
 
 Стоимость: $0 навсегда!
 ```
+
+</details>
+
+<details>
+<summary><b>🔀 Пулы прокси и ротация групп</b> · <i>fork</i></summary>
+
+**Пул прокси** — это либо один прокси, либо **ротация группы** из множества прокси (плюс опциональный слот «direct» с IP сервера). Привяжите его к любому подключению провайдера, чтобы исходящий трафик этого подключения шёл через пул.
+
+### Создание пула
+
+```
+Панель управления → Proxy Pools → Create
+
+  Тип:
+    • Single proxy  → один proxyUrl (http/https/socks5/socks5h/socks4/socks4a)
+    • Rotating group → несколько записей + режим ротации
+
+  Опции rotating group:
+    Режим ротации:
+      • on-error  (по умолчанию) — least-recently-used, пропускает запись, которая только что упала
+      • round-robin — переход к следующей записи на каждый запрос
+      • random    — равновероятный выбор на каждый запрос
+    Записи:   +proxy  (вставьте URL прокси)
+              +direct (собственный IP сервера, без прокси)
+    strictProxy: ☐  жёсткий отказ при ошибке прокси (без отката на direct)
+```
+
+**Массовый импорт:** вставьте список прокси (`protocol://user:pass@host:port` или `host:port:user:pass`), чтобы добавить сразу много записей (дубликаты убираются автоматически).
+
+### Привязка к подключению
+
+Откройте подключение провайдера → **Proxy** → выберите пул. Бесплатные провайдеры без авторизации (OpenCode Free, mimo-free) вместо этого показывают карточку **Proxy / Rotation** на странице провайдера: задайте **Rotation Strategy** round-robin или random (нужно ≥2 активных пулов), чтобы распределить запросы по IP.
+
+### Как ротация ведёт себя во время выполнения
+
+- При **ротатируемой ошибке** (408/429/rate-limit/quota/capacity/overloaded/5xx) текущая запись уходит в кулдаун (**60s** при rate-limit, **30s** при 5xx) и следующая запись пробуется **на том же аккаунте**.
+- Только когда вся группа исчерпана, 9Router переходит к следующему аккаунту/уровню комбо.
+- `strictProxy = on` отключает этот плавный откат для пула — падающий прокси роняет запрос вместо утечки вашего реального IP.
+
+</details>
+
+<details>
+<summary><b>🐬 DeepSeek Web (DS2API)</b> · <i>fork</i></summary>
+
+9Router управляет **локальным Go-сайдкаром**, который превращает вашу сессию DeepSeek Web в OpenAI-совместимый эндпоинт, чтобы любой CLI-инструмент мог использовать DeepSeek Web.
+
+### Настройка
+
+```
+Панель управления → DeepSeek Web
+  → Install engine   (скачивает vibecoder11200/ds2api v4.6.2-rotation, разово)
+  → Add account      (вставьте учётные данные DeepSeek Web)
+  → Start engine
+  → Enable           (включает подключение провайдера ds2api + авто-алиасы моделей)
+```
+
+Модели получают авто-алиас с префиксом `ds2api/` при управляемом запуске (например, `ds2api/deepseek-chat`), поэтому OpenAI-клиенты работают и без префикса.
+
+### Прокси и ротация групп для каждого аккаунта
+
+У сайдкара DS2API **своя** система прокси-групп (отдельно от Proxy Pools 9Router):
+
+```
+Панель управления → DeepSeek Web → Proxy groups (rotating)
+  Strategy: round-robin | random | failover
+  Sticky:   N   (запросов до ротации — только round-robin, 1–1000)
+
+Каждая строка аккаунта → режим прокси: direct | fixed | group
+```
+
+- `round-robin` — продвижение каждые N запросов (sticky).
+- `random` — равновероятно на каждый запрос.
+- `failover` — повтор на следующем прокси при транспортной ошибке / 5xx / 408 / 429, с повтором тела запроса.
+
+### Движок / env
+
+Движок берётся из форка [`vibecoder11200/ds2api`](https://github.com/vibecoder11200/ds2api) (релиз `v4.6.2-rotation`), который добавляет поддержку HTTP/HTTPS-прокси поверх socks5-only сборки upstream. Переопределите через:
+
+| Env var | Назначение |
+| --- | --- |
+| `DS2API_VERSION` | Тег релиза движка (по умолчанию `v4.6.2-rotation`) |
+| `DS2API_URL` | Переопределить loopback URL сайдкара |
+| `DS2API_ADMIN_KEY` | Переопределить автогенерируемый admin-секрет |
+| `DS2API_CONFIG_PATH` | Расположение файла конфигурации сайдкара (по умолчанию `${DATA_DIR}/ds2api/config.json`) |
 
 </details>
 
@@ -906,7 +1080,7 @@ codex "ваш промпт"
   "agents": {
     "defaults": {
       "model": {
-        "primary": "9router/if/glm-4.7"
+        "primary": "9router/kr/glm-5"
       }
     }
   },
@@ -918,8 +1092,8 @@ codex "ваш промпт"
         "api": "openai-completions",
         "models": [
           {
-            "id": "if/glm-4.7",
-            "name": "glm-4.7"
+            "id": "kr/glm-5",
+            "name": "glm-5"
           }
         ]
       }
@@ -1035,6 +1209,10 @@ docker stop 9router && docker rm 9router
 | `AUTH_COOKIE_SECURE` | `false` | Принудительный `Secure` cookie аутентификации (задайте `true` за HTTPS reverse proxy) |
 | `REQUIRE_API_KEY` | `false` | Требовать Bearer API key на маршрутах `/v1/*` (рекомендуется для развёртываний с выходом в интернет) |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY` | empty | Опциональный исходящий прокси для вызовов к провайдерам |
+| `DS2API_URL` · *fork* | auto (loopback) | Переопределить URL сайдкара DeepSeek Web |
+| `DS2API_VERSION` · *fork* | `v4.6.2-rotation` | Тег релиза движка DS2API (берётся из `vibecoder11200/ds2api`) |
+| `DS2API_ADMIN_KEY` · *fork* | автогенерация | Переопределить admin-секрет сайдкара DS2API |
+| `HEADROOM_URL` | `http://localhost:8787` | Эндпоинт прокси-сжатия токенов Headroom |
 
 Примечания:
 - Прокси-переменные в нижнем регистре также поддерживаются: `http_proxy`, `https_proxy`, `all_proxy`, `no_proxy`.
@@ -1081,18 +1259,36 @@ docker stop 9router && docker rm 9router
 **MiniMax (`minimax/`)** - $0.2/1M:
 - `minimax/MiniMax-M2.1`
 
-**iFlow (`if/`)** - БЕСПЛАТНО:
+**iFlow (`if/`)** - ⛔ ПРЕКРАЩЕНО (2026):
 - `if/kimi-k2-thinking`
 - `if/qwen3-coder-plus`
 - `if/deepseek-r1`
 
-**Qwen (`qw/`)** - БЕСПЛАТНО:
+**Qwen (`qw/`)** - ⛔ ПРЕКРАЩЕНО (2026):
 - `qw/qwen3-coder-plus`
 - `qw/qwen3-coder-flash`
 
 **Kiro (`kr/`)** - БЕСПЛАТНО:
 - `kr/claude-sonnet-4.5`
 - `kr/claude-haiku-4.5`
+
+**Grok CLI (`gcli/`)** - OAuth (device-code):
+- `gcli/grok-4.5`, `gcli/grok-4.5-high`, `gcli/grok-4.5-medium`, `gcli/grok-4.5-low`
+
+**Perplexity Agent (`perplexity-agent/`)** - API key, Responses API:
+- Кросс-вендорная маршрутизация: `perplexity-agent/openai/gpt-5.5`, `perplexity-agent/anthropic/claude-sonnet-4-6`, `perplexity-agent/google/gemini-3.1-pro-preview`, `perplexity-agent/xai/grok-4.20-reasoning`, плюс Sonar. (Динамически — берётся из `/v1/models`.)
+
+**Featherless (`featherless/`)** - API key, OpenAI-совместимый:
+- `featherless/deepseek-v4-pro`, `featherless/glm-5.2`, `featherless/kimi-k2.7-code` и другие.
+
+**Gemini Web (`gemini-web/`)** · *fork* - cookie auth:
+- `gemini-web/gemini-3-pro`, `gemini-web/gemini-3-flash`, `gemini-web/gemini-3-flash-thinking`, `gemini-web/gemini-3-flash-image`, `gemini-web/gemini-3-veo-video`, `gemini-web/gemini-3-audio` (passthrough).
+
+**Genspark Web (`genspark-web/`)** · *fork* - cookie auth:
+- `genspark-web/gpt-5-pro`, `genspark-web/claude-sonnet-4-6`, `genspark-web/gemini-3-pro-preview`, `genspark-web/grok-4-0709` (добавьте `-search` для веб-поиска), плюс модели изображений `genspark-web/nano-banana-pro`, `genspark-web/fal-ai/flux-2` (passthrough).
+
+**DeepSeek Web (`ds2api/`)** · *fork* - управляемый сайдкар:
+- `ds2api/<deepseek-models>` — «голые» имена моделей DeepSeek получают авто-алиас при управляемом запуске.
 
 </details>
 
@@ -1106,7 +1302,7 @@ docker stop 9router && docker rm 9router
 
 **Ограничение скорости (Rate limiting)**
 - Исчерпана квота подписки → Резервирование на GLM/MiniMax
-- Добавьте комбо: `cc/claude-opus-4-6 → glm/glm-4.7 → if/kimi-k2-thinking`
+- Добавьте комбо: `cc/claude-opus-4-6 → glm/glm-4.7 → kr/claude-sonnet-4.5`
 
 **OAuth-токен истёк**
 - Автообновление 9Router
@@ -1115,7 +1311,7 @@ docker stop 9router && docker rm 9router
 **Высокие затраты**
 - Проверьте статистику использования в панели
 - Переключите основную модель на GLM/MiniMax
-- Используйте бесплатные уровни (Gemini CLI, iFlow) для некритичных задач
+- Используйте бесплатные уровни (Kiro, OpenCode Free, Vertex) для некритичных задач
 
 **Панель открывается на неверном порту**
 - Установите `PORT=20128` и `NEXT_PUBLIC_BASE_URL=http://localhost:20128`
@@ -1289,6 +1485,8 @@ OPENAI_API_KEY="your-cloud-key" bash tester/security/test-cloud-openai-compatibl
 ---
 
 ## 🔀 Форки
+
+**Этот репозиторий** — [`vibecoder11200/9router`](https://github.com/vibecoder11200/9router): форк с расширенным функционалом поверх upstream [decolua/9router](https://github.com/decolua/9router). Добавляет сайдкар DeepSeek Web (DS2API), ротацию пулов/групп прокси, веб-cookie провайдеры Genspark и Gemini, внешний URL туннеля, а также модель распространения через GitHub Releases. Отслеживайте изменения в [`CHANGELOG.md`](../CHANGELOG.md).
 
 **[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — Полнофункциональный TypeScript-форк 9Router. Добавляет 36+ провайдеров, авторезервирование на 4 уровнях, мультимодальный API (изображения, embedding, аудио, TTS), circuit breaker, семантическое кеширование, оценку LLM и доработанную панель. 368+ юнит-тестов. Доступен через npm.
 

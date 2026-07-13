@@ -14,6 +14,8 @@
   [🚀 クイックスタート](#-クイックスタート) • [💡 機能](#-主な機能) • [📖 セットアップ](#-セットアップガイド) • [🌐 ウェブサイト](https://9router.com)
 
   [🇻🇳 Tiếng Việt](./README.vi.md) • [🇨🇳 中文](./README.zh-CN.md) • [🇯🇵 日本語](./README.ja-JP.md)
+
+  > 🔀 **これは [decolua/9router](https://github.com/decolua/9router)（`v0.5.30`）の機能強化フォークです**。**DeepSeek Web (DS2API) サイドカー**、**ローテーションプロキシプール**、**Genspark/Gemini web-cookie プロバイダー**、**外部トンネル URL** などを追加。[GitHub Releases](https://github.com/vibecoder11200/9router/releases) で配布（npm なし）。詳しくは下記の [⭐ フォーク機能](#-フォーク機能) を参照。
 </div>
 
 ---
@@ -56,10 +58,37 @@
        │   ↓ クオータ消費済み
        ├─→ [Tier 2: 格安] GLM ($0.6/1M)、MiniMax ($0.2/1M)
        │   ↓ 予算上限
-       └─→ [Tier 3: 無料] iFlow、Qwen、Kiro（無制限）
+       └─→ [Tier 3: 無料] Kiro、OpenCode Free、Vertex（$0）
 
 結果: コーディングが止まらない、最小コスト
 ```
+
+---
+
+## ⭐ フォーク機能
+
+> **このフォーク**（`vibecoder11200/9router`）が upstream に追加する機能。すべてオプションで、デフォルトはオフです。
+
+| 機能 | 追加内容 | 有効化場所 |
+| --- | --- | --- |
+| 🐬 **DeepSeek Web (DS2API)** | DeepSeek Web のセッションを OpenAI 互換エンドポイントに変換するローカル Go サイドカーを実行。開始/停止/インストール/**更新**を管理、アカウントごとのプロキシ + **ローテーションプロキシグループ**（round-robin/random/failover）。エンジンは [`vibecoder11200/ds2api`](https://github.com/vibecoder11200/ds2api) `v4.6.2-rotation` から取得。 | Dashboard → **DeepSeek Web** |
+| 🔀 **プロキシプールとローテーショングループ** | 単一プロキシプール **または** ローテーショングループ（複数プロキシ + オプションの "direct" サーバー IP スロット）。リクエストごとのローテーション: **on-error**（LRU） / **round-robin** / **random**。全プロトコル対応（http、https、socks5/5h/4/4a）。一括インポート。`strictProxy` で hard fail。自動クールダウン（rate-limit は 60s、5xx は 30s）。任意のプロバイダー接続にバインド可能。 | Dashboard → **Proxy Pools** |
+| 🌐 **認証なしプロバイダーのローテーション** | 認証不要の無料プロバイダー（OpenCode Free、mimo-free…）をプロバイダーページからローテーショングループにバインド可能 — **Rotation Strategy** を round-robin/random に設定（アクティブなプールが ≥2 必要）して IP 間でリクエストを分散。 | Provider page → **Proxy / Rotation** カード |
+| 🤖 **Genspark Web** | Cookie ベースの Genspark Copilot MOA バックエンド。チャット + **画像生成**（`COPILOT_MOA_IMAGE`）。任意のモデルに `-search` を付けてウェブグラウンディング。プレフィックス `genspark-web/`（`gspark`）。 | Dashboard → Providers → **Genspark Web** |
+| ♊ **Gemini Web** | Cookie ベースの `gemini.google.com`（内部 `StreamGenerate` RPC）。Cookie プール最大 5、round-robin、15 分ヘルスチェック、死んだ Cookie の自動無効化。LLM + 画像 + 動画 + 音声。プレフィックス `gemini-web/`（`gweb`）。 | Dashboard → Providers → **Gemini Web** |
+| 🔗 **外部トンネル URL** | アプリが管理しないトンネル（例: `cloudflared` の systemd サービス、任意のリバースプロキシ）を登録。*Allow dashboard access via tunnel* と組み合わせることで、ログイン後にローカル専用アクション（DS2API のインストール/開始/停止、トンネル制御、Headroom、MITM）をそのトンネル経由で実行可能。設定 `externalTunnelUrl`。 | Dashboard → Endpoint → **External tunnel URL** |
+
+> さらに **upstream v0.5.30** のすべて：PXPipe、Grok CLI、Perplexity Agent API、Featherless、Headroom extras — 詳細は下記の各セクションを参照。
+
+<details>
+<summary><b>📖 2つのプロキシグループシステムの違い</b></summary>
+
+このフォークには **2つの独立した** プロキシグループシステムがあります。混同しやすいので注意:
+
+- **9Router Proxy Pools**（Dashboard → Proxy Pools）— 9Router 自身の機能。モード: `on-error` / `round-robin` / `random`。**任意の** プロバイダー接続に適用可能。失敗したエントリをクールダウンし、アカウントフォールバックの前に **同じアカウント上で** 別のエントリを試行。コード: `src/lib/network/proxyRotation.js`。
+- **DS2API proxy groups**（Dashboard → DeepSeek Web）— **DS2API Go サイドカー内部** で管理され、ダッシュボード経由で操作。モード: `round-robin` / `random` / `failover`（+ `sticky` カウント）。DeepSeek Web アカウント **のみ** に適用。コード: `temp/ds2api/internal/config`。
+
+</details>
 
 ---
 
@@ -84,7 +113,7 @@ npm install -g 9router
 Claude Code/Codex/Gemini CLI/OpenClaw/Cursor/Clineの設定:
   エンドポイント: http://localhost:20128/v1
   APIキー: [ダッシュボードからコピー]
-  モデル: if/kimi-k2-thinking
+  モデル: kr/claude-sonnet-4.5
 ```
 
 **これだけです！** 無料AIモデルでコーディングを始めましょう。
@@ -230,28 +259,25 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 
 ### 🆓 無料プロバイダー
 
+> **注意：** iFlow、Qwen、Gemini CLI の無料枠は 2026 年に終了しました。Kiro / OpenCode Free / Vertex を使用してください。
+
 <div align="center">
   <table>
     <tr>
       <td align="center" width="150">
-        <img src="../public/providers/iflow.png" width="70" alt="iFlow"/><br/>
-        <b>iFlow AI</b><br/>
-        <sub>8以上のモデル • 無制限</sub>
-      </td>
-      <td align="center" width="150">
-        <img src="../public/providers/qwen.png" width="70" alt="Qwen"/><br/>
-        <b>Qwen Code</b><br/>
-        <sub>3以上のモデル • 無制限</sub>
-      </td>
-      <td align="center" width="150">
-        <img src="../public/providers/gemini-cli.png" width="70" alt="Gemini CLI"/><br/>
-        <b>Gemini CLI</b><br/>
-        <sub>月18万回無料</sub>
-      </td>
-      <td align="center" width="150">
         <img src="../public/providers/kiro.png" width="70" alt="Kiro"/><br/>
         <b>Kiro AI</b><br/>
-        <sub>Claude • 無制限</sub>
+        <sub>Claude • 無料無制限</sub>
+      </td>
+      <td align="center" width="150">
+        <img src="../public/providers/opencode.png" width="70" alt="OpenCode Free"/><br/>
+        <b>OpenCode Free</b><br/>
+        <sub>認証不要 • 無料</sub>
+      </td>
+      <td align="center" width="150">
+        <img src="../public/providers/gemini.png" width="70" alt="Vertex"/><br/>
+        <b>Vertex AI</b><br/>
+        <sub>$300 無料クレジット</sub>
       </td>
     </tr>
   </table>
@@ -340,8 +366,20 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
       </td>
     </tr>
   </table>
-  <p><i>...その他Nebius、Chutes、Hyperbolic、カスタムOpenAI/Anthropic互換エンドポイントなど20以上のプロバイダー</i></p>
+  <p><i>...その他 Grok CLI (OAuth)、Perplexity Agent API、Featherless、Cloudflare AI、Nebius、Chutes、Hyperbolic、Venice AI、カスタムOpenAI/Anthropic互換エンドポイントなど 20 以上のプロバイダー</i></p>
 </div>
+
+### 🍪 Web-Cookie プロバイダー · *fork*
+
+> APIキーの代わりにブラウザの **セッションクッキー** で認証 — web 専用の AI を OpenAI 互換エンドポイントに変換します。*このフォークの追加機能。*
+
+| プロバイダー | プレフィックス | 利用できる機能 |
+| --- | --- | --- |
+| **Gemini Web** | `gemini-web/`（`gweb`） | 内部 RPC 経由の `gemini.google.com`。LLM + 画像 + 動画 + 音声。Cookie プール（最大 5、round-robin、15 分ヘルスチェック、死んだ Cookie を自動無効化）。 |
+| **Genspark Web** | `genspark-web/`（`gspark`） | Genspark Copilot MOA チャット + **画像生成**（`COPILOT_MOA_IMAGE`）。任意のモデルに `-search` を付けてウェブグラウンディング。 |
+| **DeepSeek Web** | `ds2api/` | 管理されたローカルサイドカー経由の DeepSeek Web セッション。詳しくは [⭐ フォーク機能](#-フォーク機能) を参照。 |
+
+**セットアップ:** Dashboard → Providers でプロバイダーを開き、セッションクッキー（cookie editor から取り出した JSON、または `session_id` の値そのまま）を貼り付けると、モデルが自動的に出現します。
 
 ---
 
@@ -349,6 +387,10 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 
 | 機能 | 概要 | メリット |
 |------|------|----------|
+| 🖼️ **PXPipe** | **プロセス内** マルチモーダル圧縮 — Claude フォーマットのコンテキストを高密度な画像として再レンダリング（Anthropic はテキスト長ではなくピクセル単位で画像を課金） | 長い Claude リクエストのコンテキストトークンを節約 |
+| 🐬 **DeepSeek Web (DS2API)** · *fork* | ローカル Go サイドカーが DeepSeek Web セッションを OpenAI エンドポイントに変換 | 任意の CLI ツールから DeepSeek Web を利用可能 |
+| 🔀 **プロキシプール** · *fork* | 単一プロキシプール **または** ローテーショングループ（on-error/round-robin/random + direct スロット） | 負荷分散、IP ベースのレート制限を回避 |
+| 🤖 **Web-Cookie プロバイダー** · *fork* | Genspark（MOA + 画像）、Gemini Web（マルチモーダル、Cookie プール） | web 専用 AI を任意の CLI ツールで利用可能 |
 | 🎯 **スマート3段階フォールバック** | 自動ルーティング: サブスクリプション → 格安 → 無料 | コーディングが止まらない、ダウンタイムゼロ |
 | 📊 **リアルタイムクオータ追跡** | ライブトークン数 + リセットカウントダウン | サブスクリプション価値の最大化 |
 | 🔄 **フォーマット変換** | OpenAI ↔ Claude ↔ Gemini シームレス対応 | あらゆるCLIツールで動作 |
@@ -371,7 +413,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 コンボ: "my-coding-stack"
   1. cc/claude-opus-4-6        (サブスクリプション)
   2. glm/glm-4.7               (格安バックアップ、$0.6/1M)
-  3. if/kimi-k2-thinking       (無料フォールバック)
+  3. kr/claude-sonnet-4.5      (無料フォールバック)
 
 → クオータ切れやエラー発生時に自動切り替え
 ```
@@ -389,6 +431,43 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 - **OpenAI** ↔ **Claude** ↔ **Gemini** ↔ **OpenAI Responses**
 - CLIツールがOpenAIフォーマットで送信 → 9Routerが変換 → プロバイダーがネイティブフォーマットで受信
 - カスタムOpenAIエンドポイントをサポートするすべてのツールで動作
+
+### 🖼️ PXPipe トークンセーバー
+
+PXPipe は **マルチモーダル** 圧縮機能です。Claude フォーマットの高密度なテキストコンテキストをコンパクトな画像として再レンダリングします。Anthropic はエンコードされたテキスト長ではなく **ピクセル**（pixels/750）単位で画像を課金するため、長いコンテキストはテキストよりも画像の方が少ないトークンで済む場合があります。
+
+- **プロセス内** — 9Router 内のライブラリとして動作（別デーモン/ポートなし）。npm パッケージは初回有効化時にインストールされます。
+- **Claude のみ** — サイズ閾値（`pxpipeMinChars`、デフォルト 25000 文字）を超える Claude フォーマットのリクエストのみ変換します。
+- **Fail-open** — エラーやタイムアウトが発生してもリクエストはそのまま送信されます。
+- **デフォルトオフ** — Dashboard → **Token Saver** の `pxpipeEnabled` トグルで有効化。統計とヘルスチェックは Dashboard → **Pxpipe** にあります。
+
+RTK（先に動作してエージェント性ノイズを除去）および Headroom（外部テキスト圧縮）と併用可能です。
+
+### 🧠 Headroom トークンセーバー
+
+Headroom はオプションで、別プロセスとして動作します。9Router は Headroom のローカル `/v1/compress` エンドポイントを呼び出した後、通常のルーティング、フォールバック、認証、使用量追跡を継続します:
+
+```
+Client → 9Router → Headroom /v1/compress → 9Router → provider
+```
+
+ローカルセットアップ:
+
+```bash
+pip install "headroom-ai[proxy]"
+headroom proxy --port 8787
+```
+
+Dashboard → Endpoint → Token Saver → Headroom で有効化。デフォルト URL: `http://localhost:8787`（`HEADROOM_URL` で上書き）。
+
+**オプション extras**（同じ Headroom カードからインストール）:
+
+- **`code`** — tree-sitter AST ベースのコード圧縮。
+- **`ml`** — Kompress-v2 HuggingFace モデルによる圧縮。
+
+ダッシュボードは `pip list` 経由でインストール済みの extras を自動検出し、ワンクリックでインストール/アンインストール（ライブログ付き）を提供します。トークン圧縮に寄与しない他の extras（image、voice、otel…）は追跡対象外です。
+
+Headroom がダウンしている、またはエラーを返す場合、9Router は fail-open で元のリクエストを送信します。
 
 ### 👥 マルチアカウント対応
 
@@ -443,8 +522,8 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 > 使用状況分析に表示される「コスト」は**追跡と比較目的のみ**です。
 > 9Router自体は**一切課金しません**。有料サービスを使用する場合のみ、プロバイダーに直接支払います。
 >
-> **例:** ダッシュボードにiFlowモデルの使用で「合計コスト$290」と表示されている場合、
-> これは有料APIを直接使用した場合に支払うであろう金額を表しています。実際のコスト = **$0**（iFlowは無料無制限）。
+> **例:** ダッシュボードにKiro モデルの使用で「合計コスト$290」と表示されている場合、
+> これは有料APIを直接使用した場合に支払うであろう金額を表しています。実際のコスト = **$0**（Kiro は無料無制限）。
 >
 > これは無料モデルや9Router経由のルーティングでどれだけ節約しているかを示す「節約トラッカー」と考えてください！
 
@@ -470,11 +549,13 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 | **💰 格安** | GLM-4.7 | $0.6/1M | 毎日午前10時 | 予算バックアップ |
 | | MiniMax M2.1 | $0.2/1M | 5時間ローリング | 最安オプション |
 | | Kimi K2 | $9/月固定 | 月1000万トークン | 予測可能なコスト |
-| **🆓 無料** | iFlow | $0 | 無制限 | 8モデル無料 |
-| | Qwen | $0 | 無制限 | 3モデル無料 |
-| | Kiro | $0 | 無制限 | Claude無料 |
+| **🆓 無料** | Kiro | $0 | 無制限 | Claude無料 |
+| | OpenCode Free | $0 | 無制限 | 認証不要 |
+| | Vertex AI | $0 | $300 無料クレジット | Gemini モデル |
 
-**💡 プロのヒント:** Gemini CLI（月18万回無料）+ iFlow（無制限無料）のコンボで $0 のコスト！
+> **注意：** iFlow、Qwen、Gemini CLI の無料枠は 2026 年に終了しました。Kiro / OpenCode Free / Vertex を使用してください。
+
+**💡 プロのヒント:** Kiro（無料無制限の Claude）+ Vertex（$300 無料クレジット）のコンボで $0 のコスト！
 
 ---
 
@@ -485,7 +566,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 ✅ **9Routerソフトウェア = 永久無料**（オープンソース、課金なし）
 ✅ **ダッシュボードの「コスト」= 表示/追跡のみ**（実際の請求ではない）
 ✅ **プロバイダーに直接支払い**（サブスクリプションまたはAPI料金）
-✅ **無料プロバイダーは無料のまま**（iFlow、Kiro、Qwen = $0 無制限）
+✅ **無料プロバイダーは無料のまま**（Kiro、OpenCode Free、Vertex = $0）
 ❌ **9Routerは請求書を送ったり**カードに課金したりしません
 
 **コスト表示の仕組み：**
@@ -500,7 +581,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 • 表示コスト: $290
 
 実際の確認:
-• プロバイダー: iFlow（無料無制限）
+• プロバイダー: Kiro（無料無制限）
 • 実際の支払い: $0.00
 • $290の意味: 無料モデルの使用で節約した金額！
 ```
@@ -508,7 +589,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 **支払いルール：**
 - **サブスクリプションプロバイダー**（Claude Code、Codex）：各ウェブサイトで直接支払い
 - **格安プロバイダー**（GLM、MiniMax）：直接支払い、9Routerはルーティングのみ
-- **無料プロバイダー**（iFlow、Kiro、Qwen）：本当に永久無料、隠れた料金なし
+- **無料プロバイダー**（Kiro、OpenCode Free、Vertex）：本当に無料、隠れた料金なし
 - **9Router**：一切課金しない
 
 ---
@@ -524,7 +605,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 コンボ: "maximize-claude"
   1. cc/claude-opus-4-6        (サブスクリプションを最大限活用)
   2. glm/glm-4.7               (クオータ切れ時の格安バックアップ)
-  3. if/kimi-k2-thinking       (無料の緊急フォールバック)
+  3. kr/claude-sonnet-4.5      (無料の緊急フォールバック)
 
 月額コスト: $20 (サブスクリプション) + ~$5 (バックアップ) = 合計$25
 vs. $20 + 制限に引っかかる = フラストレーション
@@ -537,9 +618,9 @@ vs. $20 + 制限に引っかかる = フラストレーション
 **解決策:**
 ```
 コンボ: "free-forever"
-  1. gc/gemini-3-flash         (月18万回無料)
-  2. if/kimi-k2-thinking       (無制限無料)
-  3. qw/qwen3-coder-plus       (無制限無料)
+  1. kr/claude-sonnet-4.5      (Kiro で無料の Claude 4.5)
+  2. oc/<auto>                 (OpenCode Free、認証なし)
+  3. vertex/gemini-3.1-pro-preview ($300 無料クレジット)
 
 月額コスト: $0
 品質: 本番対応モデル
@@ -556,7 +637,7 @@ vs. $20 + 制限に引っかかる = フラストレーション
   2. cx/gpt-5.2-codex          (セカンドサブスクリプション)
   3. glm/glm-4.7               (格安、毎日リセット)
   4. minimax/MiniMax-M2.1      (最安、5時間リセット)
-  5. if/kimi-k2-thinking       (無料無制限)
+  5. kr/claude-sonnet-4.5      (無料無制限)
 
 結果: 5層のフォールバック = ダウンタイムゼロ
 月額コスト: $20-200 (サブスクリプション) + $10-20 (バックアップ)
@@ -569,9 +650,9 @@ vs. $20 + 制限に引っかかる = フラストレーション
 **解決策:**
 ```
 コンボ: "openclaw-free"
-  1. if/glm-4.7                (無制限無料)
-  2. if/minimax-m2.1           (無制限無料)
-  3. if/kimi-k2-thinking       (無制限無料)
+  1. kr/glm-5                  (Kiro 経由で無料)
+  2. kr/MiniMax-M2.5           (Kiro 経由で無料)
+  3. kr/claude-sonnet-4.5      (無料無制限)
 
 月額コスト: $0
 アクセス方法: WhatsApp、Telegram、Slack、Discord、iMessage、Signal...
@@ -588,7 +669,7 @@ vs. $20 + 制限に引っかかる = フラストレーション
 
 **例：**
 - **ダッシュボード表示:** 「合計コスト$290」
-- **実際:** iFlow（無料無制限）を使用中
+- **実際:** Kiro（無料無制限）を使用中
 - **実際のコスト:** **$0.00**
 - **$290の意味:** 有料APIの代わりに無料モデルを使用して**節約した**金額！
 
@@ -613,14 +694,16 @@ vs. $20 + 制限に引っかかる = フラストレーション
 <details>
 <summary><b>🆓 無料プロバイダーは本当に無制限ですか？</b></summary>
 
-**はい！** 無料と表示されているプロバイダー（iFlow、Kiro、Qwen）は本当に無制限で**隠れた料金はありません**。
+**はい！** 無料と表示されているプロバイダー（Kiro、OpenCode Free、Vertex）は本当に無料で**隠れた料金はありません**。
 
 これらは各企業が提供する無料サービスです：
-- **iFlow**: OAuth経由で8以上のモデルに無料無制限アクセス
-- **Kiro**: AWS Builder ID経由で無料無制限Claudeモデル
-- **Qwen**: デバイス認証経由でQwenモデルに無料無制限アクセス
+- **Kiro**: AWS Builder ID 経由で無料無制限の Claude モデル
+- **OpenCode Free**: 認証不要で OpenCode モデルに無料アクセス
+- **Vertex**: Google Cloud の $300 無料クレジットで Gemini モデル
 
 9Routerはリクエストをルーティングするだけで、「罠」や将来の課金はありません。本当に無料のサービスであり、9Routerはフォールバックサポートでそれらを使いやすくしています。
+
+> **注意：** iFlow、Qwen、Gemini CLI の無料枠は 2026 年に終了しました。Kiro / OpenCode Free / Vertex を使用してください。
 
 **注意:** 一部のサブスクリプションプロバイダー（Antigravity、GitHub Copilot）には無料プレビュー期間があり、後に有料になる可能性がありますが、それは9Routerではなく各プロバイダーから明確に告知されます。
 
@@ -633,9 +716,9 @@ vs. $20 + 制限に引っかかる = フラストレーション
 
 1. **100%無料コンボから始める：**
    ```
-   1. gc/gemini-3-flash (Googleから月18万回無料)
-   2. if/kimi-k2-thinking (iFlowから無制限無料)
-   3. qw/qwen3-coder-plus (Qwenから無制限無料)
+   1. kr/claude-sonnet-4.5 (Kiro で無料無制限の Claude)
+   2. oc/<auto> (OpenCode Free、認証不要)
+   3. vertex/gemini-3.1-pro-preview (Google Cloud の $300 無料クレジット)
    ```
    **コスト: $0/月**
 
@@ -776,7 +859,11 @@ vs. $20 + 制限に引っかかる = フラストレーション
 <details>
 <summary><b>🆓 無料プロバイダー（緊急バックアップ）</b></summary>
 
+> **注意：** iFlow、Qwen、Gemini CLI の無料枠は 2026 年に終了しました。Kiro / OpenCode Free / Vertex を使用してください。
+
 ### iFlow（8つの無料モデル）
+
+> ⛔ **終了済み（2026）** — iFlow の無料枠は 2026 年に終了しました。代わりに Kiro を使用してください。
 
 ```bash
 ダッシュボード → iFlowを接続
@@ -792,6 +879,8 @@ vs. $20 + 制限に引っかかる = フラストレーション
 ```
 
 ### Qwen（3つの無料モデル）
+
+> ⛔ **終了済み（2026）** — Qwen の無料枠は 2026 年に終了しました。代わりに OpenCode Free を使用してください。
 
 ```bash
 ダッシュボード → Qwenを接続
@@ -813,6 +902,28 @@ vs. $20 + 制限に引っかかる = フラストレーション
 モデル:
   kr/claude-sonnet-4.5
   kr/claude-haiku-4.5
+```
+
+### OpenCode Free（認証不要）
+
+```bash
+ダッシュボード → OpenCode Freeを接続
+→ 認証不要（自動取得）
+
+モデル:
+  oc/<auto> (opencode.ai/zen/v1/models から自動取得)
+```
+
+### Vertex AI（$300 無料クレジット）
+
+```bash
+ダッシュボード → Vertexを接続
+→ Google Cloud サービスアカウントキーを追加
+→ $300 無料クレジット
+
+モデル:
+  vertex/gemini-3.1-pro-preview
+  vertex/gemini-3-flash-preview
 ```
 
 </details>
@@ -845,12 +956,96 @@ CLIでの使用: premium-coding
 ```
 名前: free-combo
 モデル:
-  1. gc/gemini-3-flash-preview (月18万回無料)
-  2. if/kimi-k2-thinking (無制限)
-  3. qw/qwen3-coder-plus (無制限)
+  1. kr/claude-sonnet-4.5 (Kiro で無料無制限の Claude 4.5)
+  2. oc/<auto> (OpenCode Free、認証なし)
+  3. vertex/gemini-3.1-pro-preview ($300 無料クレジット)
 
 コスト: 永久$0！
 ```
+
+</details>
+
+<details>
+<summary><b>🔀 プロキシプールとローテーショングループ</b> · <i>fork</i></summary>
+
+**プロキシプール**は単一プロキシ、または複数プロキシの **ローテーショングループ**（+ オプションの "direct" サーバー IP スロット）のいずれかです。任意のプロバイダー接続にバインドすることで、その接続のアウトバウンドトラフィックがプール経由になります。
+
+### プールの作成
+
+```
+Dashboard → Proxy Pools → Create
+
+  Type:
+    • Single proxy   → 1つの proxyUrl（http/https/socks5/socks5h/socks4/socks4a）
+    • Rotating group → 複数エントリ + ローテーションモード
+
+  Rotating group のオプション:
+    Rotation mode:
+      • on-error  (デフォルト) — 最も長く使われていないエントリを選択、直前に失敗したエントリをスキップ
+      • round-robin — リクエストごとに次のエントリへ進む
+      • random    — リクエストごとに一様ランダム
+    Entries:   +proxy  (プロキシ URL を貼り付け)
+               +direct (サーバー自身の IP、プロキシなし)
+    strictProxy: ☐  プロキシがエラーの時に hard fail（direct へフォールバックしない）
+```
+
+**一括インポート:** プロキシリスト（`protocol://user:pass@host:port` または `host:port:user:pass`）を貼り付けると、複数エントリを一度に追加できます（自動で重複排除）。
+
+### 接続へのバインド
+
+プロバイダー接続を開く → **Proxy** → プールを選択。認証不要の無料プロバイダー（OpenCode Free、mimo-free）の場合は、プロバイダーページに **Proxy / Rotation** カードが表示されます — **Rotation Strategy** を round-robin または random に設定（アクティブなプールが ≥2 必要）して IP 間でリクエストを分散します。
+
+### 実行時のローテーション挙動
+
+- **ローテーション可能なエラー**（408/429/rate-limit/quota/capacity/overloaded/5xx）が発生した場合、現在のエントリをクールダウン（rate-limit は **60s**、5xx は **30s**）して **同じアカウントで** 次のエントリを試行します。
+- グループ全体が枯渇した場合にのみ、9Router は次のアカウント/コンボティアへフォールバックします。
+- `strictProxy = on` はプールに対するその gracefully なフォールバックを無効化します — 失敗するプロキシはリクエストを失敗させ、実 IP の漏洩を防ぎます。
+
+</details>
+
+<details>
+<summary><b>🐬 DeepSeek Web (DS2API)</b> · <i>fork</i></summary>
+
+9Router は **ローカル Go サイドカー** を管理し、DeepSeek Web のセッションを OpenAI 互換エンドポイントに変換します。これにより任意の CLI ツールから DeepSeek Web を利用できます。
+
+### セットアップ
+
+```
+Dashboard → DeepSeek Web
+  → Install engine   (vibecoder11200/ds2api v4.6.2-rotation をダウンロード、初回のみ)
+  → Add account      (DeepSeek Web の認証情報を貼り付け)
+  → Start engine
+  → Enable           (ds2api プロバイダー接続を有効化 + モデルを自動エイリアス)
+```
+
+管理された開始時にモデルは `ds2api/` プレフィックスで自動エイリアスされます（例: `ds2api/deepseek-chat`）。そのため OpenAI クライアントはプレフィックスなしでも動作します。
+
+### アカウントごとのプロキシとローテーショングループ
+
+DS2API サイドカーは独自のプロキシグループシステム（9Router の Proxy Pools とは別）を持ちます:
+
+```
+Dashboard → DeepSeek Web → Proxy groups (rotating)
+  Strategy: round-robin | random | failover
+  Sticky:   N   (ローテーション前のリクエスト数 — round-robin のみ、1–1000)
+
+各アカウント行 → proxy mode: direct | fixed | group
+```
+
+- `round-robin` — N リクエストごとに進む（sticky）。
+- `random` — リクエストごとに一様ランダム。
+- `failover` — トランスポートエラー / 5xx / 408 / 429 発生時に次のプロキシでリトライ（リクエストボディを再送）。
+
+### エンジン / env
+
+エンジンは [`vibecoder11200/ds2api`](https://github.com/vibecoder11200/ds2api) フォーク（リリース `v4.6.2-rotation`）から取得します。upstream の socks5-only ビルドに HTTP/HTTPS プロキシ対応を追加した版です。以下で上書き可能:
+
+| Env var | 用途 |
+| --- | --- |
+| `DS2API_VERSION` | エンジンのリリースタグ（デフォルト `v4.6.2-rotation`） |
+| `DS2API_URL` | サイドカーのループバック URL を上書き |
+| `DS2API_ADMIN_KEY` | 自動生成される admin secret を上書き |
+| `DS2API_CONFIG_PATH` | サイドカー設定ファイルの場所（デフォルト `${DATA_DIR}/ds2api/config.json`） |
 
 </details>
 
@@ -903,7 +1098,7 @@ codex "your prompt"
   "agents": {
     "defaults": {
       "model": {
-        "primary": "9router/if/glm-4.7"
+        "primary": "9router/kr/glm-5"
       }
     }
   },
@@ -915,8 +1110,8 @@ codex "your prompt"
         "api": "openai-completions",
         "models": [
           {
-            "id": "if/glm-4.7",
-            "name": "glm-4.7"
+            "id": "kr/glm-5",
+            "name": "glm-5"
           }
         ]
       }
@@ -1032,6 +1227,10 @@ docker stop 9router && docker rm 9router
 | `AUTH_COOKIE_SECURE` | `false` | 認証クッキーに`Secure`を強制（HTTPSリバースプロキシの背後では`true`に設定） |
 | `REQUIRE_API_KEY` | `false` | `/v1/*` ルートでBearer APIキーを必須にする（インターネット公開デプロイで推奨） |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY` | 空 | アップストリームプロバイダー呼び出し用のオプショナルアウトバウンドプロキシ |
+| `DS2API_URL` · *fork* | auto (ループバック) | DeepSeek Web サイドカーの URL を上書き |
+| `DS2API_VERSION` · *fork* | `v4.6.2-rotation` | DS2API エンジンのリリースタグ（`vibecoder11200/ds2api` から取得） |
+| `DS2API_ADMIN_KEY` · *fork* | 自動生成 | DS2API サイドカーの admin secret を上書き |
+| `HEADROOM_URL` | `http://localhost:8787` | Headroom トークンセーバーのプロキシエンドポイント |
 
 注意事項：
 - 小文字のプロキシ変数もサポート: `http_proxy`, `https_proxy`, `all_proxy`, `no_proxy`
@@ -1078,18 +1277,43 @@ docker stop 9router && docker rm 9router
 **MiniMax (`minimax/`)** - $0.2/1M:
 - `minimax/MiniMax-M2.1`
 
-**iFlow (`if/`)** - 無料:
+**iFlow (`if/`)** - ⛔ 終了済み（2026）:
 - `if/kimi-k2-thinking`
 - `if/qwen3-coder-plus`
 - `if/deepseek-r1`
 
-**Qwen (`qw/`)** - 無料:
+**Qwen (`qw/`)** - ⛔ 終了済み（2026）:
 - `qw/qwen3-coder-plus`
 - `qw/qwen3-coder-flash`
 
 **Kiro (`kr/`)** - 無料:
 - `kr/claude-sonnet-4.5`
 - `kr/claude-haiku-4.5`
+
+**OpenCode Free (`oc/`)** - 認証不要:
+- `opencode.ai/zen/v1/models` から自動取得
+
+**Vertex AI (`vertex/`)** - $300 無料クレジット:
+- `vertex/gemini-3.1-pro-preview`
+- `vertex/gemini-3-flash-preview`
+
+**Grok CLI (`gcli/`)** - OAuth (device-code):
+- `gcli/grok-4.5`, `gcli/grok-4.5-high`, `gcli/grok-4.5-medium`, `gcli/grok-4.5-low`
+
+**Perplexity Agent (`perplexity-agent/`)** - APIキー, Responses API:
+- クロスベンダールーティング: `perplexity-agent/openai/gpt-5.5`, `perplexity-agent/anthropic/claude-sonnet-4-6`, `perplexity-agent/google/gemini-3.1-pro-preview`, `perplexity-agent/xai/grok-4.20-reasoning`、ほか Sonar。（動的 — `/v1/models` から取得。）
+
+**Featherless (`featherless/`)** - APIキー, OpenAI 互換:
+- `featherless/deepseek-v4-pro`, `featherless/glm-5.2`, `featherless/kimi-k2.7-code` など。
+
+**Gemini Web (`gemini-web/`)** · *fork* - cookie 認証:
+- `gemini-web/gemini-3-pro`, `gemini-web/gemini-3-flash`, `gemini-web/gemini-3-flash-thinking`, `gemini-web/gemini-3-flash-image`, `gemini-web/gemini-3-veo-video`, `gemini-web/gemini-3-audio`（passthrough）。
+
+**Genspark Web (`genspark-web/`)** · *fork* - cookie 認証:
+- `genspark-web/gpt-5-pro`, `genspark-web/claude-sonnet-4-6`, `genspark-web/gemini-3-pro-preview`, `genspark-web/grok-4-0709`（ウェブグラウンディングは `-search` を付ける）、ほか画像モデル `genspark-web/nano-banana-pro`, `genspark-web/fal-ai/flux-2`（passthrough）。
+
+**DeepSeek Web (`ds2api/`)** · *fork* - 管理サイドカー:
+- `ds2api/<deepseek-models>` — DeepSeek のモデル名は管理開始時に自動エイリアスされます。
 
 </details>
 
@@ -1103,7 +1327,7 @@ docker stop 9router && docker rm 9router
 
 **レート制限**
 - サブスクリプションクオータ切れ → GLM/MiniMaxにフォールバック
-- コンボを追加: `cc/claude-opus-4-6 → glm/glm-4.7 → if/kimi-k2-thinking`
+- コンボを追加: `cc/claude-opus-4-6 → glm/glm-4.7 → kr/claude-sonnet-4.5`
 
 **OAuthトークンの期限切れ**
 - 9Routerが自動リフレッシュ
@@ -1112,7 +1336,7 @@ docker stop 9router && docker rm 9router
 **高コスト**
 - ダッシュボードで使用状況を確認
 - プライマリモデルをGLM/MiniMaxに切り替え
-- 重要でないタスクには無料ティア（Gemini CLI、iFlow）を使用
+- 重要でないタスクには無料ティア（Kiro、OpenCode Free、Vertex）を使用
 
 **ダッシュボードが違うポートで開く**
 - `PORT=20128` と `NEXT_PUBLIC_BASE_URL=http://localhost:20128` を設定
@@ -1187,6 +1411,8 @@ Authorization: Bearer your-api-key
 
 
 ## 🔀 フォーク
+
+**このリポジトリ** — [`vibecoder11200/9router`](https://github.com/vibecoder11200/9router)：upstream [decolua/9router](https://github.com/decolua/9router) の機能強化フォーク。DeepSeek Web (DS2API) サイドカー、ローテーションプロキシプール/グループ、Genspark & Gemini の web-cookie プロバイダー、外部トンネル URL、GitHub Releases 配布モデルを追加。変更履歴は [`CHANGELOG.md`](../CHANGELOG.md) を参照。
 
 **[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — 9RouterのフルフィーチャーTypeScriptフォーク。36以上のプロバイダー、4段階自動フォールバック、マルチモーダルAPI（画像、埋め込み、音声、TTS）、サーキットブレーカー、セマンティックキャッシュ、LLM評価、洗練されたダッシュボードを追加。368以上のユニットテスト。npmとDockerで利用可能。
 

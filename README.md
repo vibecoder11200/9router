@@ -19,6 +19,8 @@
 
 [🇻🇳 Tiếng Việt](./i18n/README.vi.md) • [🇨🇳 中文](./i18n/README.zh-CN.md) • [🇯🇵 日本語](./i18n/README.ja-JP.md) • [🇷🇺 Русский](./i18n/README.ru.md)
 
+> 🔀 **This is a feature-enhanced fork** of [decolua/9router](https://github.com/decolua/9router) (`v0.5.30`), adding **DeepSeek Web (DS2API) sidecar**, **rotating proxy pools**, **Genspark/Gemini web-cookie providers**, **external tunnel URL**, and more. Distributed via [GitHub Releases](https://github.com/vibecoder11200/9router/releases) (not npm). See [⭐ Fork Features](#-fork-features) below.
+
 </div>
 
 ---
@@ -68,6 +70,33 @@
 
 Result: Never stop coding, minimal cost + 20-40% token savings via RTK
 ```
+
+---
+
+## ⭐ Fork Features
+
+> Additions in **this fork** (`vibecoder11200/9router`) on top of upstream. All are optional and ship disabled by default.
+
+| Feature | What it adds | Where to enable |
+| --- | --- | --- |
+| 🐬 **DeepSeek Web (DS2API)** | Runs a local Go sidecar that turns your DeepSeek Web session into an OpenAI-compatible endpoint. Managed start/stop/install/**update**, per-account proxies + **rotating proxy groups** (round-robin/random/failover). Engine pulled from [`vibecoder11200/ds2api`](https://github.com/vibecoder11200/ds2api) `v4.6.2-rotation`. | Dashboard → **DeepSeek Web** |
+| 🔀 **Proxy Pools & Rotating Groups** | Single-proxy pools **or** rotating groups (many proxies + optional "direct" server-IP slot). Per-request rotation: **on-error** (LRU) / **round-robin** / **random**. All protocols (http, https, socks5/5h/4/4a). Batch import. `strictProxy` fail-hard. Auto-cooldown (60s rate-limit, 30s 5xx). Bind to any provider connection. | Dashboard → **Proxy Pools** |
+| 🌐 **No-auth provider rotation** | Free no-auth providers (OpenCode Free, mimo-free…) can be bound to a rotating pool group from their provider page — set **Rotation Strategy** to round-robin/random (needs ≥2 active pools) to spread requests across IPs. | Provider page → **Proxy / Rotation** card |
+| 🤖 **Genspark Web** | Cookie-based Genspark Copilot MOA backend. Chat + **image generation** (`COPILOT_MOA_IMAGE`). Append `-search` to any model for web grounding. Prefix `genspark-web/` (`gspark`). | Dashboard → Providers → **Genspark Web** |
+| ♊ **Gemini Web** | Cookie-based `gemini.google.com` (internal `StreamGenerate` RPC). Cookie pool up to 5, round-robin, 15-min health checks, auto-disable dead cookies. LLM + image + video + audio. Prefix `gemini-web/` (`gweb`). | Dashboard → Providers → **Gemini Web** |
+| 🔗 **External Tunnel URL** | Register a tunnel the app does **not** manage (e.g. `cloudflared` via systemd, or any reverse proxy). Combined with *Allow dashboard access via tunnel*, local-only actions (DS2API install/start/stop, tunnel controls, Headroom, MITM) run over that tunnel after login. Setting `externalTunnelUrl`. | Dashboard → Endpoint → **External tunnel URL** |
+
+> Plus everything from **upstream v0.5.30**: PXPipe multimodal token saver, Grok CLI, Perplexity Agent API, Featherless, Headroom extras — all documented in their sections below.
+
+<details>
+<summary><b>📖 How the two proxy-group systems differ</b></summary>
+
+This fork has **two independent** proxy-group systems. They are easy to confuse:
+
+- **9Router Proxy Pools** (Dashboard → Proxy Pools) — 9Router's own. Modes: `on-error` / `round-robin` / `random`. Applies to **any** provider connection. Cools down failing entries and tries another entry on the **same account** before account fallback. Code: `src/lib/network/proxyRotation.js`.
+- **DS2API proxy groups** (Dashboard → DeepSeek Web) — managed **inside the DS2API Go sidecar** and surfaced through the dashboard. Modes: `round-robin` / `random` / `failover` (+ `sticky` count). Applies **only** to DeepSeek Web accounts. Code: `temp/ds2api/internal/config`.
+
+</details>
 
 ---
 
@@ -381,6 +410,18 @@ command when a newer release exists (run `9router` and watch the menu).
 
 > **Note:** iFlow, Qwen and Gemini CLI free tiers were discontinued in 2026. Use Kiro / OpenCode Free / Vertex instead.
 
+### 🍪 Web-Cookie Providers · *fork*
+
+> Authenticate with a browser **session cookie** instead of an API key — turns web-only AI into an OpenAI-compatible endpoint. *Added by this fork.*
+
+| Provider | Prefix | What you get |
+| --- | --- | --- |
+| **Gemini Web** | `gemini-web/` (`gweb`) | `gemini.google.com` via internal RPC. LLM + image + video + audio. Cookie pool (up to 5, round-robin, 15-min health checks, auto-disable dead cookies). |
+| **Genspark Web** | `genspark-web/` (`gspark`) | Genspark Copilot MOA chat + **image generation** (`COPILOT_MOA_IMAGE`). Append `-search` to any model for web grounding. |
+| **DeepSeek Web** | `ds2api/` | Your DeepSeek Web session, via a managed local sidecar. See [⭐ Fork Features](#-fork-features). |
+
+**Setup:** open the provider in Dashboard → Providers, paste the session cookie (JSON from a cookie editor, or the bare `session_id` value), and the models appear automatically.
+
 ### 🔑 API Key Providers (40+)
 
 <div align="center">
@@ -464,7 +505,7 @@ command when a newer release exists (run `9router` and watch the menu).
       </td>
     </tr>
   </table>
-  <p><i>...and 20+ more providers including Nebius, Chutes, Hyperbolic, and custom OpenAI/Anthropic compatible endpoints</i></p>
+  <p><i>...and 20+ more providers including Grok CLI (OAuth), Perplexity Agent API, Featherless, Cloudflare AI, Nebius, Chutes, Hyperbolic, Venice AI, and custom OpenAI/Anthropic compatible endpoints</i></p>
 </div>
 
 ---
@@ -475,8 +516,12 @@ command when a newer release exists (run `9router` and watch the menu).
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | 🚀 **RTK Token Saver** ([RTK](https://github.com/rtk-ai/rtk) ⭐40K)               | Compress tool outputs (`git diff`, `grep`, `ls`, `tree`...) before sending to LLM        | Save **20-40% input tokens** per request          |
 | 🧠 **Headroom Token Saver** ([Headroom](https://github.com/chopratejas/headroom)) | Optional external `/v1/compress` proxy before provider routing                           | Save more context tokens without changing clients |
+| 🖼️ **PXPipe Token Saver**                                                         | **In-process** multimodal compression — re-renders Claude-format context as dense images (Anthropic bills images by pixels, not text length) | Save context tokens on long Claude requests |
 | 🪨 **Caveman Mode** ([Caveman](https://github.com/JuliusBrussee/caveman) ⭐52K)   | Inject caveman-speak prompt → LLM replies terse, technical substance preserved           | Save **up to 65% output tokens**                  |
 | 🐴 **Ponytail** ([Ponytail](https://github.com/DietrichGebert/ponytail))          | Inject "lazy senior dev" prompt → LLM writes minimal, YAGNI-first code (Lite/Full/Ultra) | **Fewer output tokens, less refactoring**         |
+| 🐬 **DeepSeek Web (DS2API)** · *fork*                                             | Local Go sidecar turns your DeepSeek Web session into an OpenAI endpoint                 | Use DeepSeek Web from any CLI tool                |
+| 🔀 **Proxy Pools & Rotating Groups** · *fork*                                     | Single-proxy pools **or** rotating groups (on-error/round-robin/random + direct slot)    | Spread load, beat IP rate-limits                  |
+| 🤖 **Web-Cookie Providers** · *fork*                                              | Genspark (MOA + image), Gemini Web (multimodal, cookie pool)                             | Access web-only AI in any CLI tool                |
 | 🎯 **Smart 3-Tier Fallback**                                                      | Auto-route: Subscription → Cheap → Free                                                  | Never stop coding, zero downtime                  |
 | 📊 **Real-Time Quota Tracking**                                                   | Live token count + reset countdown                                                       | Maximize subscription value                       |
 | 🔄 **Format Translation**                                                         | OpenAI ↔ Claude ↔ Gemini ↔ Cursor ↔ Kiro ↔ Vertex                                        | Works with any CLI tool                           |
@@ -521,7 +566,14 @@ pip install "headroom-ai[proxy]"
 headroom proxy --port 8787
 ```
 
-Enable in Dashboard → Endpoint → Token Saver → Headroom. Default URL: `http://localhost:8787`.
+Enable in Dashboard → Endpoint → Token Saver → Headroom. Default URL: `http://localhost:8787` (override with `HEADROOM_URL`).
+
+**Optional extras** (install from the same Headroom card in the dashboard):
+
+- **`code`** — tree-sitter AST-based code compression.
+- **`ml`** — Kompress-v2 HuggingFace model compression.
+
+The dashboard auto-detects installed extras via `pip list`, and offers one-click install/uninstall with a live log. Other extras (image, voice, otel, …) aren't tracked since they don't help token compression.
 
 Docker examples:
 
@@ -534,6 +586,17 @@ http://host.docker.internal:8787
 ```
 
 If Headroom is down or returns an error, 9Router fails open and sends the original request.
+
+### 🖼️ PXPipe Token Saver
+
+PXPipe is a **multimodal** compressor: it re-renders dense Claude-format text context as compact images. Anthropic bills images by **pixels** (pixels/750) rather than encoded text length, so a long context can cost fewer tokens as an image than as text.
+
+- **In-process** — runs as a library inside 9Router (no separate daemon/port). The npm package is installed on first enable.
+- **Claude-only** — only transforms Claude-format requests above a size threshold (`pxpipeMinChars`, default 25000 chars).
+- **Fail-open** — any error/timeout leaves the request untouched.
+- **Default off** — enable in Dashboard → **Token Saver** (the `pxpipeEnabled` toggle). Stats and a health check live under Dashboard → **Pxpipe**.
+
+Stacks with RTK (which runs first and strips agentic noise) and Headroom (external text compression).
 
 ### 🐴 Ponytail (Lazy Senior Dev)
 
@@ -631,8 +694,8 @@ Seamless translation between formats:
 > The "cost" displayed in Usage Analytics is **for tracking and comparison purposes only**.
 > 9Router itself **never charges** you anything. You only pay providers directly (if using paid services).
 >
-> **Example:** If your dashboard shows "$290 total cost" while using iFlow models, this represents
-> what you would have paid using paid APIs directly. Your actual cost = **$0** (iFlow is free unlimited).
+> **Example:** If your dashboard shows "$290 total cost" while using Kiro models, this represents
+> what you would have paid using paid APIs directly. Your actual cost = **$0** (Kiro is free unlimited).
 >
 > Think of it as a "savings tracker" showing how much you're saving by using free models or
 > routing through 9Router!
@@ -675,7 +738,7 @@ Seamless translation between formats:
 ✅ **9Router software = FREE forever** (open source, never charges)  
 ✅ **Dashboard "costs" = Display/tracking only** (not actual bills)  
 ✅ **You pay providers directly** (subscriptions or API fees)  
-✅ **FREE providers stay FREE** (iFlow, Kiro, Qwen = $0 unlimited)  
+✅ **FREE providers stay FREE** (Kiro, OpenCode Free, Vertex = $0)  
 ❌ **9Router never sends invoices** or charges your card
 
 **How Cost Display Works:**
@@ -691,7 +754,7 @@ Dashboard Display:
 • Display Cost: $290
 
 Reality Check:
-• Provider: iFlow (FREE unlimited)
+• Provider: Kiro (FREE unlimited)
 • Actual Payment: $0.00
 • What $290 Means: Amount you SAVED by using free models!
 ```
@@ -700,7 +763,7 @@ Reality Check:
 
 - **Subscription providers** (Claude Code, Codex): Pay them directly via their websites
 - **Cheap providers** (GLM, MiniMax): Pay them directly, 9Router just routes
-- **FREE providers** (iFlow, Kiro, Qwen): Genuinely free forever, no hidden charges
+- **FREE providers** (Kiro, OpenCode Free, Vertex): Genuinely free, no hidden charges
 - **9Router**: Never charges anything, ever
 
 ---
@@ -785,7 +848,7 @@ The dashboard tracks your token usage and displays **estimated costs** as if you
 **Example:**
 
 - **Dashboard shows:** "$290 total cost"
-- **Reality:** You're using iFlow (FREE unlimited)
+- **Reality:** You're using Kiro (FREE unlimited)
 - **Your actual cost:** **$0.00**
 - **What $290 means:** Amount you **saved** by using free models instead of paid APIs!
 
@@ -834,12 +897,12 @@ These are free services offered by those respective companies:
 
 **Free-First Strategy:**
 
-1. **Start with 100% free combo:**
+1. **Start with a 100% free combo:**
 
    ```
-   1. gc/gemini-3-flash (180K/month free from Google)
-   2. if/kimi-k2-thinking (unlimited free from iFlow)
-   3. qw/qwen3-coder-plus (unlimited free from Qwen)
+   1. kr/claude-sonnet-4.5 (Claude 4.5 free unlimited via Kiro)
+   2. oc/<auto>            (OpenCode Free, no auth)
+   3. vertex/gemini-3.1-pro-preview ($300 free credits)
    ```
 
    **Cost: $0/month**
@@ -1077,6 +1140,90 @@ Cost: $0 forever (+ 20-40% token savings via RTK)!
 </details>
 
 <details>
+<summary><b>🔀 Proxy Pools & Rotating Groups</b> · <i>fork</i></summary>
+
+A **proxy pool** is either a single proxy or a **rotating group** of many proxies (plus an optional "direct" server-IP slot). Bind it to any provider connection so that connection's outbound traffic goes through the pool.
+
+### Create a pool
+
+```
+Dashboard → Proxy Pools → Create
+
+  Type:
+    • Single proxy  → one proxyUrl (http/https/socks5/socks5h/socks4/socks4a)
+    • Rotating group → multiple entries + rotation mode
+
+  Rotating group options:
+    Rotation mode:
+      • on-error  (default) — least-recently-used, skips the entry that just failed
+      • round-robin — advance to the next entry every request
+      • random    — uniform random per request
+    Entries:   +proxy  (paste a proxy URL)
+               +direct (server's own IP, no proxy)
+    strictProxy: ☐  fail hard if the proxy errors (don't fall back to direct)
+```
+
+**Batch import:** paste a proxy list (`protocol://user:pass@host:port` or `host:port:user:pass`) to add many entries at once (deduped automatically).
+
+### Bind to a connection
+
+Open a provider connection → **Proxy** → select the pool. Free no-auth providers (OpenCode Free, mimo-free) instead show a **Proxy / Rotation** card on the provider page: set **Rotation Strategy** to round-robin or random (needs ≥2 active pools) to spread requests across IPs.
+
+### How rotation behaves at runtime
+
+- On a **rotatable error** (408/429/rate-limit/quota/capacity/overloaded/5xx), the current entry is cooled down (**60s** for rate-limits, **30s** for 5xx) and the next entry is tried **on the same account**.
+- Only when the whole group is exhausted does 9Router fall back to the next account/combo tier.
+- `strictProxy = on` disables that graceful fallback for the pool — a failing proxy fails the request instead of leaking your real IP.
+
+</details>
+
+<details>
+<summary><b>🐬 DeepSeek Web (DS2API)</b> · <i>fork</i></summary>
+
+9Router manages a **local Go sidecar** that turns your DeepSeek Web session into an OpenAI-compatible endpoint, so any CLI tool can use DeepSeek Web.
+
+### Setup
+
+```
+Dashboard → DeepSeek Web
+  → Install engine   (downloads vibecoder11200/ds2api v4.6.2-rotation, ~one-time)
+  → Add account      (paste your DeepSeek Web credentials)
+  → Start engine
+  → Enable           (toggles the ds2api provider connection + auto-aliases models)
+```
+
+Models are auto-aliased with the `ds2api/` prefix on managed start (e.g. `ds2api/deepseek-chat`), so OpenAI clients work without the prefix too.
+
+### Per-account proxies & rotating groups
+
+The DS2API sidecar has its **own** proxy-group system (separate from 9Router's Proxy Pools):
+
+```
+Dashboard → DeepSeek Web → Proxy groups (rotating)
+  Strategy: round-robin | random | failover
+  Sticky:   N   (requests before rotating — round-robin only, 1–1000)
+
+Each account row → proxy mode: direct | fixed | group
+```
+
+- `round-robin` — advance every N requests (sticky).
+- `random` — uniform per request.
+- `failover` — retry on the next proxy on transport error / 5xx / 408 / 429, replaying the request body.
+
+### Engine / env
+
+The engine is pulled from the [`vibecoder11200/ds2api`](https://github.com/vibecoder11200/ds2api) fork (release `v4.6.2-rotation`) which adds HTTP/HTTPS proxy support on top of upstream's socks5-only build. Override with:
+
+| Env var | Purpose |
+| --- | --- |
+| `DS2API_VERSION` | Engine release tag (default `v4.6.2-rotation`) |
+| `DS2API_URL` | Override the sidecar loopback URL |
+| `DS2API_ADMIN_KEY` | Override the auto-generated admin secret |
+| `DS2API_CONFIG_PATH` | Sidecar config file location (default `${DATA_DIR}/ds2api/config.json`) |
+
+</details>
+
+<details>
 <summary><b>🔧 CLI Integration</b></summary>
 
 ### Cursor IDE
@@ -1261,6 +1408,10 @@ docker pull vibecoder11200/9router:latest   # update to latest
 | `REQUIRE_API_KEY`                                    | `false`                                  | Enforce Bearer API key on `/v1/*` routes (recommended for internet-exposed deploys) |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY` | empty                                    | Optional outbound proxy for upstream provider calls                                 |
 | `SEARXNG_URL`                                        | `http://localhost:8888/search`           | Endpoint for the built-in unauthenticated SearXNG web-search provider               |
+| `DS2API_URL` · *fork*                                | auto (loopback)                          | Override the DeepSeek Web sidecar URL                                                |
+| `DS2API_VERSION` · *fork*                             | `v4.6.2-rotation`                        | DS2API engine release tag (pulled from `vibecoder11200/ds2api`)                     |
+| `DS2API_ADMIN_KEY` · *fork*                           | auto-generated                           | Override the DS2API sidecar admin secret                                              |
+| `HEADROOM_URL`                                       | `http://localhost:8787`                  | Headroom token-saver proxy endpoint                                                   |
 
 Notes:
 
@@ -1352,6 +1503,30 @@ Notes:
 - `vertex/gemini-2.5-flash`
 - `vertex-partner/glm-5-maas`
 - `vertex-partner/deepseek-v3.2-maas`
+
+**Grok CLI (`gcli/`)** - OAuth (device-code):
+
+- `gcli/grok-4.5`, `gcli/grok-4.5-high`, `gcli/grok-4.5-medium`, `gcli/grok-4.5-low`
+
+**Perplexity Agent (`perplexity-agent/`)** - API key, Responses API:
+
+- Cross-vendor routing: `perplexity-agent/openai/gpt-5.5`, `perplexity-agent/anthropic/claude-sonnet-4-6`, `perplexity-agent/google/gemini-3.1-pro-preview`, `perplexity-agent/xai/grok-4.20-reasoning`, plus Sonar. (Dynamic — fetched from `/v1/models`.)
+
+**Featherless (`featherless/`)** - API key, OpenAI-compatible:
+
+- `featherless/deepseek-v4-pro`, `featherless/glm-5.2`, `featherless/kimi-k2.7-code`, and more.
+
+**Gemini Web (`gemini-web/`)** · *fork* - cookie auth:
+
+- `gemini-web/gemini-3-pro`, `gemini-web/gemini-3-flash`, `gemini-web/gemini-3-flash-thinking`, `gemini-web/gemini-3-flash-image`, `gemini-web/gemini-3-veo-video`, `gemini-web/gemini-3-audio` (passthrough).
+
+**Genspark Web (`genspark-web/`)** · *fork* - cookie auth:
+
+- `genspark-web/gpt-5-pro`, `genspark-web/claude-sonnet-4-6`, `genspark-web/gemini-3-pro-preview`, `genspark-web/grok-4-0709` (append `-search` for web grounding), plus image models `genspark-web/nano-banana-pro`, `genspark-web/fal-ai/flux-2` (passthrough).
+
+**DeepSeek Web (`ds2api/`)** · *fork* - managed sidecar:
+
+- `ds2api/<deepseek-models>` — bare DeepSeek model names are auto-aliased on managed start.
 
 </details>
 
@@ -1455,6 +1630,8 @@ Thanks to all contributors who helped make 9Router better!
 [![Star Chart](https://starchart.cc/vibecoder11200/9router.svg?variant=adaptive)](https://starchart.cc/vibecoder11200/9router)
 
 ## 🔀 Forks
+
+**This repository** — [`vibecoder11200/9router`](https://github.com/vibecoder11200/9router): a feature-enhanced fork of upstream [decolua/9router](https://github.com/decolua/9router). Adds the DeepSeek Web (DS2API) sidecar, rotating proxy pools/groups, Genspark & Gemini web-cookie providers, external tunnel URL, and a GitHub Releases distribution model. Track changes in [`CHANGELOG.md`](./CHANGELOG.md).
 
 **[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — A full-featured TypeScript fork of 9Router. Adds 36+ providers, 4-tier auto-fallback, multi-modal APIs (images, embeddings, audio, TTS), circuit breaker, semantic cache, LLM evaluations, and a polished dashboard. 368+ unit tests. Available via npm and Docker.
 
