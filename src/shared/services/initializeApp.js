@@ -14,7 +14,6 @@ import {
   WATCHDOG_INTERVAL_MS, NETWORK_CHECK_INTERVAL_MS, VIRTUAL_IFACE_REGEX,
 } from "@/lib/tunnel";
 import { getMitmStatus, startMitm, loadEncryptedPassword, initDbHooks, restoreToolDNS, removeAllDNSEntriesSync } from "@/mitm/manager";
-import { startQuotaAutoPing } from "@/shared/services/quotaAutoPing";
 import { syncToJson as syncMitmAliasCache } from "@/lib/mitmAliasCache";
 import { getInstallStatus } from "@/lib/ds2api/install";
 import { startManagedDS2API } from "@/lib/ds2api/lifecycle";
@@ -101,23 +100,39 @@ async function runHeavyStartup() {
     safeRestartTailscale("startup").catch((e) => console.log("[InitApp] Tailscale resume failed:", e.message));
   }
 
-  ensureCloudflared().catch(() => {});
+  if (settings.tunnelEnabled) ensureCloudflared().catch(() => {});
 
-  // Sync mitmAlias DB → JSON cache so standalone MITM server can read it
-  syncMitmAliasCache().catch(() => {});
+  if (settings.mitmEnabled) {
+    // Sync mitmAlias DB → JSON cache so standalone MITM server can read it.
+    syncMitmAliasCache().catch(() => {});
+    autoStartMitm(settings);
+  }
 
-  startWatchdog();
-  startNetworkMonitor();
-  autoStartMitm();
+  // perf(startup): only run tunnel watchdog/network monitor when a tunnel is on,
+  // and only run quota auto-ping when a connection actually enables it.
+  configureTunnelMonitoring(settings);
+
+  // Fork: auto-start the managed DS2API sidecar (preserved from fork v0.5.32).
+  // Unconditional like the original — DS2API is opt-in via its own install/start
+  // state, not via a global settings flag.
   autoStartDs2api();
-  startQuotaAutoPing();
+
+  if (hasQuotaAutoPingEnabled(settings)) {
+    import("@/shared/services/quotaAutoPing")
+      .then(({ startQuotaAutoPing }) => startQuotaAutoPing())
+      .catch((e) => console.log("[AutoPing] scheduler start failed:", e.message));
+  }
 }
 
-async function autoStartMitm() {
+function hasQuotaAutoPingEnabled(settings) {
+  return [settings?.claudeAutoPing, settings?.codexAutoPing]
+    .some((config) => Object.values(config?.connections || {}).some(Boolean));
+}
+
+async function autoStartMitm(settings) {
   if (g.mitmStartInProgress) return;
   g.mitmStartInProgress = true;
   try {
-    const settings = await getSettings();
     if (!settings.mitmEnabled) return;
     const mitmStatus = await getMitmStatus();
     if (mitmStatus.running) return;
@@ -259,6 +274,12 @@ function startWatchdog() {
   if (g.watchdogInterval.unref) g.watchdogInterval.unref();
 }
 
+function stopWatchdog() {
+  if (!g.watchdogInterval) return;
+  clearInterval(g.watchdogInterval);
+  g.watchdogInterval = null;
+}
+
 // ─── Network monitor: detect IPv4 fingerprint change + sleep/wake ────────────
 
 function getNetworkFingerprint() {
@@ -318,6 +339,25 @@ function startNetworkMonitor() {
   }, NETWORK_CHECK_INTERVAL_MS);
 
   if (g.networkMonitorInterval.unref) g.networkMonitorInterval.unref();
+}
+
+
+function stopNetworkMonitor() {
+  if (!g.networkMonitorInterval) return;
+  clearInterval(g.networkMonitorInterval);
+  g.networkMonitorInterval = null;
+  g.lastNetworkFingerprint = null;
+  g.lastOnline = null;
+}
+
+export function configureTunnelMonitoring(settings) {
+  if (settings?.tunnelEnabled || settings?.tailscaleEnabled) {
+    startWatchdog();
+    startNetworkMonitor();
+    return;
+  }
+  stopWatchdog();
+  stopNetworkMonitor();
 }
 
 export default initializeApp;
