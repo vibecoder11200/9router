@@ -1,4 +1,32 @@
-# Unreleased
+# v0.5.36 (2026-07-17)
+
+## Features (inherited from upstream v0.5.33–v0.5.35)
+- **xAI**: Grok Imagine video generation (`/v1/videos`) + CLI (`9router xai video …`)
+- **CLI tools**: Grok Build setup — writes `[model.9router]` to `~/.grok/config.toml`
+- **GitHub Copilot**: route Claude models through Copilot's native `/v1/messages`
+- **Kiro**: add GPT-5.6 model family (#2596)
+- **RTK**: `X-9Router-Token-Saver` header to bypass token savers per request
+- **Providers**: quota visibility settings
+- **Translator**: drop temperature for all Claude models
+- **i18n**: Thai (th) + Persian (fa) translations / README
+
+## Fixes (inherited from upstream)
+- **Providers**: bulk-add API keys no longer overwrite existing keys (gap-fill `Key N`)
+- **Anthropic**: lowercase `anthropic-version` header to prevent duplication on `/v1/messages`
+- **Alicode-intl**: use DashScope compatible-mode endpoint so standard keys work
+- **Grok CLI**: align Grok Build with current subscription protocol (#2590)
+- **Grok CLI**: surface `expiresAt` so proactive token refresh fires (#2546)
+- **Kiro**: improve direct session cache reuse
+- **Models**: populate capabilities for live-catalog LLM models
+- **Models**: list compatible provider models in `/v1/models`
+- **Thinking**: send explicit `thinking:{type:adaptive}` alongside `output_config.effort`
+- **Translator**: strip `client_metadata` when converting openai-responses → openai
+
+## Improvements (inherited)
+- **Perf**: skip inactive background services on startup
+
+## Fork
+- **Migrate upstream v0.5.35** — merges decolua/9router upstream v0.5.32→v0.5.35 (27 commits) into the fork while preserving all custom features (DeepSeek Web/ds2api, gemini-web, genspark-web, proxy-group rotation, GitHub Releases update mechanism, DS2API autostart). Upstream's `runHeavyStartup()` perf refactor (gated cloudflared/mitm/quota-auto-ping) is adopted; the fork's `autoStartDs2api()` is preserved as an unconditional step. Both `package.json` and `cli/package.json` bumped to `0.5.36` in lockstep per the release SOP.
 
 # v0.5.32 (2026-07-13)
 

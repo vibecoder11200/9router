@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
   externalTunnelUrl: "",
   stickyRoundRobinLimit: 3,
   providerStrategies: {},
+  quotaVisibility: {},
   comboStrategy: "fallback",
   comboStickyRoundRobinLimit: 1,
   comboStrategies: {},
