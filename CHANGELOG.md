@@ -1,3 +1,9 @@
+# v0.5.37 (2026-07-18)
+
+## Fixes (test-only — no runtime change)
+- **Tests**: `force-stream-config.test.js` mock of `open-sse/rtk/headroom.js` was missing the `formatHeadroomSizeLog` and `isHeadroomPhantomSavings` exports that `chatCore.js` imports (added in upstream v0.5.35's RTK token-saver commit). The mock now exposes the full export surface, so the 2 previously-skipped force-stream tests pass instead of failing with "No 'formatHeadroomSizeLog' export is defined". This was a pre-existing bug in upstream v0.5.35 itself (verified by running on a clean upstream checkout).
+- **Tests**: `golden-request.test.js`'s `clean()` helper (which strips dynamic fields before snapshot comparison) now also masks `agentContinuationId` — a per-session `crypto.randomUUID()` added to the OpenAI→Kiro translator by upstream's "Kiro direct session cache reuse" commit. Without this mask the snapshot comparison was flaky (failed on every run with a different UUID). Now deterministic.
+
 # v0.5.36 (2026-07-17)
 
 ## Features (inherited from upstream v0.5.33–v0.5.35)

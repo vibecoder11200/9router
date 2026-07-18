@@ -71,6 +71,11 @@ vi.mock("../../open-sse/rtk/index.js", () => ({
 vi.mock("../../open-sse/rtk/headroom.js", () => ({
   compressWithHeadroom: vi.fn(async () => null),
   formatHeadroomLog: vi.fn(() => ""),
+  // chatCore.js also imports these two (used for diagnostics/phantom-savings
+  // logging at chatCore.js:205,209). Mock them so the import doesn't blow up
+  // when headroom is disabled — matches the actual headroom.js export surface.
+  formatHeadroomSizeLog: vi.fn(() => ""),
+  isHeadroomPhantomSavings: vi.fn(() => false),
 }));
 
 vi.mock("../../open-sse/providers/capabilities.js", () => ({
