@@ -38,6 +38,25 @@ exports[`GOLDEN buildHeaders (default executor providers) > alicode-intl → hea
 }
 `;
 
+exports[`GOLDEN buildHeaders (default executor providers) > alims-intl → headers (apiKey / oauth) 1`] = `
+{
+  "apiKey": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "nonStream": {
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+  "oauth": {
+    "Accept": "text/event-stream",
+    "Authorization": "Bearer <TOK>",
+    "Content-Type": "application/json",
+  },
+}
+`;
+
 exports[`GOLDEN buildHeaders (default executor providers) > anthropic → headers (apiKey / oauth) 1`] = `
 {
   "apiKey": {
@@ -226,10 +245,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > cline → headers (a
     "Authorization": "Bearer <TOK>",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://cline.bot",
-    "User-Agent": "9Router/0.5.37",
+    "User-Agent": "9Router/0.5.40",
     "X-CLIENT-TYPE": "9router",
-    "X-CLIENT-VERSION": "0.5.37",
-    "X-CORE-VERSION": "0.5.37",
+    "X-CLIENT-VERSION": "0.5.40",
+    "X-CORE-VERSION": "0.5.40",
     "X-IS-MULTIROOT": "false",
     "X-PLATFORM": "win32",
     "X-PLATFORM-VERSION": "v24.18.0",
@@ -239,10 +258,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > cline → headers (a
     "Authorization": "Bearer <TOK>",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://cline.bot",
-    "User-Agent": "9Router/0.5.37",
+    "User-Agent": "9Router/0.5.40",
     "X-CLIENT-TYPE": "9router",
-    "X-CLIENT-VERSION": "0.5.37",
-    "X-CORE-VERSION": "0.5.37",
+    "X-CLIENT-VERSION": "0.5.40",
+    "X-CORE-VERSION": "0.5.40",
     "X-IS-MULTIROOT": "false",
     "X-PLATFORM": "win32",
     "X-PLATFORM-VERSION": "v24.18.0",
@@ -253,10 +272,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > cline → headers (a
     "Authorization": "Bearer <TOK>",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://cline.bot",
-    "User-Agent": "9Router/0.5.37",
+    "User-Agent": "9Router/0.5.40",
     "X-CLIENT-TYPE": "9router",
-    "X-CLIENT-VERSION": "0.5.37",
-    "X-CORE-VERSION": "0.5.37",
+    "X-CLIENT-VERSION": "0.5.40",
+    "X-CORE-VERSION": "0.5.40",
     "X-IS-MULTIROOT": "false",
     "X-PLATFORM": "win32",
     "X-PLATFORM-VERSION": "v24.18.0",
@@ -272,10 +291,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > clinepass → header
     "Authorization": "Bearer <TOK>",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://cline.bot",
-    "User-Agent": "9Router/0.5.37",
+    "User-Agent": "9Router/0.5.40",
     "X-CLIENT-TYPE": "9router",
-    "X-CLIENT-VERSION": "0.5.37",
-    "X-CORE-VERSION": "0.5.37",
+    "X-CLIENT-VERSION": "0.5.40",
+    "X-CORE-VERSION": "0.5.40",
     "X-IS-MULTIROOT": "false",
     "X-PLATFORM": "win32",
     "X-PLATFORM-VERSION": "v24.18.0",
@@ -285,10 +304,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > clinepass → header
     "Authorization": "Bearer <TOK>",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://cline.bot",
-    "User-Agent": "9Router/0.5.37",
+    "User-Agent": "9Router/0.5.40",
     "X-CLIENT-TYPE": "9router",
-    "X-CLIENT-VERSION": "0.5.37",
-    "X-CORE-VERSION": "0.5.37",
+    "X-CLIENT-VERSION": "0.5.40",
+    "X-CORE-VERSION": "0.5.40",
     "X-IS-MULTIROOT": "false",
     "X-PLATFORM": "win32",
     "X-PLATFORM-VERSION": "v24.18.0",
@@ -299,10 +318,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > clinepass → header
     "Authorization": "Bearer <TOK>",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://cline.bot",
-    "User-Agent": "9Router/0.5.37",
+    "User-Agent": "9Router/0.5.40",
     "X-CLIENT-TYPE": "9router",
-    "X-CLIENT-VERSION": "0.5.37",
-    "X-CORE-VERSION": "0.5.37",
+    "X-CLIENT-VERSION": "0.5.40",
+    "X-CORE-VERSION": "0.5.40",
     "X-IS-MULTIROOT": "false",
     "X-PLATFORM": "win32",
     "X-PLATFORM-VERSION": "v24.18.0",
@@ -715,35 +734,11 @@ exports[`GOLDEN buildHeaders (default executor providers) > kimi → headers (ap
     "Anthropic-Beta": "claude-code-20250219,interleaved-thinking-2025-05-14",
     "Anthropic-Version": "2023-06-01",
     "Content-Type": "application/json",
-    "x-api-key": "<CRED>",
-  },
-  "nonStream": {
-    "Anthropic-Beta": "claude-code-20250219,interleaved-thinking-2025-05-14",
-    "Anthropic-Version": "2023-06-01",
-    "Content-Type": "application/json",
-    "x-api-key": "<CRED>",
-  },
-  "oauth": {
-    "Accept": "text/event-stream",
-    "Anthropic-Beta": "claude-code-20250219,interleaved-thinking-2025-05-14",
-    "Anthropic-Version": "2023-06-01",
-    "Content-Type": "application/json",
-    "x-api-key": "<CRED>",
-  },
-}
-`;
-
-exports[`GOLDEN buildHeaders (default executor providers) > kimi-coding → headers (apiKey / oauth) 1`] = `
-{
-  "apiKey": {
-    "Accept": "text/event-stream",
-    "Anthropic-Beta": "claude-code-20250219,interleaved-thinking-2025-05-14",
-    "Anthropic-Version": "2023-06-01",
-    "Content-Type": "application/json",
     "X-Msh-Device-Id": "kimi-<TS>",
-    "X-Msh-Device-Model": "win32 x64",
+    "X-Msh-Device-Model": "Windows x64",
+    "X-Msh-Device-Name": "DESKTOP-1VV0QS6",
     "X-Msh-Platform": "9router",
-    "X-Msh-Version": "2.1.2",
+    "X-Msh-Version": "0.5.40",
     "x-api-key": "<CRED>",
   },
   "nonStream": {
@@ -751,9 +746,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > kimi-coding → head
     "Anthropic-Version": "2023-06-01",
     "Content-Type": "application/json",
     "X-Msh-Device-Id": "kimi-<TS>",
-    "X-Msh-Device-Model": "win32 x64",
+    "X-Msh-Device-Model": "Windows x64",
+    "X-Msh-Device-Name": "DESKTOP-1VV0QS6",
     "X-Msh-Platform": "9router",
-    "X-Msh-Version": "2.1.2",
+    "X-Msh-Version": "0.5.40",
     "x-api-key": "<CRED>",
   },
   "oauth": {
@@ -762,9 +758,10 @@ exports[`GOLDEN buildHeaders (default executor providers) > kimi-coding → head
     "Anthropic-Version": "2023-06-01",
     "Content-Type": "application/json",
     "X-Msh-Device-Id": "kimi-<TS>",
-    "X-Msh-Device-Model": "win32 x64",
+    "X-Msh-Device-Model": "Windows x64",
+    "X-Msh-Device-Name": "DESKTOP-1VV0QS6",
     "X-Msh-Platform": "9router",
-    "X-Msh-Version": "2.1.2",
+    "X-Msh-Version": "0.5.40",
     "x-api-key": "<CRED>",
   },
 }
@@ -1158,6 +1155,13 @@ exports[`GOLDEN buildUrl (default executor providers) > alicode → url (stream 
 
 exports[`GOLDEN buildUrl (default executor providers) > alicode-intl → url (stream + non-stream) 1`] = `
 {
+  "nonStream": "https://coding-intl.dashscope.aliyuncs.com/v1/chat/completions",
+  "stream": "https://coding-intl.dashscope.aliyuncs.com/v1/chat/completions",
+}
+`;
+
+exports[`GOLDEN buildUrl (default executor providers) > alims-intl → url (stream + non-stream) 1`] = `
+{
   "nonStream": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
   "stream": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
 }
@@ -1360,13 +1364,6 @@ exports[`GOLDEN buildUrl (default executor providers) > kimchi → url (stream +
 `;
 
 exports[`GOLDEN buildUrl (default executor providers) > kimi → url (stream + non-stream) 1`] = `
-{
-  "nonStream": "https://api.kimi.com/coding/v1/messages?beta=true",
-  "stream": "https://api.kimi.com/coding/v1/messages?beta=true",
-}
-`;
-
-exports[`GOLDEN buildUrl (default executor providers) > kimi-coding → url (stream + non-stream) 1`] = `
 {
   "nonStream": "https://api.kimi.com/coding/v1/messages?beta=true",
   "stream": "https://api.kimi.com/coding/v1/messages?beta=true",

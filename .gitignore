@@ -97,3 +97,4 @@ graphify-out/*
 .codegraph/
 .PR/
 .next-analyze/*
+.zcode/

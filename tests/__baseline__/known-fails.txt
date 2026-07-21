@@ -1,4 +1,10 @@
 tests/unit/antigravity-mitm.test.js :: Antigravity MITM model handling flags the out-of-box agent/Default model mandatory
+# v0.5.40: cursor-agent-proto.test.js ships 35 failing tests in upstream v0.5.40 ITSELF.
+# The test imports buildAgentRunFrame / encodeAgentValue / decodeMcpArgs / etc. that the
+# upstream source never exports (cursorProtobuf.js lacks them; cursor.js keeps
+# buildAgentRunFrame non-exported). Verified failing on a clean upstream/master checkout.
+# Plus cursor-models.test.js "live model catalog" needs network. Not merge regressions.
+tests/unit/cursor-agent-proto.test.js :: Cursor AgentService codec (cursorProtobuf.js)
 tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import extracts tokens using exact keys
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import falls back to fuzzy key matching on macOS when exact keys are missing
