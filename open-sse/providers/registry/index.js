@@ -99,10 +99,28 @@ import p96 from "./xiaomi-mimo.js";
 import p97 from "./xiaomi-tokenplan.js";
 import p98 from "./youcom.js";
 import p99 from "./alims-intl.js";
-// Fork custom providers (appended after upstream p0–p99)
-import p100 from "./gemini-web.js";
-import p101 from "./ds2api.js";
-import p102 from "./genspark-web.js";
+import p100 from "./codebuddy-intl.js";
+// Temporarily hidden — no tool calling support (trae SOLO agent / windsurf gRPC skip ToolCallChunk).
+// Re-enable by uncommenting both the import and the array entry below.
+// import p102 from "./trae.js";
+import p103 from "./zed.js";
+import p105 from "./api-airforce.js";
+import p106 from "./baidu.js";
+import p107 from "./bazaarlink.js";
+import p108 from "./bluesminds.js";
+import p109 from "./kilo-gateway.js";
+import p110 from "./llm7.js";
+import p111 from "./sambanova.js";
+import p112 from "./tencent.js";
+import p113 from "./morph.js";
+// import p114 from "./devin-cli.js";
+// import p104 from "./windsurf.js";
+import p115 from "./poolside.js";
+// Fork custom providers (appended after upstream p0–p115; renumbered to avoid clashing with
+// upstream's codebuddy-intl which now occupies p100)
+import p116 from "./gemini-web.js";
+import p117 from "./ds2api.js";
+import p118 from "./genspark-web.js";
 
 export default [
   p0,
@@ -206,6 +224,22 @@ export default [
   p98,
   p99,
   p100,
-  p101,
-  p102
+  // p102, // trae — hidden, no tool calling
+  p103,
+  p105,
+  p106,
+  p107,
+  p108,
+  p109,
+  p110,
+  p111,
+  p112,
+  p113,
+  // p114, // devin-cli — hidden, spawns local agent with shell/fs access
+  // p104, // windsurf — hidden, no tool calling
+  p115,
+  // Fork custom providers
+  p116,
+  p117,
+  p118,
 ];

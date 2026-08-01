@@ -29,3 +29,18 @@ tests/unit/translator-request-normalization.test.js :: request normalization cla
 tests/unit/translator-request-normalization.test.js :: request normalization filterToOpenAIFormat flattens text-only arrays to string
 tests/unit/translator-request-normalization.test.js :: request normalization parseSSELine supports provider raw NDJSON stream lines
 tests/unit/translator-request-normalization.test.js :: request normalization translateRequest keeps /v1/messages Claude->OpenAI text payloads string-safe
+
+# v0.5.45 migration — 6 NEW failing tests, all non-merge-regressions:
+#   - kiro-terminal-integrity (2): vitest 5000ms timeout on slow Windows CI; passes on Linux
+#   - tunnel-pid-ownership (1): new upstream test; vitest lacks the @/ alias config that
+#     jsconfig.json defines (@/* -> ./src/*). Same project-wide vitest config gap as other
+#     @/-importing tests; not a code regression.
+#   - windsurf-executor (3): PRE-EXISTING upstream bug in v0.5.45 — registry/executor use
+#     server.codeium.com but the test asserts server.self-serve.windsurf.com. Verified on
+#     a clean upstream/master checkout. Reported upstream; not caused by this merge.
+tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery bounds the retry HTTP error body
+tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery surfaces retry HTTP failures as SSE after heartbeat commits headers
+tests/unit/tunnel-pid-ownership.test.js :: cloudflared PID ownership does not let an old child clear its successor PID
+tests/unit/windsurf-executor.test.js :: WindsurfExecutor class constructor wires config from PROVIDERS.windsurf
+tests/unit/windsurf-executor.test.js :: WindsurfExecutor class buildUrl returns the GetChatMessage endpoint
+tests/unit/windsurf-executor.test.js :: WindsurfExecutor class PROVIDERS.windsurf baseUrl is the chat endpoint (registry in sync)
