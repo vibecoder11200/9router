@@ -379,7 +379,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       title: "strictProxy direct-fetch refused",
       body: "strictProxy=true but the connection proxy could not be resolved; the direct fetch was refused.",
     });
-    throw new Error("[ProxyFetch] strictProxy=true but connection proxy could not be resolved; refusing direct fetch");
+    const err = new Error("[ProxyFetch] strictProxy=true but connection proxy could not be resolved; refusing direct fetch");
+    err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
+    throw err;
   }
   const envProxyUrl = connectionProxyUrl || noProxyBypassed || strict
     ? null
@@ -399,7 +401,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
         }
       } catch (proxyError) {
         if (strict) {
-          throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+          const err = new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+          err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
+          throw err;
         }
         console.warn(`[ProxyFetch] Proxy failed, falling back to direct bypass: ${proxyError.message}`);
       }
@@ -425,7 +429,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
       if (strict) {
-        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+        const err = new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+        err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
+        throw err;
       }
       console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
       return originalFetch(url, options);

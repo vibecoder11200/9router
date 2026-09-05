@@ -221,23 +221,42 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const handleDelete = async (proxyPool) => {
+  const handleDelete = async (proxyPool, { force = false } = {}) => {
     setConfirmState({
       title: "Delete Proxy Pool",
       message: `Delete proxy pool "${proxyPool.name}"?`,
       onConfirm: async () => {
         setConfirmState(null);
         try {
-          const res = await fetch(`/api/proxy-pools/${proxyPool.id}`, { method: "DELETE" });
+          const res = await fetch(`/api/proxy-pools/${proxyPool.id}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(force ? { force: true } : {}),
+          });
           if (res.ok) {
             setProxyPools((prev) => prev.filter((item) => item.id !== proxyPool.id));
-            notify.success("Proxy pool deleted");
+            notify.success(force ? "Proxy pool deleted (bindings removed)" : "Proxy pool deleted");
             return;
           }
 
           const data = await res.json();
           if (res.status === 409) {
-            notify.warning(`Cannot delete: ${data.boundConnectionCount || 0} connection(s) are still using this pool.`);
+            // Two distinct 409s (P3): providerStrategies bind (offers force) and
+            // live connections bind. Show the server's actual reason instead of
+            // a made-up "0 connection(s)" message.
+            const boundProviders = Array.isArray(data.boundProviders) ? data.boundProviders : [];
+            if (boundProviders.length > 0) {
+              const ok = window.confirm(
+                `Cannot delete: proxy strategies for ${boundProviders.join(", ")} still use this pool.\n\nUnbind them and delete anyway?`
+              );
+              if (ok) await handleDelete(proxyPool, { force: true });
+              return;
+            }
+            notify.warning(
+              data.boundConnectionCount
+                ? `${data.error || "Cannot delete"}: ${data.boundConnectionCount} connection(s) still use this pool.`
+                : data.error || "Cannot delete: this pool is still in use."
+            );
           } else {
             notify.error(data.error || "Failed to delete proxy pool");
           }

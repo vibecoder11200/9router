@@ -69,6 +69,11 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
         log.warn("AUTH", `No-auth ${providerId}: strict proxy pool ${resolvedProxy.proxyPoolId || "?"} ${resolvedProxy.source === "error" ? "resolution failed" : "exhausted"} — refusing direct`);
         return {
           allRateLimited: true,
+          // Structural marker (audit follow-up): this is a POOL outage, not
+          // locked accounts — the chat loop must not fire the critical
+          // all-accounts-locked alert for it. (lastErrorCode is also derived
+          // from real locks, so the status code alone cannot carry this.)
+          strictPoolRefusal: true,
           retryAfter,
           retryAfterHuman: formatRetryAfter(retryAfter),
           lastError: resolvedProxy.source === "error"
@@ -448,4 +453,19 @@ export async function isValidApiKey(apiKey) {
 export async function getApiKeyRow(apiKey) {
   if (!apiKey) return null;
   return await getApiKeyRowFromRepo(apiKey);
+}
+
+/**
+ * Per-key budget enforcement for the non-chat /v1 endpoints (phase 08
+ * follow-up): embeddings/fetch/stt/tts/image/search/video all accrue real
+ * spend under requireApiKey but historically bypassed the chat-only
+ * checkKeyBudget call, so a hard-blocked key kept spending free. Returns the
+ * 429 response to return as-is, or null to proceed.
+ */
+export async function enforceKeyBudget(apiKey) {
+  if (!apiKey) return null;
+  const row = await getApiKeyRowFromRepo(apiKey);
+  if (!row || !(row.isActive === 1 || row.isActive === true)) return null;
+  const { checkKeyBudget } = await import("./keyBudgets.js");
+  return await checkKeyBudget(apiKey, row);
 }

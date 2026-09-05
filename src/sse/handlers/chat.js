@@ -291,6 +291,11 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   // Retries used so far for managed-pool connection failures (port-down during
   // rotation). Bounded by MAX_MANAGED_CONN_RETRIES per request.
   let managedConnRetries = 0;
+  // Set when a proxy-side INFRA failure terminates its recovery paths (strict
+  // pool fetch refused/died, managed pool teardown). Pool state, not account
+  // state — the account below is skipped WITHOUT a model-lock or breaker
+  // recordFailure (audit finding 25: a dead pool must not open breakers).
+  let proxyInfraFailure = false;
   // Last known state of the SOCKS port during those retries. null = no retry
   // ran; true = port kept accepting connections (so the failure is NOT
   // teardown noise); false = port never came back.
@@ -309,14 +314,20 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         const errorMsg = lastError || credentials.lastError || "Unavailable";
         const status = HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
-        try {
-          emitAlert(EVENT_TYPES.ALL_ACCOUNTS_LOCKED, {
-            severity: SEVERITY.CRITICAL,
-            dedupKey: String(provider || "unknown"),
-            title: "All accounts locked",
-            body: `Every ${provider} account is locked/rate-limited (${model}): ${errorMsg}. Retry after ${credentials.retryAfterHuman || "cooldown"}.`,
-          });
-        } catch { /* alerts must never break the error path */ }
+        // Noauth strict-pool exhaustion rides the allRateLimited shape but is
+        // a POOL outage, not locked accounts — the pool alert already fired
+        // (strictPoolFailure); a critical "all accounts locked" here would be
+        // a false alarm (audit finding 28).
+        if (!credentials.strictPoolRefusal) {
+          try {
+            emitAlert(EVENT_TYPES.ALL_ACCOUNTS_LOCKED, {
+              severity: SEVERITY.CRITICAL,
+              dedupKey: String(provider || "unknown"),
+              title: "All accounts locked",
+              body: `Every ${provider} account is locked/rate-limited (${model}): ${errorMsg}. Retry after ${credentials.retryAfterHuman || "cooldown"}.`,
+            });
+          } catch { /* alerts must never break the error path */ }
+        }
         return unavailableResponse(status, `[${provider}/${model}] ${errorMsg}`, credentials.retryAfter, credentials.retryAfterHuman);
       }
       if (excludeConnectionIds.size === 0) {
@@ -327,8 +338,8 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         // Every account was skipped for a dead strict pool — 503 with a short
         // retry-after (entries cool down in ~60s; never fetch direct).
         const retryAfter = new Date(Date.now() + 30_000).toISOString();
-        log.warn("CHAT", `[${provider}/${model}] ${lastError || "All strict proxy pools exhausted"} (retry in 30s)`);
-        return unavailableResponse(HTTP_STATUS.SERVICE_UNAVAILABLE, `[${provider}/${model}] ${lastError || "All strict proxy pools exhausted"}`, retryAfter, "retry in 30s");
+        log.warn("CHAT", `[${provider}/${model}] ${lastError || "All proxy pools exhausted"} (retry in 30s)`);
+        return unavailableResponse(HTTP_STATUS.SERVICE_UNAVAILABLE, `[${provider}/${model}] ${lastError || "All proxy pools exhausted"}`, retryAfter, "retry in 30s");
       }
       if (breakerRetryAfterMs !== Infinity) {
         // Every remaining candidate was skipped by an open breaker. The loop
@@ -472,8 +483,10 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         lastStatus = result.status;
         continue;
       }
-      // Port didn't come back in time — fall through to normal error handling.
-      log.warn("PROXY", `Managed-pool SOCKS port ${connSocksPort} did not come back within 6s; falling through to error handling`);
+      // Port didn't come back in time — proxy-side infra failure. Do NOT let
+      // this fall into account locking/breaker feeding (audit finding 25).
+      log.warn("PROXY", `Managed-pool SOCKS port ${connSocksPort} did not come back within 6s; treating as proxy-infra failure (account not locked)`);
+      proxyInfraFailure = true;
     }
 
     // --- Managed-pool flakiness tracking (status-agnostic) ---
@@ -589,17 +602,34 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
       // Group exhausted → account fallback. Under strictProxy the account
       // itself is fine (its pool is dead), so skip the model-lock entirely and
       // just exclude it for this request — pool cooldowns are pool state, not
-      // account state (P1). TODO(phase-05): emit proxy-pool-exhausted here.
+      // account state (P1). This is the only direct emit site for group
+      // exhaustion: the loop may terminate via lastProxyExhausted without ever
+      // re-resolving, so without it the phase-05 pool alert never fires.
       if (psd.strictProxy === true) {
         log.warn("PROXY", `Group ${usedPoolId} exhausted (strict) — skipping account without lock → NEXT ACCOUNT`);
+        try {
+          emitAlert(EVENT_TYPES.PROXY_POOL_EXHAUSTED, {
+            severity: SEVERITY.WARN,
+            dedupKey: String(usedPoolId),
+            title: "Proxy pool exhausted",
+            body: `Pool ${usedPoolId} has no usable entries left (strict proxy) — accounts bound to it are being skipped until entries cool down.`,
+          });
+        } catch { /* alerts must never break the error path */ }
         excludeConnectionIds.add(credentials.connectionId);
         lastError = result.error;
         lastStatus = result.status;
         lastProxyExhausted = true;
         continue;
       }
-      // Group exhausted → fall back to account fallback below.
-      log.warn("PROXY", `Group ${usedPoolId} exhausted, falling back to next account`);
+      // Non-strict group exhausted → same skip-without-lock: the pool is out
+      // but the ACCOUNT is fine (audit finding 25 — a dead pool used to lock
+      // every account bound to it AND feed their breakers).
+      log.warn("PROXY", `Group ${usedPoolId} exhausted — skipping account without lock → NEXT ACCOUNT`);
+      excludeConnectionIds.add(credentials.connectionId);
+      lastError = result.error;
+      lastStatus = result.status;
+      lastProxyExhausted = true;
+      continue;
     }
 
     // Antigravity 409/429: refresh live quota to get exact resetAt before locking
@@ -611,6 +641,26 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         refreshedCredentials.accessToken, credentials.providerSpecificData
       );
       if (quotaResetMs) resetsAtMs = quotaResetMs;
+    }
+
+    // Proxy-side INFRA failure (strict pool refused/died mid-fetch, managed
+    // pool teardown exhausted its retries): pool state, NOT account state.
+    // Skip without a model-lock or breaker recordFailure — a dead proxy must
+    // not open per-account breakers (audit finding 25). Terminal shape when
+    // nothing remains is the 503-with-retry-after below.
+    if (proxyInfraFailure || result?.proxyInfra === true) {
+      if (!credentials.connectionId) {
+        // Noauth has a single pseudo-connection — excluding it would loop forever.
+        const retryAfter = new Date(Date.now() + 30_000).toISOString();
+        return unavailableResponse(HTTP_STATUS.SERVICE_UNAVAILABLE, `[${provider}/${model}] ${result.error || "Proxy unavailable"}`, retryAfter, "retry in 30s");
+      }
+      log.warn("PROXY", `⇄ ACC:${credentials.connectionName} PROXY-INFRA (${result.status}) — skipping without lock → NEXT ACCOUNT`);
+      excludeConnectionIds.add(credentials.connectionId);
+      lastError = result.error;
+      lastStatus = result.status;
+      lastProxyExhausted = true;
+      proxyInfraFailure = false;
+      continue;
     }
 
     // Exhausted Antigravity model is blocked only in RAM cache until upstream resetAt.

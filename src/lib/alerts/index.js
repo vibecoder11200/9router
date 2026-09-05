@@ -110,10 +110,12 @@ function prettifyEventType(eventType) {
 
 /** Drop dedup entries older than 24h once the map grows past the threshold. */
 function pruneDedup(now) {
-  for (const [key, ts] of state.dedup) {
-    if (now - ts > DEDUP_ENTRY_TTL_MS) state.dedup.delete(key);
+  for (const [key, entry] of state.dedup) {
+    if (now - entry.ts > DEDUP_ENTRY_TTL_MS) state.dedup.delete(key);
   }
 }
+
+const SEVERITY_RANK = { [SEVERITY.INFO]: 0, [SEVERITY.WARN]: 1, [SEVERITY.CRITICAL]: 2 };
 
 /**
  * Emit an alert to every configured channel. Fire-and-forget: returns
@@ -152,19 +154,23 @@ async function _dispatch(eventType, payload = {}) {
     if (typeof payload.remainingPct === "number" && payload.remainingPct > threshold) return;
   }
 
-  // Dedup window: clamp 1..1440 minutes, default 10.
+  // Dedup window: clamp 1..1440 minutes, default 10. Severity-aware: a
+  // higher-severity event pierces the window (a WARN "pool exhausted" must
+  // not swallow the CRITICAL "pool errored" for the same pool minutes later).
   const dedupMin = clampNumber(settings.alertsDedupMin, 1, 1440, 10);
   const windowMs = dedupMin * 60_000;
   const dedupKey = `${eventType}:${payload.dedupKey ?? "default"}`;
+  const severity = payload.severity ?? SEVERITY.WARN;
+  const rank = SEVERITY_RANK[severity] ?? SEVERITY_RANK[SEVERITY.WARN];
   const now = Date.now();
   const lastEmit = state.dedup.get(dedupKey);
-  if (lastEmit !== undefined && now - lastEmit < windowMs) return;
-  state.dedup.set(dedupKey, now);
+  if (lastEmit !== undefined && now - lastEmit.ts < windowMs && rank <= lastEmit.rank) return;
+  state.dedup.set(dedupKey, { ts: now, rank });
   if (state.dedup.size > DEDUP_PRUNE_THRESHOLD) pruneDedup(now);
 
   const message = {
     eventType,
-    severity: payload.severity ?? SEVERITY.WARN,
+    severity,
     title: payload.title ?? prettifyEventType(eventType),
     body: String(payload.body ?? JSON.stringify(payload.details ?? {})).slice(0, BODY_MAX_CHARS),
     host: os.hostname(),

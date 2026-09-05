@@ -1,5 +1,5 @@
 import {
-  extractApiKey, isValidApiKey,
+  extractApiKey, isValidApiKey, enforceKeyBudget,
   getProviderCredentials, markAccountUnavailable,
   isTrustedInternalRequest,
 } from "../services/auth.js";
@@ -40,6 +40,10 @@ export async function handleTts(request) {
     if (!apiKey) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
     const valid = await isValidApiKey(apiKey);
     if (!valid) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");
+    // Budget hard-block must cover EVERY spending endpoint, not just chat
+    // (audit finding 26: these 7 endpoints accrued unbilled usage).
+    const budgetResponse = await enforceKeyBudget(apiKey);
+    if (budgetResponse) return budgetResponse;
   }
 
   if (!modelStr) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing model");

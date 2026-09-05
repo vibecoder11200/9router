@@ -408,7 +408,12 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     if (log?.errorLine) {
       log.errorLine(reqTag, "✗", `ERROR 502 · ${provider}/${model} · ${Date.now() - requestStartTime}ms\n    ${errMsg}${error.stack ? `\n    ${error.stack}` : ""}`);
     }
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+    const errResult = createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+    // Proxy-side infra failure (strict pool refused/died): carry the marker
+    // so the chat loop skips the account WITHOUT a model-lock or breaker
+    // failure — the pool is down, not the account.
+    if (error?.proxyInfra === true) errResult.proxyInfra = true;
+    return errResult;
   }
 
   // Handle 401/403 - try token refresh (skip for noAuth providers)

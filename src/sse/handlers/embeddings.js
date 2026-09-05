@@ -5,6 +5,7 @@ import {
   extractApiKey,
   isTrustedInternalRequest,
   isValidApiKey,
+  enforceKeyBudget,
 } from "../services/auth.js";
 import { getSettings } from "@/lib/localDb";
 import { getModelInfo } from "../services/model.js";
@@ -64,6 +65,10 @@ export async function handleEmbeddings(request) {
       log.warn("AUTH", "Invalid API key (requireApiKey=true)");
       return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");
     }
+    // Budget hard-block must cover EVERY spending endpoint, not just chat
+    // (audit finding 26: these 7 endpoints accrued unbilled usage).
+    const budgetResponse = await enforceKeyBudget(apiKey);
+    if (budgetResponse) return budgetResponse;
   }
 
   if (!modelStr) {
