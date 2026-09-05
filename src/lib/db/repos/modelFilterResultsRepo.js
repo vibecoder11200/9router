@@ -133,6 +133,53 @@ export async function getNextHealthyConfigsForModel(model, excludeConfigId, { li
   }));
 }
 
+/**
+ * Model-agnostic candidate fallback for managed-pool rotation: the best
+ * known-good configs across ALL filter models. Used when the requested
+ * model has no cache rows (the Model Filter never ran with it) so rotation
+ * can still escape a rate-limited exit IP — switchConfig live-verifies
+ * SOCKS + distinct-exit-IP, and the request loop re-rotates if the new
+ * node also fails for this model.
+ *
+ * @param {string} excludeConfigId the currently active config id to skip
+ * @param {object} [opts]
+ * @param {number} [opts.limit=1]
+ */
+export async function getNextHealthyConfigsAnyModel(excludeConfigId, { limit = 1 } = {}) {
+  const db = await getAdapter();
+  const rows = db.all(
+    `SELECT
+        r.configId AS configId,
+        r.latencyMs AS latencyMs,
+        r.exitIp    AS exitIp,
+        r.testedAt  AS testedAt,
+        c.name      AS name,
+        c.protocol  AS protocol,
+        c.country   AS country,
+        c.host      AS host,
+        c.port      AS port
+      FROM xrayModelFilterResults r
+      JOIN xrayConfigs c ON c.id = r.configId
+      WHERE r.ok = 1
+        AND c.isActive = 1
+        AND (? IS NULL OR r.configId != ?)
+      ORDER BY r.latencyMs IS NULL DESC, r.latencyMs ASC, r.testedAt DESC
+      LIMIT ?`,
+    [excludeConfigId ?? null, excludeConfigId ?? null, Math.max(1, Math.min(Number(limit) || 1, 50))]
+  );
+  return rows.map((r) => ({
+    configId: r.configId,
+    latencyMs: r.latencyMs,
+    exitIp: r.exitIp,
+    testedAt: r.testedAt,
+    name: r.name,
+    protocol: r.protocol,
+    country: r.country,
+    host: r.host,
+    port: r.port,
+  }));
+}
+
 /** Aggregate counts for the UI status badge. */
 export async function getModelFilterCacheStats() {
   const db = await getAdapter();

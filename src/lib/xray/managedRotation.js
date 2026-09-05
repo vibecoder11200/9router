@@ -39,7 +39,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getSelectedXrayConfig } from "../db/repos/xrayRepo.js";
 import { DATA_DIR } from "@/lib/dataDir.js";
-import { getNextHealthyConfigsForModel, getModelFilterResult, upsertModelFilterResult } from "../db/repos/modelFilterResultsRepo.js";
+import { getNextHealthyConfigsForModel, getNextHealthyConfigsAnyModel, getModelFilterResult, upsertModelFilterResult } from "../db/repos/modelFilterResultsRepo.js";
 import { isProxyIpBanError } from "../network/proxyRotation.js";
 
 /**
@@ -62,6 +62,17 @@ async function findCandidatesForModel(model, activeId) {
       if (cands.length) return { candidates: cands, matchedModel: swapped };
     }
   }
+  // Model-agnostic fallback: the Model Filter may never have run with THIS
+  // model (e.g. requests for oc/mimo-v2.5-free while the filter cache only
+  // holds rows for the configured filter model). Without this, every 429 on
+  // an unfiltered model aborts with no-healthy-candidate and the pool stays
+  // pinned to the rate-limited IP. A cross-model candidate is still a real,
+  // recently-validated node behind the same subscription; switchConfig
+  // live-verifies SOCKS + distinct exit IP, and if the node can't serve this
+  // model the request loop just rotates again (adaptive cooldown bypass).
+  // matchedModel stays the requested model so IP-ban marking keys on it.
+  cands = await getNextHealthyConfigsAnyModel(activeId, { limit: 5 });
+  if (cands.length) return { candidates: cands, matchedModel: model };
   return { candidates: [], matchedModel: model };
 }
 

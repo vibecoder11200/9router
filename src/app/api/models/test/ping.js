@@ -1,4 +1,3 @@
-import { getApiKeys } from "@/lib/localDb";
 import { UPDATER_CONFIG } from "@/shared/constants/config";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 
@@ -38,14 +37,13 @@ function createSilentWavFile() {
 }
 
 async function getInternalHeaders() {
-  let apiKey = null;
-  try {
-    const keys = await getApiKeys();
-    apiKey = keys.find((k) => k.isActive !== false)?.key || null;
-  } catch {}
-
+  // apiKeys.key stores the MASKED display string since v0.6.36
+  // (sk-{keyId}-••••{last4}; raw keys exist only as hashes) — it is not a
+  // credential and must never go into a header: U+2022 is not a valid
+  // ByteString char, so fetch() throws "Cannot convert argument to a
+  // ByteString…" before the request is even sent. requireApiKey=off needs no
+  // auth (local mode); requireApiKey=on surfaces the endpoint's honest 401.
   const headers = { "Content-Type": "application/json" };
-  if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
   headers["x-9r-cli-token"] = await getConsistentMachineId(CLI_TOKEN_SALT);
   return headers;
 }

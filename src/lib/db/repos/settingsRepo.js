@@ -120,7 +120,7 @@ const DEFAULT_SETTINGS = {
   xrayVersion: "",
   xraySelectedConfigId: "",
   xrayModelFilterEnabled: false,
-  xrayModelFilterModel: "oc/deepseek-v4-flash-free",
+  xrayModelFilterModel: "",
   xrayModelFilterLimit: 50,
   xrayModelFilterAll: false,
   xrayModelFilterPrune: false,

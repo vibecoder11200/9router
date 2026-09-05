@@ -129,7 +129,7 @@ export default function XrayProxyPage() {
   const [settings, setSettings] = useState({});
   const [confirmState, setConfirmState] = useState(null);
   const [modelFilter, setModelFilter] = useState({
-    model: "oc/deepseek-v4-flash-free",
+    model: "",
     limit: 50,
     all: false,
     prune: false,
@@ -187,7 +187,7 @@ export default function XrayProxyPage() {
           xrayHttpPort: data.xrayHttpPort ?? prev.xrayHttpPort,
           xraySubscriptionUrl: data.xraySubscriptionUrl || prev.xraySubscriptionUrl,
           xrayModelFilterEnabled: data.xrayModelFilterEnabled === true,
-          xrayModelFilterModel: data.xrayModelFilterModel || "oc/deepseek-v4-flash-free",
+          xrayModelFilterModel: data.xrayModelFilterModel || "",
           xrayModelFilterLimit: data.xrayModelFilterLimit ?? 50,
           xrayModelFilterAll: data.xrayModelFilterAll === true,
           xrayModelFilterPrune: data.xrayModelFilterPrune === true,
@@ -197,7 +197,7 @@ export default function XrayProxyPage() {
         }));
         setModelFilter((prev) => ({
           ...prev,
-          model: data.xrayModelFilterModel || prev.model || "oc/deepseek-v4-flash-free",
+          model: data.xrayModelFilterModel || prev.model || "",
           limit: data.xrayModelFilterLimit ?? prev.limit ?? 50,
           all: data.xrayModelFilterAll === true,
           prune: data.xrayModelFilterPrune === true,
