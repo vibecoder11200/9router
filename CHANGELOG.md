@@ -1,3 +1,45 @@
+# v0.6.42 (2026-09-06)
+
+Fix release: repairs the model-test crash on the providers page, un-breaks
+managed-pool (v2go) rotation for models the Model Filter never ran with, and
+ships the public docs site.
+
+## Fixes
+- **Model test crashed with "Cannot convert argument to a ByteString…"**:
+  the `/api/models/test` ping put `apiKeys.key` into `Authorization: Bearer …`,
+  but since v0.6.36 (S7, keys hashed at rest) that column stores the MASKED
+  display string (`sk-{keyId}-••••{last4}`). The `•` (U+2022) is not a valid
+  HTTP header character, so `fetch()` threw before any request left and EVERY
+  model test failed with a red banner whenever an API key row existed.
+  The header is now dropped entirely: with Require API Key off no auth is
+  needed (local mode); with it on the endpoint's honest 401 is surfaced
+  instead. Model tests now report real provider health (green check / the
+  actual 429/5xx reason) again.
+- **Managed-pool (v2go) rotation was a no-op for unfiltered models**: the
+  rotation candidate lookup only read Model Filter cache rows for the exact
+  request model — e.g. traffic for `oc/mimo-v2.5-free` while the filter cache
+  only held the (discontinued) default filter model — so every 429 aborted
+  with "no-healthy-candidate" and the pool stayed pinned on the rate-limited
+  IP. Rotation now falls back to any recently-validated node across models;
+  switchConfig still live-verifies SOCKS + a distinct exit IP, and the
+  request loop re-rotates if the new node also fails for that model.
+- **Xray Model Proxy Filter no longer pre-fills a discontinued model**: the
+  hardcoded default `oc/deepseek-v4-flash-free` (dead upstream) is removed
+  from the dashboard input and DEFAULT_SETTINGS; the field starts empty with
+  a placeholder only. Existing saved values are preserved.
+
+## Docs
+- The docs site is live at https://vibecoder11200.github.io/9router/ —
+  fixed the hydration crash + root redirect, rewrote `.md` links into real
+  routes, and added three new feature pages (Alerts, API Keys & Budgets,
+  Circuit Breaker) in all 5 languages. Header logo no longer reads
+  "9 9Router Docs"; "Go to App" points at the docs home.
+
+## Features
+- Donate modal: per-channel QR fallback chain (primary QR → fallback
+  provider → altText) with Ko-fi and PayPal channels.
+
+
 # v0.6.41 (2026-09-05)
 
 Hotfix: makes the v0.6.40 one-time setup code **actually retrievable** when
