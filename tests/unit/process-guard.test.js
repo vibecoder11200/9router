@@ -7,9 +7,10 @@ import path from "node:path";
 
 vi.mock("@/lib/processGuard.js", () => ({
   isOurProcess: vi.fn(),
+  probeProcess: vi.fn(),
 }));
 
-import { isOurProcess } from "@/lib/processGuard.js";
+import { isOurProcess, probeProcess } from "@/lib/processGuard.js";
 
 // DATA_DIR is read at module-import time — point it at a temp dir BEFORE the
 // process modules load so pid files land in a sandbox.
@@ -48,20 +49,31 @@ describe("isOurProcess", () => {
 
 describe("getVerifiedManagedPid (xray)", () => {
   it("pid alive + cmdline verified → returns the pid", () => {
-    vi.mocked(isOurProcess).mockReturnValue(true);
+    vi.mocked(probeProcess).mockReturnValue("ours");
     writePidFile(process.pid); // a pid that is genuinely alive
     expect(xrayProc.getVerifiedManagedPid()).toBe(process.pid);
   });
 
   it("pid alive but NOT ours (PID reuse) → stale: null + pid file removed", () => {
-    vi.mocked(isOurProcess).mockReturnValue(false);
+    vi.mocked(probeProcess).mockReturnValue("gone");
     writePidFile(process.pid);
     expect(xrayProc.getVerifiedManagedPid()).toBeNull();
     expect(fs.existsSync(path.join(XRAY_DIR, "xray.pid"))).toBe(false);
   });
 
+  it("pid alive but probe UNPROVABLE (tool failed) → conservative: pid kept, no double-start", () => {
+    // X7 follow-up: a failed/slow PowerShell-CIM probe used to make a LIVE
+    // managed xray look stopped — its PID file was deleted, the next start
+    // could not bind the port, and the orphan held it until manual cleanup.
+    // "unknown" must behave like running: keep the file, report the pid.
+    vi.mocked(probeProcess).mockReturnValue("unknown");
+    writePidFile(process.pid);
+    expect(xrayProc.getVerifiedManagedPid()).toBe(process.pid);
+    expect(fs.existsSync(path.join(XRAY_DIR, "xray.pid"))).toBe(true);
+  });
+
   it("stopXray on a recycled pid → not_running, kill never invoked", () => {
-    vi.mocked(isOurProcess).mockReturnValue(false);
+    vi.mocked(probeProcess).mockReturnValue("gone");
     writePidFile(process.pid);
     const res = xrayProc.stopXray();
     expect(res).toEqual({ stopped: false, reason: "not_running" });
@@ -70,7 +82,7 @@ describe("getVerifiedManagedPid (xray)", () => {
   });
 
   it("no pid file → null", () => {
-    vi.mocked(isOurProcess).mockReturnValue(true);
+    vi.mocked(probeProcess).mockReturnValue("ours");
     expect(xrayProc.getVerifiedManagedPid()).toBeNull();
   });
 });

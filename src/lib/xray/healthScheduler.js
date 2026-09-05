@@ -75,6 +75,9 @@ export function configureXrayHealthCheck(settings = {}, state = g) {
   }
   if (state.interval) clearInterval(state.interval);
   const ms = Math.max(5, Math.floor(n)) * 60_000;
+  if (Math.floor(n) < 5) {
+    console.warn(`[XrayHealth] configured interval ${n} min is below the 5-minute minimum — clamped to 5 min`);
+  }
   state.intervalMs = ms;
   state.interval = setInterval(() => {
     runXrayHealthCheckTick(state).catch(() => { /* tick never rejects; belt for HMR */ });

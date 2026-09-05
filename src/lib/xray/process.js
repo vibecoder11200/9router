@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { DATA_DIR } from "@/lib/dataDir.js";
-import { isOurProcess } from "@/lib/processGuard.js";
+import { probeProcess } from "@/lib/processGuard.js";
 import { getXrayBinaryPath, isXrayInstalled } from "./installer.js";
 
 const XRAY_DIR = path.join(DATA_DIR, "xray");
@@ -97,15 +97,20 @@ export function getManagedPid() {
  * Like getManagedPid, but also verifies the live process's command line is
  * actually an xray binary before trusting the PID file (X7 kill-safety). A
  * recycled PID now owned by an unrelated process is treated as a stale file:
- * removed and reported as not running — never killed.
+ * removed and reported as not running — never killed. An UNPROVABLE process
+ * (probe tool failed/timed out while the PID is alive) keeps its PID file and
+ * is reported as running: a false "running" is recoverable, a false "not
+ * running" double-spawns into a port conflict and orphans the live process.
  */
 export function getVerifiedManagedPid() {
   const pid = getManagedPid();
   if (!pid) return null;
-  if (!isOurProcess(pid, "xray")) {
+  const state = probeProcess(pid, "xray");
+  if (state === "gone") {
     try { clearPid(); } catch { /* best-effort */ }
     return null;
   }
+  // "ours" or "unknown" — conservative: keep the PID file, don't re-spawn.
   return pid;
 }
 

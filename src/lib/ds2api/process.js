@@ -3,7 +3,7 @@ import path from "path";
 import crypto from "node:crypto";
 import { spawn } from "child_process";
 import { findDS2APIBinary, getDS2APIDataDir } from "./detect.js";
-import { isOurProcess } from "@/lib/processGuard.js";
+import { probeProcess } from "@/lib/processGuard.js";
 
 const DS2API_DIR = getDS2APIDataDir();
 const PID_FILE = path.join(DS2API_DIR, "ds2api.pid");
@@ -47,12 +47,14 @@ export function getManagedPid() {
  * Like getManagedPid, but verifies the live process's command line actually
  * references the DS2API binary before trusting the PID file (X7 kill-safety).
  * A recycled PID owned by an unrelated process is treated as stale: removed,
- * never killed.
+ * never killed. An UNPROVABLE process (probe failed while the PID is alive)
+ * keeps its PID file and is reported as running — never double-spawned.
  */
 export function getVerifiedManagedPid() {
   const pid = getManagedPid();
   if (!pid) return null;
-  if (!isOurProcess(pid, "ds2api")) {
+  const state = probeProcess(pid, "ds2api");
+  if (state === "gone") {
     try { clearPid(); } catch { /* best-effort */ }
     return null;
   }
