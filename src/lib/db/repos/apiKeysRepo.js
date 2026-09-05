@@ -164,6 +164,33 @@ export async function updateApiKey(id, data) {
   return result;
 }
 
+// v0.6.45 re-key: restore an inert imported key against THIS install's
+// secret. Ownership proof needs no old secret — a full masked-string compare
+// against the row's own display value. Validation is STRUCTURAL only
+// ("sk-" prefix, 2 or 4 dash-parts): parseApiKey's CRC is install-bound and a
+// raw key pasted from the exporting install always fails it (phase-03 Key
+// Insights). The raw key is never stored raw, returned only via the masked
+// rowToKey output, and never logged.
+export async function rekeyApiKey(id, rawKey) {
+  const db = await getAdapter();
+  const row = db.get(`SELECT * FROM apiKeys WHERE id = ?`, [id]);
+  if (!row) return { error: "not_found" };
+  const k = String(rawKey ?? "");
+  const parts = k.split("-");
+  if (!k.startsWith("sk-") || (parts.length !== 2 && parts.length !== 4)) return { error: "invalid" };
+  // RT-11: re-key exists ONLY for flagged (inert) rows. Without this gate the
+  // masked-compare proof publishes keyId + CRC-derived last4 (≈16 unknown
+  // bits), so an any-row rekey surface would allow silent attacker-key
+  // substitution in ~65k online guesses.
+  if (row.needsRekey !== 1 && row.needsRekey !== true) return { error: "not_needed" };
+  if (maskApiKey(k) !== rowToKey(row).key) return { error: "mismatch" };
+  db.run(
+    `UPDATE apiKeys SET keyHash = ?, key = ?, needsRekey = 0 WHERE id = ?`,
+    [hashApiKey(k), maskApiKey(k), id]
+  );
+  return { key: rowToKey(db.get(`SELECT * FROM apiKeys WHERE id = ?`, [id])) };
+}
+
 export async function deleteApiKey(id) {
   const db = await getAdapter();
   const res = db.run(`DELETE FROM apiKeys WHERE id = ?`, [id]);

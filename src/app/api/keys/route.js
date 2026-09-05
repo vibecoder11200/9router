@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const keys = await getApiKeys();
-    return NextResponse.json({ keys });
+    // Global flag so the Endpoint page can show the re-key banner (phase-03).
+    return NextResponse.json({ keys, needsRekey: keys.some((k) => k.needsRekey === true) });
   } catch (error) {
     console.log("Error fetching keys:", error);
     return NextResponse.json({ error: "Failed to fetch keys" }, { status: 500 });

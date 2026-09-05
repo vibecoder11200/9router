@@ -18,6 +18,7 @@ import StatusAlert from "./components/StatusAlert";
 import Tooltip from "./components/Tooltip";
 import SecurityWarning from "./components/SecurityWarning";
 import BudgetModal from "./components/BudgetModal";
+import RekeyModal from "./components/RekeyModal";
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +27,7 @@ export default function APIPageClient({ machineId }) {
   const [createdKey, setCreatedKey] = useState(null);
   const [confirmState, setConfirmState] = useState(null);
   const [budgetKey, setBudgetKey] = useState(null);
+  const [rekeyKey, setRekeyKey] = useState(null);
   const [keyStatus, setKeyStatus] = useState(null);
 
   const [requireApiKey, setRequireApiKey] = useState(false);
@@ -731,6 +733,14 @@ export default function APIPageClient({ machineId }) {
     setKeyStatus({ type: "success", message: name ? `Budget updated for "${name}"` : "Budget updated" });
   };
 
+  // Called by RekeyModal after a successful re-key: close modal, refresh list
+  // (badge + banner clear), show feedback.
+  const handleRekeySaved = async () => {
+    const name = rekeyKey?.name;
+    await fetchData();
+    setKeyStatus({ type: "success", message: name ? `Re-keyed "${name}" — it now validates on this install` : "Key re-keyed" });
+  };
+
   // Compact budget summary for the key row, e.g. "$5/day" or "1M tok/mo".
   const formatBudgetSummary = (key) => {
     const windowLabel = key.budgetWindow === "monthly" ? "mo" : "day";
@@ -786,6 +796,10 @@ export default function APIPageClient({ machineId }) {
   }
 
   const currentEndpoint = baseUrl;
+
+  // v0.6.45: keys imported from a backup whose secret was not adopted cannot
+  // authenticate here until re-keyed with their raw keys (phase-03).
+  const rekeyCount = keys.filter((k) => k.needsRekey === true).length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -1103,6 +1117,15 @@ export default function APIPageClient({ machineId }) {
           </div>
         )}
 
+        {rekeyCount > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 px-3 py-2 rounded border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
+              <span className="material-symbols-outlined text-[18px]">warning</span>
+              {rekeyCount} API key{rekeyCount === 1 ? " was" : "s were"} imported from a backup and can&apos;t authenticate yet. Re-key them with their raw keys.
+            </div>
+          </div>
+        )}
+
         {keys.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
@@ -1162,6 +1185,9 @@ export default function APIPageClient({ machineId }) {
                   {key.isActive === false && (
                     <p className="text-xs text-orange-500 mt-1">Paused</p>
                   )}
+                  {key.needsRekey === true && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Needs re-key</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Toggle
@@ -1190,6 +1216,15 @@ export default function APIPageClient({ machineId }) {
                   >
                     <span className="material-symbols-outlined text-[18px]">savings</span>
                   </button>
+                  {key.needsRekey === true && (
+                    <button
+                      onClick={() => { setKeyStatus(null); setRekeyKey(key); }}
+                      className="p-2 hover:bg-amber-500/10 rounded text-amber-600 dark:text-amber-400 transition-all"
+                      title="Re-key"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">key_vertical</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDeleteKey(key.id)}
                     className="p-2 hover:bg-red-500/10 rounded text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
@@ -1243,6 +1278,14 @@ export default function APIPageClient({ machineId }) {
         keyData={budgetKey}
         onClose={() => setBudgetKey(null)}
         onSaved={handleBudgetSaved}
+      />
+
+      {/* Re-key Modal */}
+      <RekeyModal
+        isOpen={!!rekeyKey}
+        keyData={rekeyKey}
+        onClose={() => setRekeyKey(null)}
+        onSaved={handleRekeySaved}
       />
 
       {/* Created Key Modal */}

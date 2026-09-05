@@ -59,6 +59,7 @@ export {
 import { hashApiKey, maskApiKey } from "./repos/apiKeysRepo.js";
 export {
   getApiKeys, getApiKeyById, createApiKey, updateApiKey, deleteApiKey, validateApiKey,
+  rekeyApiKey,
   getApiKeyRow, getApiKeyHashNameMap,
   hashApiKey, maskApiKey,
 } from "./repos/apiKeysRepo.js";

@@ -15,7 +15,7 @@ export {
   stampProxyEntryUsed,
   setEntryCooldown,
   normalizeCooldownUntil,
-  getApiKeys, getApiKeyById, createApiKey, updateApiKey, deleteApiKey, validateApiKey, getApiKeyRow,
+  getApiKeys, getApiKeyById, createApiKey, updateApiKey, deleteApiKey, validateApiKey, rekeyApiKey, getApiKeyRow,
   getCombos, getComboById, getComboByName,
   createCombo, updateCombo, deleteCombo,
   getModelAliases, setModelAlias, deleteModelAlias,
