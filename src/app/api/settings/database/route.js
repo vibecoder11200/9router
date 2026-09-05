@@ -35,7 +35,7 @@ export async function POST(request) {
     if (!(await authorized(request, password))) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
-    await importDb(payload);
+    const restored = await importDb(payload);
 
     // Ensure proxy settings take effect immediately after a DB import.
     try {
@@ -45,7 +45,7 @@ export async function POST(request) {
       console.warn("[Settings][DatabaseImport] Failed to re-apply outbound proxy env:", err);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, warnings: restored?.warnings || [] });
   } catch (error) {
     console.log("Error importing database:", error);
     return NextResponse.json(

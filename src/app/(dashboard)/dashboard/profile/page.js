@@ -716,7 +716,13 @@ export default function ProfilePage() {
       }
 
       await reloadSettings();
-      setDbStatus({ type: "success", message: "Database imported successfully" });
+      const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      setDbStatus({
+        type: warnings.length ? "warning" : "success",
+        message: warnings.length
+          ? `Database imported with notices: ${warnings.join(" ")}`
+          : "Database imported successfully",
+      });
     } catch (err) {
       setDbStatus({ type: "error", message: err.message || "Invalid backup file" });
     } finally {
@@ -828,7 +834,7 @@ export default function ProfilePage() {
               />
             </div>
             {dbStatus.message && (
-              <p className={`text-sm ${dbStatus.type === "error" ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
+              <p className={`text-sm ${dbStatus.type === "error" ? "text-red-500" : dbStatus.type === "warning" ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>
                 {dbStatus.message}
               </p>
             )}

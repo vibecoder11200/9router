@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { getAdapter } from "../driver.js";
 import { parseJson, stringifyJson } from "../helpers/jsonCol.js";
 import { getMeta, setMeta } from "../helpers/metaStore.js";
+import { hashApiKey } from "./apiKeysRepo.js";
 
 // Keys are `sk-{machineId}-{keyId}-{crc}` — every key on one machine shares the
 // same first 8 chars, so head-only masking is NOT unique. Keep head+tail.
@@ -19,16 +20,23 @@ function apiKeyFingerprint(key) {
   return "key-" + crypto.createHash("sha256").update(key).digest("hex").slice(0, 10);
 }
 
-// Resolve display metadata for a raw API key. Deleted keys (absent from
-// apiKeyMap) get a head…tail fallback name that is unique per key, so rows for
-// different deleted keys never merge in the keyName-grouped UI.
-function resolveApiKeyMeta(rawKey, apiKeyMap) {
+// Resolve display metadata for a raw API key. `apiKeyHashMap` is the
+// keyHash→meta map from getApiKeyHashNameMap(): since S7 the apiKeys.key
+// column stores the MASKED display value, so a raw-key join can never match —
+// hashing the raw key and looking up by hash works for every migration state.
+// Deleted keys (absent from the map) get a head…tail fallback name that is
+// unique per key (same sha256 fingerprint family as apiKeyKey), so rows for
+// different deleted keys never merge in the keyName-grouped UI. The tail is
+// masked to the policy's 4 chars — the old -6 slice leaked extra raw-key
+// material into API responses.
+function resolveApiKeyMeta(rawKey, apiKeyHashMap) {
   if (!rawKey || typeof rawKey !== "string") {
     return { keyName: "Local (No API Key)", apiKeyMasked: null, apiKeyKey: "local-no-key" };
   }
-  const keyInfo = apiKeyMap[rawKey];
+  let keyInfo = null;
+  try { keyInfo = apiKeyHashMap?.get?.(hashApiKey(rawKey)) || null; } catch { /* hashing needs the install secret; absent → fallback */ }
   return {
-    keyName: keyInfo?.name || `${rawKey.slice(0, 8)}…${rawKey.slice(-6)}`,
+    keyName: keyInfo?.name || `${rawKey.slice(0, 8)}…${rawKey.slice(-4)}`,
     apiKeyMasked: maskApiKey(rawKey),
     apiKeyKey: apiKeyFingerprint(rawKey),
   };
@@ -401,7 +409,7 @@ function loadDaysInRange(adapter, maxDays) {
 export async function getUsageStats(period = "all") {
   const db = await getAdapter();
 
-  const [{ getProviderConnections }, { getApiKeys }, { getProviderNodes }] = await Promise.all([
+  const [{ getProviderConnections }, { getApiKeyHashNameMap }, { getProviderNodes }] = await Promise.all([
     import("./connectionsRepo.js"),
     import("./apiKeysRepo.js"),
     import("./nodesRepo.js"),
@@ -418,10 +426,8 @@ export async function getUsageStats(period = "all") {
     for (const n of nodes) if (n.id && n.name) providerNodeNameMap[n.id] = n.name;
   } catch {}
 
-  let allApiKeys = [];
-  try { allApiKeys = await getApiKeys(); } catch {}
-  const apiKeyMap = {};
-  for (const k of allApiKeys) apiKeyMap[k.key] = { name: k.name, id: k.id, createdAt: k.createdAt };
+  let apiKeyHashMap = new Map();
+  try { apiKeyHashMap = (await getApiKeyHashNameMap()) || apiKeyHashMap; } catch {}
 
   // recentRequests from live history (last 100 entries enough for 20 deduped)
   const recentRows = db.all(`SELECT timestamp, provider, model, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`);
@@ -564,7 +570,7 @@ export async function getUsageStats(period = "all") {
         const metaKey = ak.apiKey || null;
         const keyHead = akKey.split("|")[0];
         const apiKeyVal = metaKey || (keyHead !== "local-no-key" ? keyHead : null);
-        const { keyName, apiKeyMasked, apiKeyKey } = resolveApiKeyMeta(apiKeyVal, apiKeyMap);
+        const { keyName, apiKeyMasked, apiKeyKey } = resolveApiKeyMeta(apiKeyVal, apiKeyHashMap);
         if (!stats.byApiKey[akKey]) {
           stats.byApiKey[akKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel, provider: providerDisplayName, apiKeyMasked, keyName, apiKeyKey, lastUsed: dateKey };
         }
@@ -681,7 +687,7 @@ export async function getUsageStats(period = "all") {
         // Same map-key format as the daily path (raw key | model | provider)
         // so per-key rows stay distinct — masked keys collide because every
         // key on a machine shares the first 8 chars.
-        const { keyName, apiKeyMasked, apiKeyKey } = resolveApiKeyMeta(r.apiKey, apiKeyMap);
+        const { keyName, apiKeyMasked, apiKeyKey } = resolveApiKeyMeta(r.apiKey, apiKeyHashMap);
         const akKey = byApiKeyMapKey(r.apiKey, r.model, r.provider);
         if (!stats.byApiKey[akKey]) {
           stats.byApiKey[akKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel: r.model, provider: providerDisplayName, apiKeyMasked, keyName, apiKeyKey, lastUsed: r.timestamp };

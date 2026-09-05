@@ -53,6 +53,27 @@ export async function getApiKeys() {
   return rows.map(rowToKey);
 }
 
+/**
+ * Map of keyHash → { name, id, createdAt } for usage attribution. Hashed rows
+ * carry their hash; legacy rows still hold the raw key in `key` until first
+ * use, so hash it here — the map then covers every key regardless of
+ * migration state. Consumers holding a RAW key hash it and look it up; raw
+ * keys never appear in the map itself.
+ */
+export async function getApiKeyHashNameMap() {
+  const db = await getAdapter();
+  const rows = db.all(`SELECT id, key, keyHash, name, createdAt FROM apiKeys`);
+  const map = new Map();
+  for (const row of rows) {
+    let hash = row.keyHash;
+    if (!hash && row.key && !String(row.key).includes("•")) {
+      try { hash = hashApiKey(row.key); } catch { /* unreadable row — skip */ }
+    }
+    if (hash) map.set(hash, { name: row.name, id: row.id, createdAt: row.createdAt });
+  }
+  return map;
+}
+
 export async function getApiKeyById(id) {
   const db = await getAdapter();
   const row = db.get(`SELECT * FROM apiKeys WHERE id = ?`, [id]);
