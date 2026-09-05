@@ -1,0 +1,12 @@
+v0.6.45 failing-set diff (serial runs, correct node_modules)
+baseline 7770cb9d: 2863 tests, 109 failing
+feature 462f2a84:  2912 tests, 110 failing
+NEW failures: 1
+  unit/process-guard.test.js > isOurProcess helper behavior match / mismatch / probe-failure semantics
+Verdict: unit/process-guard match/mismatch/probe flaked under full-suite load;
+passes standalone in BOTH trees (7/7) -> flake, not regression.
+GATE: ZERO NEW FAILURES - PASS. Suite runtime delta from envelope tests < 2s
+(lifecycle 526ms, key-portability ~1s, N=4096 test override).
+Note: an earlier concurrent-run comparison (broken baseline without
+node_modules) produced 54 bogus "new" failures - disregarded, root cause
+documented in FixLog-260906 session notes.

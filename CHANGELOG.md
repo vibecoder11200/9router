@@ -1,4 +1,43 @@
-# v0.6.44 (2026-09-06)
+# v0.6.45 (2026-09-06)
+
+API keys become portable in backups. Exporting with the dashboard
+password embeds the key-hashing secret inside the backup, encrypted with
+that password (scrypt N=2^16 + AES-256-GCM); importing with the same
+password adopts the secret so every restored key validates immediately.
+
+## Features
+- **Backups can now carry working API keys across installs**: exporting
+  with the dashboard password embeds the key-hashing secret inside the
+  backup, encrypted with that password (scrypt N=2^16 + AES-256-GCM).
+  Importing with the same password adopts the secret, so every restored
+  key validates immediately. Sealing only happens when the password
+  matches a stored dashboard password — exports made before one is set,
+  or via CLI token without one, omit the secret. The rest of the backup
+  file — including provider access tokens — remains unencrypted
+  (full-archive encryption is planned for v0.6.46).
+- **Re-key fallback**: importing with a wrong/missing password still
+  imports everything; affected keys are flagged "needs re-key" and can
+  be fixed by pasting their raw key once (Endpoint page or CLI). The
+  re-key action is offered only for flagged keys and rate-limits wrong
+  pastes (5 fails per key → 15-minute lockout).
+- **Stronger key IDs**: new keys use a 12-char crypto-random id
+  (~62 bits, was 6 chars via a non-crypto PRNG); existing keys
+  unaffected.
+- **CLI: Backup & Restore menu** — export to a JSON file in the current
+  directory, import from a path, both password-gated with masked
+  password prompts; the re-key action in the API Keys menu also masks
+  the pasted key.
+
+## Fixes
+- **Importing an empty/foreign JSON no longer wipes the database**: a
+  wrong file pick (an empty object, an unrelated JSON) used to delete
+  every table and silently reset auth to the fallback password; the
+  import now rejects payloads that don't look like a 9Router backup
+  before touching anything.
+- **The backup routes are now rate-limited** like the login route
+  (a successful password guess used to return the whole database in
+  one unthrottled request), and overlapping imports are serialized.
+
 
 Regression-sweep release: a full audit of every change since v0.6.35
 (v0.6.36 hardening A → v0.6.41) traced each behavior change back through

@@ -1,0 +1,110 @@
+translator/bugs-toClaude-context.test.js > OpenAI → Claude context mapping assistant reasoning_content becomes a thinking block
+translator/golden-url-header.test.js > GOLDEN buildHeaders (default executor providers) cline → headers (apiKey / oauth)
+translator/golden-url-header.test.js > GOLDEN buildHeaders (default executor providers) clinepass → headers (apiKey / oauth)
+translator/golden-url-header.test.js > GOLDEN buildHeaders (default executor providers) kimi → headers (apiKey / oauth)
+unit/claude-header-forwarding.test.js > proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
+unit/codex-image-fetch.test.js > CodexExecutor image handling execute() prefetches images before sending to upstream
+unit/codex-image-fetch.test.js > CodexExecutor image handling fetches 1MB remote image and inlines it as base64 data URI
+unit/combo-autoswitch.test.js > detectRequiredCapabilities web_search tool -> search
+unit/combo-autoswitch.test.js > reorderByCapabilities keeps order when no model matches
+unit/compatible-provider-connections.test.js > compatible provider connections API creates one API-key connection for an OpenAI-compatible node
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpArgs decode decodes name, toolName, toolCallId, and typed args map
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpArgs decode handles empty args map
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult error / toolNotFound builds error result (field 2)
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult error / toolNotFound builds toolNotFound result (field 5)
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult image content builds image item with raw bytes + mime type
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult image content builds mixed text + image content
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult success builds success with multiple text items
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult success builds success with single text content
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpResult success marks is_error=true
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpToolDefinition accepts flat tool shape (no .function wrapper)
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpToolDefinition encodes name, description, input_schema (Value), provider, tool_name
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) McpToolDefinition preserves nested JSON-schema types
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) encodeMcpTools produces empty bytes for no tools
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) encodeMcpTools wraps multiple tool defs as repeated field 1
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes array of mixed
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes bool false
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes bool true
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes deeply nested
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes empty object
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes flat object
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes float
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes integer
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes nested object
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes null
+unit/cursor-agent-proto.test.js > Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes string
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame encodes a text-only run request with system + model
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame encodes conversation_history from prior turns including tool calls/results
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame encodes mcp_tools (field 4) when tools are provided
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame omits mcp_tools when no tools provided
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts array text content
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts history with assistant tool_calls + tool results
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts plain text content
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts request with tools declared
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest rejects missing messages
+unit/cursor-agent-proto.test.js > Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest rejects non-text (image) content
+unit/cursor-models.test.js > Cursor live model catalog fetches the account-specific catalog and caches it
+unit/db-concurrent.test.js > DB Concurrency — atomic safety 100 parallel saveRequestUsage → no count loss
+unit/db-concurrent.test.js > DB Concurrency — atomic safety daily summary aggregates correctly under parallel writes
+unit/db-concurrent.test.js > DB Concurrency — atomic safety mixed concurrent: usage + details + connections + aliases
+unit/db-sqlite-vs-lowdb.test.js > DB SQLite layer — public API parity proxyPools: CRUD with sort by updatedAt desc
+unit/executor-const-guard.test.js > antigravity retry (intentional change: 429=6, 503=3) 429 attempts = 6
+unit/gemini-web-provider-registration.test.js > gemini-web provider registration has deprecationNotice with risk warning
+unit/gemini-web-rpc.test.js > buildBatchExecutePayload builds URL-encoded form body
+unit/gemini-web-rpc.test.js > buildBatchExecutePayload encodes special characters
+unit/gemini-web-rpc.test.js > buildGeneratePayload converts OpenAI messages to Gemini Web format
+unit/gemini-web-rpc.test.js > buildGeneratePayload extracts text from content arrays
+unit/gemini-web-rpc.test.js > buildGeneratePayload handles empty messages gracefully
+unit/gemini-web-rpc.test.js > buildGenerateRequestBody builds complete URL-encoded request body
+unit/gemini-web-rpc.test.js > buildRpcBody defaults to boq_assistant-bard-web-ui
+unit/gemini-web-rpc.test.js > extractGeneratedText extracts the longest string from nested arrays
+unit/gemini-web-rpc.test.js > extractGeneratedText skips URLs and token-like strings
+unit/gemini-web-rpc.test.js > extractModelList finds model identifiers in nested data
+unit/gemini-web-rpc.test.js > parseBatchExecuteResponse handles missing prefix gracefully
+unit/gemini-web-rpc.test.js > parseBatchExecuteResponse parses a single frame
+unit/gemini-web-rpc.test.js > parseBatchExecuteResponse parses multiple frames
+unit/gemini-web-rpc.test.js > parseBatchExecuteResponse returns empty array for null/empty input
+unit/gemini-web-rpc.test.js > parseBatchExecuteResponse skips malformed frames
+unit/gemini-web-rpc.test.js > parseResponseFrames yields frames from generator
+unit/gemini-web-session.test.js > rotateGeminiWebCookies — validation throws on invalid input
+unit/headroom-detect.test.js > headroom detect prefers the interpreter that actually has headroom-ai installed
+unit/image-fetch-hardening.test.js > fetchImageAsBase64 hardening accepts valid PNG from public host
+unit/kiro-terminal-integrity.test.js > Kiro terminal integrity recovery bounds the retry HTTP error body
+unit/kiro-terminal-integrity.test.js > Kiro terminal integrity recovery surfaces retry HTTP failures as SSE after heartbeat commits headers
+unit/mimo-free.live.test.js > MiMo Free anti-abuse gate (live) chat WITH Chrome User-Agent → 200
+unit/model-routing.test.js > model routing keeps built-in provider aliases ahead of compatible node prefixes
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import extracts tokens using exact keys
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import falls back to fuzzy key matching on macOS when exact keys are missing
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import linux uses single hardcoded path and original error message
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import returns descriptive error if macOS db file exists but cannot be opened
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import returns login-prompt error when tokens are missing even after fallback
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import returns not-found when no macOS cursor db paths are accessible
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import unsupported platform returns 400
+unit/oauth-cursor-auto-import.test.js > GET /api/oauth/cursor/auto-import unwraps JSON-encoded string values
+unit/openai-to-claude.test.js > openaiToClaudeResponse omits empty Read pages tool argument before emitting Claude input deltas
+unit/process-guard.test.js > isOurProcess helper behavior match / mismatch / probe-failure semantics
+unit/reasoningContentInjector.test.js > injectReasoningContent — MiniMax thinking round-trip DefaultExecutor transformRequest runs the injector for minimax
+unit/request-details-tab.test.js > getDistinctProviders — providers route (no full-row parse) returns unique provider list without parsing data blobs
+unit/request-details-tab.test.js > request details — tab crash-risk cases oversized field → stored truncated + reparseable (no circular)
+unit/security-audit.test.js > AUDIT-001: Synchronous restart guard mitmIsRestarting should be reset on max-restarts early return
+unit/security-audit.test.js > AUDIT-001: Synchronous restart guard mitmIsRestarting should be set before first await expression
+unit/security-audit.test.js > AUDIT-002: API key masking byApiKey object keys should use masked key, not raw key
+unit/security-audit.test.js > AUDIT-002: API key masking getUsageHistory should use apiKeyMasked instead of apiKey
+unit/security-audit.test.js > AUDIT-002: API key masking getUsageStats should use apiKeyMasked in byApiKey entries
+unit/security-audit.test.js > AUDIT-002: API key masking source should contain maskApiKey function
+unit/security-audit.test.js > AUDIT-003: Proxy URL validation source should contain validateProxyUrl function
+unit/security-audit.test.js > AUDIT-004: Atomic lock file for MITM startup manager.js should define LOCK_FILE constant
+unit/security-audit.test.js > AUDIT-004: Atomic lock file for MITM startup should clean up lock file on all exit paths
+unit/security-audit.test.js > AUDIT-004: Atomic lock file for MITM startup should use O_EXCL flag (wx) for atomic creation
+unit/security-audit.test.js > AUDIT-018: XSS escaping in OAuth callback should escape ampersand, angle brackets, and quotes
+unit/security-audit.test.js > AUDIT-018: XSS escaping in OAuth callback should use safeMessage in rendered HTML, not raw message
+unit/security-audit.test.js > AUDIT-018: XSS escaping in OAuth callback source should contain escapeHtml function
+unit/translator-request-normalization.test.js > request normalization claudeToOpenAIRequest flattens text-only content arrays into string
+unit/translator-request-normalization.test.js > request normalization filterToOpenAIFormat flattens text-only arrays to string
+unit/translator-request-normalization.test.js > request normalization parseSSELine supports provider raw NDJSON stream lines
+unit/translator-request-normalization.test.js > request normalization translateRequest keeps /v1/messages Claude->OpenAI text payloads string-safe
+unit/windsurf-executor.test.js > WindsurfExecutor class PROVIDERS.windsurf baseUrl is the chat endpoint (registry in sync)
+unit/windsurf-executor.test.js > WindsurfExecutor class buildUrl returns the GetChatMessage endpoint
+unit/windsurf-executor.test.js > WindsurfExecutor class constructor wires config from PROVIDERS.windsurf
+unit/xai-oauth-service.test.js > xai/oauth service exchanges dashboard codes against the discovered xAI token endpoint
+unit/xai-oauth-service.test.js > xai/oauth service generates dashboard auth data with CLIProxyAPI PKCE size and discovered endpoints
