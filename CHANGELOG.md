@@ -1,3 +1,66 @@
+# v0.6.44 (2026-09-06)
+
+Regression-sweep release: a full audit of every change since v0.6.35
+(v0.6.36 hardening A → v0.6.41) traced each behavior change back through
+its consumers and fixed the 20+ regressions found — including several
+latent breaks the test suite could not see. Verified by a full-suite
+failing-set diff against a clean v0.6.43 checkout (zero new failures;
+three usage-dashboard tests broken since v0.6.36 pass again).
+
+## Fixes
+- **Database export was completely broken (since v0.6.36)**:
+  `exportDb` threw `ReferenceError` on any database holding at least one
+  API key — the S7 hash helpers were re-exported but never imported into
+  module scope. The round-trip test never created a key, so CI stayed
+  green. Exports also now carry per-key budget config and an install id.
+- **Importing a backup on another machine warns instead of silently
+  killing every API key**: `keyHash` is HMAC'd with the exporting
+  install's secret, so restored keys can never validate elsewhere; the
+  import result now explains that loudly (and `[REDACTED]` session-token
+  markers are never persisted as fake credentials).
+- **Usage dashboard "API Key Name" column (since v0.6.36)**: attribution
+  joined raw keys against the masked display column — a match that can
+  never succeed. Now hash-joins; works for every migration state.
+- **Masked display keys no longer fed into credentials anywhere**: MITM
+  start (auto + manual), all 14 CLI-tool dashboard cards, ApiKeySelect,
+  and the CLI quick-setups refused or wrote dead tokens; all now ask for
+  the RAW key (shown once at creation) or run keyless in local mode.
+- **Account failover restored for provider auth/billing errors**: the C4
+  NO_FALLBACK list had silently ended account rotation for
+  expired-cookie / out-of-credit errors (gemini-web, grok, genspark,
+  perplexity, qoder, commandcode, grok-cli, openrouter, anthropic) —
+  text evidence now rotates accounts again; bare deterministic 4xx
+  still fails fast.
+- **Proxy-pool outages no longer lock accounts or trip circuit
+  breakers**: proxy-infra failures skip the account without a model-lock
+  or breaker record; noauth pool exhaustion no longer fires a false
+  "all accounts locked" alert; alert dedup lets higher severities
+  through.
+- **Per-key budget hard-block now covers all spending endpoints**
+  (embeddings, fetch, stt, tts, images, search, video) — previously only
+  chat enforced it.
+- **Self-hosted provider nodes validate again**: the v0.6.36 SSRF
+  hardening blocked localhost/LAN base URLs even for local callers;
+  provably-local requests may now reach them (credential headers are
+  stripped on cross-origin redirects instead of being replayed).
+- **Upgrades no longer lock tunnel users out of their dashboard**: a
+  one-time migration preserves pre-v0.6.36 implicit access for installs
+  that predate the fail-closed default flip.
+- **Windows xray/DS2API no longer orphaned by a failed PID check**: a
+  slow/blocked PowerShell-CIM probe used to delete the PID file of a
+  live process and brick restarts; unprovable PIDs are now treated
+  conservatively.
+- **Streams**: no more duplicate `[DONE]` frames for `data:[DONE]`
+  (no-space) upstreams; client-cancel-early no longer loses lock-heal /
+  breaker success; remote-image prefetch is cached so fallback attempts
+  stop re-downloading images.
+- **Proxy-pool delete UI** shows the real 409 reason (bound strategies)
+  and offers unbind-and-delete.
+- Plus: stale MITM sudo blobs self-clear with a warning instead of
+  silently disabling auto-start, hex-form IPv4-mapped IPv6 loopback is
+  recognized, and the CommandCode peek escape hatches are documented in
+  `.env.example`.
+
 # v0.6.43 (2026-09-06)
 
 Hotfix on v0.6.42: with **Require API Key enabled** (the fresh-install
