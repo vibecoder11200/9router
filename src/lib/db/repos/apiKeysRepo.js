@@ -44,6 +44,9 @@ function rowToKey(row) {
       ? Math.min(100, Math.floor(Number(row.softThresholdPct)))
       : 80,
     hardBlock: row.hardBlock === 1 || row.hardBlock === true,
+    // v0.6.45: imported keyHash this install's secret cannot validate (re-key
+    // clears it — phase 03). Older rows without the column resolve to false.
+    needsRekey: row.needsRekey === 1 || row.needsRekey === true,
   };
 }
 

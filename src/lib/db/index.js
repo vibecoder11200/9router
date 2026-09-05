@@ -2,6 +2,7 @@
 import { getAdapter } from "./driver.js";
 import { stringifyJson, parseJson } from "./helpers/jsonCol.js";
 import { getMeta, setMeta } from "./helpers/metaStore.js";
+import { isBackupEnvelope, openBackupSecret } from "@/lib/auth/backupEnvelope.js";
 import crypto from "node:crypto";
 
 /**
@@ -116,13 +117,23 @@ export {
 } from "./repos/modelFilterResultsRepo.js";
 
 // Export/import full DB
-export async function exportDb() {
+//
+// v0.6.45 key portability: `options.password` (a dashboard password already
+// verified by the caller against the STORED bcrypt hash — RT-03) wraps the
+// "api-keys-hmac" install secret into `authSecretEnvelope` so a backup is
+// portable across installs. Without a password the archive is envelope-less
+// (`meta.authSecretWrapped === false`) and imported keyHash rows cannot
+// validate on another install (needsRekey flags them on import).
+export async function exportDb(options = {}) {
   const db = await getAdapter();
   const { exportSettings } = await import("./repos/settingsRepo.js");
 
   const out = {
-    meta: { installId: await getInstallId(), exportedAt: new Date().toISOString() },
-    settings: await exportSettings(),
+    meta: {
+      installId: await getInstallId(),
+      exportedAt: new Date().toISOString(),
+      authSecretWrapped: false,
+    },
     providerConnections: db.all(`SELECT * FROM providerConnections`).map((r) => {
       const data = parseJson(r.data, {});
       // X12: session tokens must never leave the box via DB export.
@@ -147,6 +158,9 @@ export async function exportDb() {
       budgetWindow: r.budgetWindow === "monthly" ? "monthly" : "daily",
       softThresholdPct: Number(r.softThresholdPct) || 80,
       hardBlock: r.hardBlock === 1 || r.hardBlock === true ? 1 : 0,
+      // Sticky: an inert (needsRekey) row re-exported stays inert until
+      // re-keyed on some install.
+      needsRekey: r.needsRekey === 1 || r.needsRekey === true ? 1 : 0,
     })),
     combos: db.all(`SELECT * FROM combos`).map((r) => ({ id: r.id, name: r.name, kind: r.kind, models: parseJson(r.models, []), createdAt: r.createdAt, updatedAt: r.updatedAt })),
     modelAliases: {},
@@ -160,6 +174,13 @@ export async function exportDb() {
   for (const r of db.all(`SELECT key, value FROM kv WHERE scope = 'mitmAlias'`)) out.mitmAlias[r.key] = parseJson(r.value);
   for (const r of db.all(`SELECT key, value FROM kv WHERE scope = 'pricing'`)) out.pricing[r.key] = parseJson(r.value);
 
+  if (typeof options.password === "string" && options.password) {
+    const { sealBackupSecret } = await import("@/lib/auth/backupEnvelope.js");
+    const { getOrCreateInstallSecret } = await import("@/lib/auth/installSecret.js");
+    out.authSecretEnvelope = await sealBackupSecret(getOrCreateInstallSecret("api-keys-hmac"), options.password);
+    out.meta.authSecretWrapped = Boolean(out.authSecretEnvelope);
+  }
+
   return out;
 }
 
@@ -168,24 +189,77 @@ export async function exportDb() {
 // ciphertext. Current values are preserved over imported ones.
 const PROTECTED_SETTING_KEYS = ["password", "mitmSudoEncrypted"];
 
-export async function importDb(payload) {
+// RT-05: minimum shape a payload must have before importDb may wipe anything.
+// A wrong file pick ({}, {"unexpected":1}) must NEVER reach the DELETEs —
+// it would drop every table and (worse) reset auth to the "123456" fallback.
+const KNOWN_TABLE_KEYS = [
+  "settings", "providerConnections", "providerNodes", "proxyPools", "apiKeys",
+  "combos", "modelAliases", "customModels", "mitmAlias", "pricing",
+];
+
+// RT-07: serialize the whole unwrap→transaction→adopt sequence. db.transaction
+// callbacks are synchronous, but the scrypt unwrap and the awaited exportDb
+// yield between them — two overlapping imports must never interleave and pair
+// rows with the wrong secret.
+let importChain = Promise.resolve();
+
+export function importDb(payload, options = {}) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     throw new Error("Invalid database payload");
   }
+  // RT-05 shape guard FIRST — before any DELETE could run.
+  if (
+    !payload.meta || typeof payload.meta !== "object" ||
+    !KNOWN_TABLE_KEYS.some((k) => k in payload && payload[k] !== undefined)
+  ) {
+    throw new Error("Invalid database payload: not a 9Router backup archive");
+  }
+  const run = importChain.then(
+    () => doImportDb(payload, options),
+    () => doImportDb(payload, options)
+  );
+  // A rejected import never poisons the chain for later imports.
+  importChain = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+async function doImportDb(payload, options = {}) {
   const db = await getAdapter();
+  const password = typeof options.password === "string" ? options.password : "";
+  const envelope = payload.authSecretEnvelope;
 
   // Cross-install restore (S7 follow-up): apiKeys.keyHash is HMAC'd with the
-  // EXPORTING install's secret. On a different install the hash can never
-  // match and the raw key exists nowhere, so restored keys are permanently
-  // unvalidatable — surface that loudly instead of failing 401s in silence.
-  // (Same-install restores share the secret and keep working.)
+  // EXPORTING install's secret. When the envelope's secret is adopted below,
+  // hashes DO validate despite differing installIds — so the cross-install
+  // warning is suppressed for adopted imports. A missing imported installId
+  // counts as unknown (foreignOrUnknown): pre-v0.6.44 archives with keyHash
+  // flag needsRekey; that is advisory-only and re-key is optional.
+  let importedInstallId = null;
   let crossInstallKeys = false;
+  let foreignOrUnknown = false;
   try {
-    const importedInstallId = payload.meta?.installId;
+    importedInstallId = payload.meta?.installId ?? null;
+    const localInstallId = await getInstallId();
+    foreignOrUnknown = importedInstallId !== localInstallId;
     if (importedInstallId && (payload.apiKeys || []).length > 0) {
-      crossInstallKeys = importedInstallId !== (await getInstallId());
+      crossInstallKeys = foreignOrUnknown;
     }
   } catch { /* warning is best-effort */ }
+
+  // Unwrap BEFORE the transaction (async scrypt cannot run inside the sync
+  // transaction callback). RT-06: skip entirely without a password — an
+  // envelope-bearing archive imported password-less goes straight to inert
+  // instead of burning a full scrypt to inevitably fail.
+  let newSecret = null;
+  let unwrapFailed = false;
+  if (password && isBackupEnvelope(envelope)) {
+    try {
+      newSecret = await openBackupSecret(envelope, password);
+    } catch {
+      unwrapFailed = true; // wrong password or tamper — NEVER hard-fail the import
+    }
+  }
+
   let redactedLoginTokens = 0;
 
   db.transaction(() => {
@@ -246,12 +320,18 @@ export async function importDb(payload) {
     }
     for (const k of payload.apiKeys || []) {
       // Legacy archives (pre-S7) carry the raw key and no hash — insert as-is;
-      // the lazy backfill in validateApiKey migrates it on first use. Archives
-      // from this version carry keyHash + masked key directly. Budget columns
-      // (phase 08) ride the same row when present.
+      // the lazy backfill in validateApiKey migrates it on first use (and such
+      // rows are never needsRekey: their hash is computed locally on arrival).
+      // Archives from this version carry keyHash + masked key directly, plus
+      // budget columns (phase 08) and the sticky needsRekey flag. Inert rows =
+      // keyHash present AND the envelope's secret was NOT recovered AND the
+      // archive is from a different/unknown install — same-install wrong or
+      // missing password leaves the local secret untouched, so hashes still
+      // validate and needsRekey stays 0.
+      const inert = !newSecret && Boolean(k.keyHash) && foreignOrUnknown;
       db.run(
         `INSERT OR REPLACE INTO apiKeys(id, key, keyHash, name, machineId, isActive, createdAt,
-          budgetType, budgetLimit, budgetWindow, softThresholdPct, hardBlock) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          budgetType, budgetLimit, budgetWindow, softThresholdPct, hardBlock, needsRekey) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           k.id, k.key, k.keyHash || null, k.name || null, k.machineId || null,
           k.isActive === false ? 0 : 1, k.createdAt || new Date().toISOString(),
@@ -259,6 +339,7 @@ export async function importDb(payload) {
           k.budgetWindow === "monthly" ? "monthly" : "daily",
           Number(k.softThresholdPct) || 80,
           k.hardBlock === 1 || k.hardBlock === true ? 1 : 0,
+          (k.needsRekey === 1 || k.needsRekey === true || inert) ? 1 : 0,
         ]
       );
     }
@@ -283,11 +364,43 @@ export async function importDb(payload) {
     }
   });
 
+  // RT-04: adopt AFTER the transaction commits — nothing inside the sync
+  // transaction needs the secret (INSERT values come verbatim from the
+  // payload). If adoption fails post-commit, imported rows are stranded
+  // inert-but-unflagged: best-effort flag every keyHash row needsRekey and
+  // surface the re-key warning (import still succeeds).
+  let adopted = false;
+  let adoptFailed = false;
+  if (newSecret) {
+    try {
+      const { adoptInstallSecret } = await import("@/lib/auth/installSecret.js");
+      adoptInstallSecret("api-keys-hmac", newSecret);
+      adopted = true;
+    } catch (err) {
+      adoptFailed = true;
+      console.error("[DB][import] key secret adoption failed after commit — imported API keys need re-keying:", err?.message);
+      try {
+        db.run(`UPDATE apiKeys SET needsRekey = 1 WHERE keyHash IS NOT NULL`);
+      } catch { /* best-effort */ }
+    }
+  }
+
   const restored = await exportDb();
+  const needsRekeyCount = (restored.apiKeys || []).filter((k) => k.needsRekey).length;
   const warnings = [];
-  if (crossInstallKeys) {
+  if (unwrapFailed) {
     warnings.push(
-      "This archive was exported on a different 9Router install. Its API keys cannot work here (raw keys are never stored), so create new keys and update your tools."
+      `The backup embedded an encrypted key secret, but the password did not match the one used when the backup was exported. Everything else was imported. ${needsRekeyCount} API key(s) were restored but cannot authenticate until re-keyed (Endpoint page → Re-key, or CLI) — paste each raw key once.`
+    );
+  }
+  if (adoptFailed) {
+    warnings.push(
+      `The backup's embedded key secret could not be activated on this install. Everything else was imported. ${needsRekeyCount} API key(s) were restored but cannot authenticate until re-keyed (Endpoint page → Re-key, or CLI) — paste each raw key once.`
+    );
+  }
+  if (crossInstallKeys && !adopted) {
+    warnings.push(
+      "This archive was exported on a different 9Router install and its API-key secret was not restored, so the imported keys cannot authenticate here (raw keys are never stored) — re-key them (Endpoint page → Re-key, or CLI) and update your tools."
     );
   }
   if (redactedLoginTokens > 0) {
@@ -295,7 +408,13 @@ export async function importDb(payload) {
       `${redactedLoginTokens} connection(s) had their session login token redacted in the export — sign in again for those accounts (balance/usage display).`
     );
   }
+  if (!envelope && !importedInstallId && (payload.apiKeys || []).some((k) => k.keyHash)) {
+    warnings.push(
+      "This backup predates v0.6.44 and carries no install id or embedded secret — if it came from another machine, its keys need re-keying."
+    );
+  }
   if (warnings.length) restored.warnings = warnings;
+  restored.needsRekeyCount = needsRekeyCount;
   return restored;
 }
 

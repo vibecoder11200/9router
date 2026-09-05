@@ -87,3 +87,18 @@ export async function verifyDashboardPassword(password, request = null) {
   const initialPassword = process.env.INITIAL_PASSWORD || DEFAULT_PASSWORD;
   return password === initialPassword;
 }
+
+/**
+ * RT-03 (v0.6.45 key portability): compare ONLY against the stored bcrypt
+ * hash in settings. NO default/INITIAL_PASSWORD fallback branches — a backup
+ * envelope must never be sealed under the publicly-known "123456". Returns
+ * false when no hash is stored. Used by the database export route to gate
+ * password-wrapped secret sealing.
+ */
+export async function verifyDashboardPasswordAgainstStoredHash(password) {
+  if (typeof password !== "string" || !password) return false;
+  const settings = await getSettings();
+  const storedHash = settings?.password;
+  if (!storedHash) return false;
+  return bcrypt.compare(password, storedHash);
+}

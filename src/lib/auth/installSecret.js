@@ -28,3 +28,35 @@ export function getOrCreateInstallSecret(fileName = "install-secret") {
   cache.set(fileName, secret);
   return secret;
 }
+
+/**
+ * Adopt an externally-provided secret (v0.6.45 backup import): overwrite the
+ * file AND the in-process cache atomically enough for our single-threaded
+ * callers — the cache write is what keeps the running process signing with
+ * the new secret without a restart. Throws on empty/invalid input.
+ */
+export function adoptInstallSecret(fileName, secret) {
+  if (typeof secret !== "string" || !secret.trim()) throw new Error("adoptInstallSecret: empty secret");
+  const file = path.join(AUTH_DIR, fileName);
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+  fs.writeFileSync(file, secret, { mode: 0o600 });
+  cache.set(fileName, secret);
+  return secret;
+}
+
+/**
+ * Read the current secret WITHOUT creating anything (null when absent) —
+ * lets callers inspect adoption state; keeps this module the single owner
+ * of AUTH_DIR.
+ */
+export function readInstallSecret(fileName = "install-secret") {
+  const hit = cache.get(fileName);
+  if (hit) return hit;
+  try {
+    const secret = fs.readFileSync(path.join(AUTH_DIR, fileName), "utf8").trim() || null;
+    if (secret) cache.set(fileName, secret);
+    return secret;
+  } catch {
+    return null;
+  }
+}

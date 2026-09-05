@@ -160,6 +160,8 @@ describe("importDb cross-install / redaction warnings", () => {
 
   it("never persists the '[REDACTED]' loginToken marker", async () => {
     const payload = {
+      // v0.6.45 RT-05: importDb now requires meta + ≥1 known table key.
+      meta: { installId: "s7-test-install" },
       providerConnections: [{
         id: "c1", provider: "totu-ai", authType: "oauth", name: "totu", email: null,
         priority: 1, isActive: true, createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
@@ -176,6 +178,8 @@ describe("importDb cross-install / redaction warnings", () => {
 
   it("restores budget columns for apiKeys", async () => {
     const payload = {
+      // v0.6.45 RT-05: importDb now requires meta + ≥1 known table key.
+      meta: { installId: "s7-test-install" },
       apiKeys: [{
         id: "k1", key: MASKED, keyHash: hmacOf(RAW_KEY), name: "ci", isActive: true,
         createdAt: "2026-01-01T00:00:00.000Z",

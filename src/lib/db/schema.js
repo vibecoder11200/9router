@@ -90,6 +90,9 @@ export const TABLES = {
       budgetWindow: "TEXT DEFAULT 'daily'",   // daily | monthly (server-local)
       softThresholdPct: "INTEGER DEFAULT 80", // edge-triggered alert threshold
       hardBlock: "INTEGER DEFAULT 0",         // 1 -> 429 at limit
+      // v0.6.45: imported keyHash that this install's secret cannot validate
+      // (re-key to fix). Additive-with-default — NO SCHEMA_VERSION bump needed.
+      needsRekey: "INTEGER DEFAULT 0",
     },
     indexes: [
       "CREATE INDEX IF NOT EXISTS idx_ak_key ON apiKeys(key)",

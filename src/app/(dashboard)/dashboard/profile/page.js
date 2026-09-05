@@ -717,10 +717,14 @@ export default function ProfilePage() {
 
       await reloadSettings();
       const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      const needsRekeyCount = Number(data.needsRekeyCount) || 0;
+      const rekeyNote = needsRekeyCount > 0
+        ? `${needsRekeyCount} key(s) need re-keying — Endpoint page → API Keys → Re-key.`
+        : "";
       setDbStatus({
-        type: warnings.length ? "warning" : "success",
-        message: warnings.length
-          ? `Database imported with notices: ${warnings.join(" ")}`
+        type: warnings.length || needsRekeyCount ? "warning" : "success",
+        message: warnings.length || needsRekeyCount
+          ? `Database imported with notices: ${[...warnings, rekeyNote].filter(Boolean).join(" ")}`
           : "Database imported successfully",
       });
     } catch (err) {
@@ -1686,7 +1690,9 @@ export default function ProfilePage() {
         }
       >
         <p className="text-text-muted mb-3 text-sm">
-          Enter your current password to {dbAuth.mode === "export" ? "export" : "import"} the database.
+          {dbAuth.mode === "export"
+            ? "Enter your dashboard password. It encrypts your API-key secret inside the backup — but the rest of the backup, including provider access tokens, stays unencrypted; store the file securely."
+            : "Enter your CURRENT dashboard password. If it differs from the password used when this backup was exported, the keys will need re-keying after import."}
         </p>
         <Input
           type="password"
