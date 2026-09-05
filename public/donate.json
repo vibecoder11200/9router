@@ -18,7 +18,7 @@
       "icon": "local_cafe",
       "color": "#ff5e5b",
       "url": "https://ko-fi.com/vibecoder11200",
-      "qr": ""
+      "qr": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=https%3A%2F%2Fko-fi.com%2Fvibecoder11200"
     },
     {
       "id": "paypal",
@@ -27,7 +27,7 @@
       "icon": "payments",
       "color": "#0070ba",
       "url": "https://paypal.me/vibecoder11200",
-      "qr": ""
+      "qr": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=https%3A%2F%2Fpaypal.me%2Fvibecoder11200"
     }
   ]
 }
