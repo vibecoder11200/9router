@@ -135,6 +135,7 @@ export async function exportDb(options = {}) {
       exportedAt: new Date().toISOString(),
       authSecretWrapped: false,
     },
+    settings: await exportSettings(),
     providerConnections: db.all(`SELECT * FROM providerConnections`).map((r) => {
       const data = parseJson(r.data, {});
       // X12: session tokens must never leave the box via DB export.
