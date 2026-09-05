@@ -1,0 +1,88 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","zh-CN","features","api-keys",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","features/api-keys","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Tbc7,# API Key 与预算
+
+启用 **Require API key** 后，API key 控制 9Router 端点的访问。key 以哈希形式存储，且每个 key 可以携带自己的消费预算，可选硬性强制。
+
+---
+
+## API Key 安全性
+
+- **静态哈希** —— key 以 HMAC-SHA256 摘要存储，密钥为每次安装随机生成的 secret（机器上的 `0600` 文件），绝不存明文。旧的明文 key 继续可用，并在首次使用时惰性迁移。
+- **处处脱敏** —— 列表和 UI 只显示 `sk-{keyId}-••••{last4}`。导出/备份只包含哈希，绝无原始 key。
+- **按安装的 secret** —— key 哈希与 MITM sudo 加密的 secret 每次安装随机生成；没有机器推导或硬编码的兜底密钥。
+
+> 📦 **从旧版本升级？** 升级到带 key 哈希的版本（`v0.6.36+`）前请先备份数据库，并在升级后重新输入一次 MITM sudo 密码 —— 旧密文在新密钥下有意设计为不可解密。
+
+---
+
+## 按 Key 预算
+
+每个 key 可设置预算，防止失控的 agent 或共用者烧光你的配额。
+
+```
+Dashboard → Endpoint & Key → ✏️ 编辑 key → Budget
+
+预算类型:   USD  |  Token  |  关闭
+限额:       例如 5 (USD) 或 50,000,000 (token)
+窗口:       每日  |  每月   （服务器本地时间）
+软阈值:     80%   → 每窗口触发一次 budget-threshold 告警
+硬阻断:     开/关 → 到达限额时返回 429 + Retry-After
+```
+
+### 行为
+
+| 时机 | 发生什么 |
+|---|---|
+| 支出 < 限额的 80% | 正常流量 |
+| 支出 ≥ 软阈值（默认 80%） | 每窗口一次 `budget-threshold` 告警（边沿触发，不刷屏）；即使未开硬阻断，80% 起也带信息性标识 |
+| 支出 ≥ 限额 **且硬阻断开启** | 请求被拒：`429`、指向窗口结束的 `Retry-After` 头，以及 `X-9Router-Budget: limit-exceeded` |
+| 窗口滚动 | 预算重置，告警重新武装 |
+
+支出在**执行时从使用历史实时读取**（索引查询）。无预算的 key 在热路径上零额外查询。
+
+### 选 USD 还是 Token
+
+- **Token 预算精确** —— 统计 prompt + completion token。
+- **USD 预算是估算** —— 汇总已记录的成本，依赖模型已配置价格。未定价的模型计入 $0，因此可能少计；当 key 支出主要来自未定价模型时编辑器会警告。
+
+### 条件与注意
+
+- 预算仅在 **Require API key** 开启时生效。
+- 窗口按**服务器本地时间**计算：每日 = 本地零点，每月 = 1 号。
+- 告警通过[告警](./alerts.md)系统送达 —— 需配置渠道。
+
+---
+
+## 创建与管理 Key
+
+```
+Dashboard → Endpoint & Key
+
++ 创建 key  →  sk-... 只显示一次（立即复制）
+✏️ 编辑      →  重命名、预算、启用开关
+🗑 删除      →  立即吊销
+```
+
+建议每个工具/每人一个 key（如 `cursor-laptop`），使用统计与预算归属清晰。
+
+---
+
+## 相关
+
+- [告警](./alerts.md) - `budget-threshold` 事件
+- [配额追踪](./quota-tracking.md) - 按 key 的使用分析
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"API Key 安全性","id":"api-key-安全性"},{"level":2,"text":"按 Key 预算","id":"按-key-预算"},{"level":3,"text":"行为","id":"行为"},{"level":3,"text":"选 USD 还是 Token","id":"选-usd-还是-token"},{"level":3,"text":"条件与注意","id":"条件与注意"},{"level":2,"text":"创建与管理 Key","id":"创建与管理-key"},{"level":2,"text":"相关","id":"相关"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f","baseDir":"/zh-CN/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

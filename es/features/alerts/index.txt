@@ -1,0 +1,99 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","es","features","alerts",""],"q":"","i":false,"f":[[["",{"children":[["lang","es","d"],{"children":[["slug","features/alerts","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Td28,# Alertas
+
+9Router puede enviar alertas operativas a **Telegram**, **Discord** o cualquier **webhook genérico** cuando algo requiere tu atención — antes de que tu sesión de código se detenga.
+
+El envío es fire-and-forget: nunca bloquea ni ralentiza el manejo de peticiones, y todo el sistema permanece inerte hasta que configuras un canal.
+
+---
+
+## Configuración rápida
+
+```
+Dashboard → Alerts
+
+1. Añade un canal (Telegram / Discord / Webhook)
+2. Elige los eventos que te interesan (todos ON por defecto)
+3. Pulsa "Test" para enviar una alerta de muestra
+4. Listo ✅
+```
+
+### Telegram
+
+1. Crea un bot con [@BotFather](https://t.me/BotFather) → copia el token del bot
+2. Envía cualquier mensaje al bot y obtén tu chat ID (p. ej. con @userinfobot)
+3. En Dashboard → Alerts, pega el **Bot Token** + **Chat ID**
+
+### Discord
+
+1. Server Settings → Integrations → Webhooks → **New Webhook**
+2. Copia la URL del webhook
+3. Pégala en Dashboard → Alerts
+
+Los mensajes llegan como embeds con color: azul = info, naranja = warn, rojo = critical.
+
+### Webhook genérico
+
+Cualquier URL que acepte un POST JSON:
+
+```json
+{
+  "eventType": "quota-near-limit",
+  "severity": "warn",
+  "title": "Cuota cerca del límite",
+  "body": "Claude Code: 82% usado (se resetea en 2h)",
+  "timestamp": "2026-09-05T10:00:00.000Z"
+}
+```
+
+---
+
+## Eventos de alerta
+
+| Evento | Severidad | Se dispara cuando |
+|---|---|---|
+| `all-accounts-locked` | critical | Todas las cuentas de un provider están rate-limited — no se pueden servir peticiones |
+| `quota-near-limit` | warn | La cuota de un provider cruza el umbral de casi-agotamiento |
+| `budget-threshold` | warn | El gasto de una API key cruza su umbral blando (80% por defecto) |
+| `breaker-open` | warn | El circuit breaker de una cuenta se abre tras fallos repetidos |
+| `breaker-recovered` | info | Un breaker abierto se cierra tras una sonda exitosa |
+| `proxy-pool-exhausted` | critical | Todas las entradas de un proxy pool no están disponibles |
+| `strictproxy-violation` | critical | El modo strict-proxy habría necesitado conexión directa — petición rechazada |
+| `xray-node-down` | critical | El nodo v2go/Xray activo falla su sonda de salud |
+| `xray-rotation-failed` | critical | La rotación automática al siguiente nodo Xray falló |
+| `totu-fetch-failed` | warn | TOTU auto-fetch no pudo refrescar su suscripción |
+
+Cada tipo de evento se activa/desactiva individualmente.
+
+---
+
+## Cómo funciona el envío
+
+- **Cola por canal** — cada canal tiene su propia cola con pacing; una ráfaga de eventos nunca inunda tu chat ni bloquea nada.
+- **Reintentos** — los envíos fallidos reintentan hasta 3 veces con backoff; se respeta `429 Retry-After`.
+- **Ventana dedup** — eventos idénticos se deduplican durante 10 minutos (`alertsDedupMin`).
+- **Enmascaramiento** — tokens/URLs guardados se enmascaran en la UI; deja un campo vacío para conservar el valor.
+- **Fuera del hot path** — la emisión es asíncrona; aunque Telegram caiga, tus peticiones no se ven afectadas.
+
+---
+
+## Relacionado
+
+- [API Keys & Presupuestos](./api-keys.md) - el evento `budget-threshold` viene de los presupuestos por key
+- [Circuit Breaker](./circuit-breaker.md) - origen de `breaker-open` / `breaker-recovered`
+- [Seguimiento de cuota](./quota-tracking.md) - `quota-near-limit` y el dashboard de Quota
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Configuración rápida","id":"configuración-rápida"},{"level":3,"text":"Telegram","id":"telegram"},{"level":3,"text":"Discord","id":"discord"},{"level":3,"text":"Webhook genérico","id":"webhook-genérico"},{"level":2,"text":"Eventos de alerta","id":"eventos-de-alerta"},{"level":2,"text":"Cómo funciona el envío","id":"cómo-funciona-el-envío"},{"level":2,"text":"Relacionado","id":"relacionado"}],"lang":"es","children":["$","$Le",null,{"content":"$f","baseDir":"/es/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

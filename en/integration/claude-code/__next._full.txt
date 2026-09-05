@@ -1,0 +1,125 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","en","integration","claude-code",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","integration/claude-code","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Ta30,# Claude Code Integration
+
+Integrate 9Router with Claude Code CLI to route your Anthropic API requests through 9Router's intelligent routing system.
+
+## Prerequisites
+
+- Claude Code CLI installed
+- 9Router running locally or cloud endpoint configured
+- API key from 9Router dashboard
+
+## Setup
+
+### 1. Configure Environment Variables
+
+Set the following environment variables in your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`):
+
+```bash
+# Base URL for 9Router
+export ANTHROPIC_BASE_URL="http://localhost:20128/v1"
+
+# Optional: Set default models for aliases
+export ANTHROPIC_DEFAULT_OPUS_MODEL="cc/claude-opus-5"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="cc/claude-sonnet-5"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="cc/claude-haiku-4-5-20251001"
+```
+
+### 2. Reload Shell Configuration
+
+```bash
+source ~/.zshrc  # or ~/.bashrc
+```
+
+### 3. Verify Configuration
+
+Check that the environment variables are set correctly:
+
+```bash
+echo $ANTHROPIC_BASE_URL
+```
+
+## Model Aliases
+
+Claude Code supports the following model aliases that map to 9Router models:
+
+| Alias | Model | Environment Variable |
+|-------|-------|---------------------|
+| `opus` | Claude Opus 4.5 | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
+| `sonnet` | Claude Sonnet 4.5 | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
+| `haiku` | Claude Haiku 4.5 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
+
+## Usage Examples
+
+### Using Model Aliases
+
+```bash
+# Use Opus model
+claude --model opus "Explain quantum computing"
+
+# Use Sonnet model
+claude --model sonnet "Write a Python function"
+
+# Use Haiku model
+claude --model haiku "Quick code review"
+```
+
+### Using Full Model Names
+
+```bash
+claude --model cc/claude-opus-5 "Your prompt here"
+```
+
+## Settings File
+
+Claude Code stores its configuration in `~/.claude/settings.json`. You can manually edit this file if needed:
+
+```json
+{
+  "baseUrl": "http://localhost:20128/v1",
+  "defaultModel": "sonnet"
+}
+```
+
+## Troubleshooting
+
+### Connection Issues
+
+If you encounter connection errors:
+
+1. Verify 9Router is running: `curl http://localhost:20128/health`
+2. Check environment variables are set correctly
+3. Ensure no firewall is blocking port 20128
+
+### Model Not Found
+
+If you get "model not found" errors:
+
+1. Verify the model name matches your 9Router configuration
+2. Check that the provider connection is active in 9Router dashboard
+3. Ensure the model is available in your connected providers
+
+## Cloud Endpoint
+
+To use 9Router cloud endpoint instead of localhost:
+
+```bash
+export ANTHROPIC_BASE_URL="https://9router.com"
+```
+
+Make sure you have configured your API key in the 9Router cloud dashboard.
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Prerequisites","id":"prerequisites"},{"level":2,"text":"Setup","id":"setup"},{"level":3,"text":"1. Configure Environment Variables","id":"1-configure-environment-variables"},{"level":3,"text":"2. Reload Shell Configuration","id":"2-reload-shell-configuration"},{"level":3,"text":"3. Verify Configuration","id":"3-verify-configuration"},{"level":2,"text":"Model Aliases","id":"model-aliases"},{"level":2,"text":"Usage Examples","id":"usage-examples"},{"level":3,"text":"Using Model Aliases","id":"using-model-aliases"},{"level":3,"text":"Using Full Model Names","id":"using-full-model-names"},{"level":2,"text":"Settings File","id":"settings-file"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"},{"level":3,"text":"Connection Issues","id":"connection-issues"},{"level":3,"text":"Model Not Found","id":"model-not-found"},{"level":2,"text":"Cloud Endpoint","id":"cloud-endpoint"}],"lang":"en","children":["$","$Le",null,{"content":"$f","baseDir":"/en/integration"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

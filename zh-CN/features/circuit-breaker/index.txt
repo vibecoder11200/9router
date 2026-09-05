@@ -1,0 +1,95 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","zh-CN","features","circuit-breaker",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","features/circuit-breaker","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Ta7d,# 熔断器
+
+按账号的熔断器阻止 9Router 持续轰炸明显故障的账号。当账号持续出错，熔断器"打开"并在冷却期内跳过它 —— 之后先温和探活再恢复信任。
+
+它位于 chat 的回退循环内，所以当一个账号被切断，请求直接落到下一个健康账号。**你永远看不到故障。**
+
+---
+
+## 工作原理
+
+```
+账号在 60 秒内失败 5 次
+        ↓
+🔴 熔断打开 —— 账号被跳过 60 秒
+        ↓ 冷却结束
+🟡 半开 —— 恰好一个真实请求作为被动探针放行
+        ↓
+✅ 成功 → 熔断闭合，账号完全恢复
+❌ 失败 → 以冷却 ×2 重新打开（30s→60s→120s…，上限 10 分钟）
+```
+
+- **失败阈值**：60 秒窗口内 5 次账号级失败（默认）。
+- **递增冷却**：每次重开冷却翻倍，上限 10 分钟。
+- **被动探针**：一个真实用户请求充当探针 —— 没有合成流量，探针背后的用户也绝不会被牺牲：探针失败则请求落到下一个账号。
+- **不重复计数**：已由 antigravity strike-block 处理的配额 429 不计入熔断失败。
+
+熔断打开或恢复时触发对应的 `breaker-open` / `breaker-recovered` 告警（见[告警](./alerts.md)）。
+
+---
+
+## 仪表盘面板
+
+```
+Dashboard → Quota → 熔断器面板
+
+账号               状态       失败    冷却
+cc/claude-opus-5   🔴 open     7      42 秒后重试
+cx/gpt-5.6-sol   🟡 half-open 1      探活中…
+glm/glm-4.7        🟢 closed   —      —
+```
+
+面板显示打开/半开的熔断器、近期失败数、冷却倒计时、antigravity strike-block，以及**手动重置**按钮。
+
+通过 API 手动重置：
+
+```bash
+POST /api/providers/{providerId}/breaker
+```
+
+---
+
+## 设置
+
+| 设置 | 默认 | 含义 |
+|---|---|---|
+| `breakerEnabled` | `true` | 总开关 —— `false` 精确恢复无熔断器的旧行为 |
+| `breakerFailureThreshold` | `5` | 打开前的窗口内失败次数 |
+| `breakerWindowSec` | `60` | 失败计数窗口 |
+| `breakerBaseCooldownSec` | `60` | 首次冷却；每次重开翻倍 |
+
+在 Dashboard → Settings 调整。怀疑行为异常时可关掉 `breakerEnabled` —— 行为与旧回退循环完全一致。
+
+---
+
+## 熔断何时跳闸
+
+收到 `breaker-open` 告警时值得排查的典型原因：
+
+- 提供商侧故障或 API 劣化（最常见）
+- 该账号的 OAuth token 过期/被吊销
+- 账号前面的代理挂了（检查代理池）
+- Antigravity 配额打击（面板可见，但不计入此处）
+
+---
+
+## 相关
+
+- [告警](./alerts.md) - `breaker-open` / `breaker-recovered` 事件
+- [智能路由](./smart-routing.md) - 熔断器所在的回退循环
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"工作原理","id":"工作原理"},{"level":2,"text":"仪表盘面板","id":"仪表盘面板"},{"level":2,"text":"设置","id":"设置"},{"level":2,"text":"熔断何时跳闸","id":"熔断何时跳闸"},{"level":2,"text":"相关","id":"相关"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f","baseDir":"/zh-CN/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

@@ -1,0 +1,88 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","en","features","api-keys",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","features/api-keys","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Tce9,# API Keys & Budgets
+
+API keys gate access to your 9Router endpoint when **Require API key** is enabled. Keys are hashed at rest, and each key can carry its own spending budget with optional hard enforcement.
+
+---
+
+## API Key Security
+
+- **Hashed at rest** — keys are stored as HMAC-SHA256 digests under a per-install secret (a `0600` file on your machine), never in plaintext. Legacy plaintext keys keep working and migrate lazily on first use.
+- **Masked everywhere** — listings and the UI only ever show `sk-{keyId}-••••{last4}`. Exports/backups contain hashes, never raw keys.
+- **Per-install secrets** — the hashing secret and the MITM sudo-password key are random per install; no machine-derived or hardcoded fallback.
+
+> 📦 **Upgrading from an older version?** Take a DB backup before upgrading to a release with key hashing (`v0.6.36+`), and re-enter the MITM sudo password once after upgrade — old ciphertext is intentionally undecryptable under the new per-install key.
+
+---
+
+## Per-Key Budgets
+
+Each key can set a budget so a runaway agent or a shared teammate can't burn your whole quota.
+
+```
+Dashboard → Endpoint & Key → ✏️ Edit key → Budget
+
+Budget type:   USD  |  Tokens  |  Off
+Limit:         e.g. 5 (USD) or 50,000,000 (tokens)
+Window:        Daily  |  Monthly   (server-local time)
+Soft threshold: 80%   → fires the budget-threshold alert once per window
+Hard block:    ON/OFF → 429 with Retry-After when the limit is reached
+```
+
+### Behavior
+
+| Moment | What happens |
+|---|---|
+| Spend < 80% of limit | Nothing — normal traffic |
+| Spend ≥ soft threshold (default 80%) | One `budget-threshold` alert per window (edge-triggered, no spam); informational from 80% even without hard block |
+| Spend ≥ limit **with hard block ON** | Request rejected with `429`, a `Retry-After` header pointing at the window end, and `X-9Router-Budget: limit-exceeded` |
+| Window rolls over | Budget resets, alert re-arms |
+
+Spend is read **fresh from usage history at enforcement time** (indexed query) — never a stale cache. Keys without a budget add zero queries to the hot path.
+
+### Choosing USD vs Tokens
+
+- **Token budgets are exact** — they count prompt + completion tokens.
+- **USD budgets are estimates** — they sum recorded costs, which require pricing to be configured for the model. Models without pricing contribute $0, so USD budgets can under-count; the editor warns when a key's spend is dominated by unpriced models.
+
+### Requirements & Caveats
+
+- Budgets apply only when **Require API key** is enabled (enforcement lives in the key-auth path).
+- Windows are computed in **server-local time**: daily = local midnight, monthly = 1st of month.
+- The alert fires through the [Alerts](./alerts.md) system — configure a channel to receive it.
+
+---
+
+## Creating & Managing Keys
+
+```
+Dashboard → Endpoint & Key
+
++ Create key  →  sk-... shown ONCE (copy it immediately)
+✏️ Edit       →  rename, budget, active toggle
+🗑 Delete     →  immediate revocation
+```
+
+Use one key per tool or per person (e.g. `cursor-laptop`, `cline-desktop`, `teammate-anh`) so usage rows and budgets stay attributable.
+
+---
+
+## Related
+
+- [Alerts](./alerts.md) - the `budget-threshold` event
+- [Quota Tracking](./quota-tracking.md) - usage analytics per key
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"API Key Security","id":"api-key-security"},{"level":2,"text":"Per-Key Budgets","id":"per-key-budgets"},{"level":3,"text":"Behavior","id":"behavior"},{"level":3,"text":"Choosing USD vs Tokens","id":"choosing-usd-vs-tokens"},{"level":3,"text":"Requirements & Caveats","id":"requirements--caveats"},{"level":2,"text":"Creating & Managing Keys","id":"creating--managing-keys"},{"level":2,"text":"Related","id":"related"}],"lang":"en","children":["$","$Le",null,{"content":"$f","baseDir":"/en/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

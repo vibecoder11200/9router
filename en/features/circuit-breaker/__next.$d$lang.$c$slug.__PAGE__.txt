@@ -1,0 +1,89 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:Tbd6,# Circuit Breaker
+
+The per-account circuit breaker stops 9Router from hammering an account that is clearly failing. When an account keeps erroring, the breaker "opens" and skips it for a cooldown — then probes it gently before trusting it again.
+
+This rides inside the chat fallback loop, so when one account trips, your request simply lands on the next healthy account. **You never see the failure.**
+
+---
+
+## How It Works
+
+```
+Account fails 5 times within 60s
+        ↓
+🔴 Breaker OPENS — account skipped for 60s
+        ↓ cooldown expires
+🟡 Half-open — exactly ONE real request admitted as a passive probe
+        ↓
+✅ Success → breaker closes, account fully back
+❌ Failure → re-opens with cooldown ×2 (30s→60s→120s…, capped at 10 min)
+```
+
+- **Failure threshold**: 5 account-level failures within a 60-second window (default).
+- **Escalating cooldowns**: each re-open doubles the cooldown, capped at 10 minutes.
+- **Passive probe**: a real user request serves as the probe — no synthetic traffic, and the user behind it is never sacrificed: if the probe fails, the request falls through to the next account.
+- **No double-counting**: quota-429s already handled by the antigravity strike-block are not counted as breaker failures.
+
+When a breaker opens or recovers, the matching `breaker-open` / `breaker-recovered` alert fires (see [Alerts](./alerts.md)).
+
+---
+
+## Dashboard Panel
+
+```
+Dashboard → Quota → Circuit Breaker panel
+
+Account            State      Failures  Cooldown
+cc/claude-opus-5   🔴 open     7         re-try in 42s
+cx/gpt-5.6-sol   🟡 half-open 1         probing…
+glm/glm-4.7        🟢 closed   —         —
+```
+
+The panel shows open/half-open breakers, recent failure counts, cooldown countdowns, antigravity strike-blocks, and a **manual reset** button for when you've fixed the underlying issue and don't want to wait out the cooldown.
+
+Manual reset via API:
+
+```bash
+POST /api/providers/{providerId}/breaker
+```
+
+---
+
+## Settings
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `breakerEnabled` | `true` | Kill switch — `false` restores pre-breaker behavior exactly |
+| `breakerFailureThreshold` | `5` | Failures within the window before opening |
+| `breakerWindowSec` | `60` | Failure-counting window |
+| `breakerBaseCooldownSec` | `60` | First cooldown; doubles on repeated re-opens |
+
+Tune via Dashboard → Settings. If you suspect the breaker is misbehaving, flip `breakerEnabled` off — behavior is byte-identical to the old fallback loop.
+
+---
+
+## When Breakers Trip
+
+Typical causes worth investigating when you get a `breaker-open` alert:
+
+- Provider-side outage or degraded API (most common)
+- Expired/revoked OAuth token on that account
+- A proxy in front of the account dying (check the proxy pool)
+- Antigravity quota strikes (displayed in the panel, but not counted here)
+
+---
+
+## Related
+
+- [Alerts](./alerts.md) - `breaker-open` / `breaker-recovered` events
+- [Smart Routing](./smart-routing.md) - the fallback loop the breaker lives in
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"How It Works","id":"how-it-works"},{"level":2,"text":"Dashboard Panel","id":"dashboard-panel"},{"level":2,"text":"Settings","id":"settings"},{"level":2,"text":"When Breakers Trip","id":"when-breakers-trip"},{"level":2,"text":"Related","id":"related"}],"lang":"en","children":["$","$L3",null,{"content":"$4","baseDir":"/en/features"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

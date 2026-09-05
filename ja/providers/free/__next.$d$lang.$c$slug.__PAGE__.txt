@@ -1,0 +1,435 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T2f2c,# 無料プロバイダー - ゼロコストフォールバック
+
+他のすべてがクォータ制限に達した時の緊急バックアップ。ゼロコストで24時間コーディング!
+
+---
+
+## 概要
+
+無料階層プロバイダーは、サブスクリプションと低価格クォータが消費された時の**フォールバック**:
+
+- 🆓 **Kiro** - 6モデル無料 (月約50クレジット、Claude Sonnet 4.5とHaiku 4.5を含む)
+- 🆓 **OpenCode Free** - ログイン不要、モデルリスト自動取得、無制限パススルー
+- 🆓 **Vertex AI** - $300の無料GCPクレジット (90日間、Gemini 3.1 Pro + パートナーモデル)
+
+> ⚠️ **提供終了した無料階層:** iFlowは2026年から有料化、Qwen Codeの無料OAuthは2026-04-15に終了、Gemini CLIは2026-06-18にサービス終了しました (代わりにGoogleアカウントで**Antigravity**をご利用ください)。
+
+**戦略:** 緊急バックアップとして使用。有料階層をメインに、無料階層をセーフティネットに!
+
+---
+
+## Kiro (Claude無料)
+
+### 料金
+
+| プラン | 月額コスト | モデル | クォータ |
+|------|--------------|--------|-------|
+| FREE | $0 | 6モデル | 月約50クレジット (新規アカウントは最初の30日間に500トライアルクレジット) |
+
+**最高の価値:** 無料Claude! 有料Claude Codeと同じ品質。
+
+### セットアップ
+
+**ステップ1: ダッシュボード経由で接続**
+
+```bash
+9router
+# Dashboard → Providers → Connect Kiro
+```
+
+**ステップ2: AWS Builder IDまたはOAuth**
+
+- 「Connect Kiro」をクリック
+- ログイン方法を選択:
+  - AWS Builder ID (推奨)
+  - Googleアカウント
+  - GitHubアカウント
+- 権限を付与
+- 自動トークン更新有効化
+
+**ステップ3: CLIで使用**
+
+```
+Model: kr/claude-sonnet-4.5
+       kr/claude-haiku-4.5
+       kr/glm-5
+       kr/MiniMax-M2.5
+       kr/qwen3-coder-next
+       kr/deepseek-3.2
+```
+
+### 利用可能なモデル
+
+| モデルID | 説明 | 最適用途 |
+|----------|-------------|----------|
+| `kr/claude-sonnet-4.5` | Claude Sonnet 4.5 | バランスのとれた品質/速度 |
+| `kr/claude-haiku-4.5` | Claude Haiku 4.5 | 高速応答 |
+| `kr/glm-5` | GLM 5 | 中国語 + 英語 |
+| `kr/MiniMax-M2.5` | MiniMax M2.5 | 長いコンテキスト |
+| `kr/qwen3-coder-next` | Qwen3 Coder Next | コード生成 |
+| `kr/deepseek-3.2` | DeepSeek 3.2 | 推論タスク |
+
+### プロのヒント
+
+- **無料Claude** - 有料階層と同じ品質
+- **AWS Builder ID** - AWSアカウントで簡単セットアップ
+- **500トライアルクレジット** - 新規アカウントは最初の30日間に500クレジットを獲得
+- **最高品質** - Claude 4.5を無料で!
+
+---
+
+## OpenCode Free (ログイン不要)
+
+### 料金
+
+| プラン | 月額コスト | モデル | クォータ |
+|------|--------------|--------|-------|
+| FREE | $0 | 自動取得 | 無制限 (モデルリストは変動) |
+
+**最高の価値:** 最速のセットアップ — アカウントは一切不要。
+
+### セットアップ
+
+**ステップ1: ダッシュボード経由で接続**
+
+```bash
+9router
+# Dashboard → Providers → Connect OpenCode Free
+```
+
+**ステップ2: ログイン不要**
+
+- 「Connect OpenCode Free」をクリック
+- モデルリストは `opencode.ai/zen/v1/models` から自動取得
+- 完了 — アカウントもOAuthも不要
+
+**ステップ3: CLIで使用**
+
+```
+Model: oc/<auto>
+```
+
+### プロのヒント
+
+- **ゼロセットアップ** - 最も速く接続できるプロバイダー
+- **`oc/<auto>`** - コンボではこのプレースホルダーを使用。9Routerが利用可能なモデルを選択
+- **変動するリスト** - 利用可能なモデルは時間とともに変化しますが、コンボは問題なく対応
+
+---
+
+## Vertex AI ($300無料クレジット)
+
+### 料金
+
+| プラン | 月額コスト | モデル | クォータ |
+|------|--------------|--------|-------|
+| FREEトライアル | $0 | Gemini 3.1 Pro + パートナーモデル | $300クレジット、90日間 |
+
+**最高の価値:** Googleのインフラで完全なGemini品質。
+
+### セットアップ
+
+**ステップ1: ダッシュボード経由で接続**
+
+```bash
+9router
+# Dashboard → Providers → Connect Vertex AI
+```
+
+**ステップ2: GCPサービスアカウントJSONをアップロード**
+
+- GCPアカウントを作成 (新規アカウントは$300クレジット、90日間)
+- サービスアカウントを作成し、JSONキーをダウンロード
+- ダッシュボードでアップロード
+
+**ステップ3: CLIで使用**
+
+```
+Model: vertex/gemini-3.1-pro-preview
+       vertex/gemini-3-flash-preview
+       vertex-partner/glm-5-maas
+       vertex-partner/deepseek-v3.2-maas
+```
+
+> **注意:** **Vertex AI Studioエンドポイント**を使用してください — Gemini APIエンドポイントは2026年3月に無料クレジットの消費を停止しました。
+
+### 利用可能なモデル
+
+| モデルID | 説明 | 最適用途 |
+|----------|-------------|----------|
+| `vertex/gemini-3.1-pro-preview` | Gemini 3.1 Pro Preview | 複雑なタスク |
+| `vertex/gemini-3-flash-preview` | Gemini 3 Flash Preview | 高速応答、Vision |
+| `vertex-partner/glm-5-maas` | GLM 5 (MaaS) | 中国語 + 英語 |
+| `vertex-partner/deepseek-v3.2-maas` | DeepSeek V3.2 (MaaS) | 推論タスク |
+
+---
+
+## 機能比較
+
+| プロバイダー | モデル | 最高のモデル | セットアップ | クォータ |
+|----------|--------|------------|-------|-------|
+| **Kiro** | 6 | Claude Sonnet 4.5 | AWS Builder ID | 月約50クレジット |
+| **OpenCode Free** | 自動 | `oc/<auto>` | ログイン不要 | 無制限 |
+| **Vertex AI** | 4+ | Gemini 3.1 Pro Preview | GCPサービスアカウント | $300 / 90日間 |
+
+**勝者:** 品質はKiro、ゼロセットアップならOpenCode Free!
+
+---
+
+## 使用例
+
+### Cursor IDEセットアップ
+
+```
+Settings → Models → Advanced:
+  OpenAI API Base URL: http://localhost:20128/v1
+  OpenAI API Key: [9routerダッシュボードから取得]
+  Model: kr/claude-sonnet-4.5
+```
+
+### コンボを作成 (推奨)
+
+```
+Dashboard → Combos → Create New
+
+Name: free-combo
+Models:
+  1. kr/claude-sonnet-4.5 (Kiro品質)
+  2. oc/<auto> (OpenCode Freeバックアップ)
+  3. vertex/gemini-3.1-pro-preview (Vertex緊急用)
+
+CLIで使用: free-combo
+```
+
+**結果:** ゼロコスト、最大アップタイム!
+
+---
+
+## 完全なフォールバック戦略
+
+### 完全な3階層コンボ
+
+```
+Dashboard → Combos → Create New
+
+Name: complete-fallback
+Models:
+  1. ag/gemini-3-flash (無料、Googleアカウント)
+  2. cc/claude-opus-5 (有料サブスクリプション)
+  3. glm/glm-4.7 (低価格バックアップ、100万あたり$0.6)
+  4. minimax/MiniMax-M2.1 (最安、100万あたり$0.2)
+  5. kr/claude-sonnet-4.5 (無料品質)
+  6. oc/<auto> (無料緊急用)
+
+CLIで使用: complete-fallback
+```
+
+**結果:**
+- Tier 1: 無料 (Antigravity、Googleアカウント)
+- Tier 2: 有料サブスクリプション (Claude Code)
+- Tier 3: 低価格バックアップ (GLM、MiniMax)
+- Tier 4: 無料フォールバック (Kiro、OpenCode Free)
+
+**コーディングが止まらない!**
+
+---
+
+## ベストプラクティス
+
+### 1. 緊急バックアップとして使用
+
+```
+優先順位:
+1. サブスクリプション階層 (有料クォータを最大化)
+2. 低価格階層 (100万トークンあたりセント)
+3. 無料階層 (バックアップ、ゼロコスト)
+
+以下の時のみ無料階層を使用:
+- サブスクリプションクォータ消費
+- 予算上限到達
+- テスト/クリティカルでないタスク
+```
+
+### 2. 適切なモデルを選択
+
+```
+複雑な推論: kr/claude-sonnet-4.5
+高速コーディング: kr/qwen3-coder-next
+最高品質: kr/claude-sonnet-4.5
+長いコンテキスト: kr/MiniMax-M2.5
+Visionタスク: vertex/gemini-3-flash-preview
+```
+
+### 3. 無料のみのコンボを作成
+
+```
+ゼロコストコーディング用:
+
+Name: zero-cost
+Models:
+  1. kr/claude-sonnet-4.5 (最高品質)
+  2. kr/qwen3-coder-next (高速コーディング)
+  3. oc/<auto> (緊急バックアップ)
+
+コスト: 永久に$0!
+```
+
+### 4. 本番前にテスト
+
+```
+無料階層を使用して:
+- プロンプトをテスト
+- 機能のプロトタイプを作成
+- 新しいフレームワークを学ぶ
+- クリティカルでないタスク
+
+有料クォータを以下に節約:
+- 本番コード
+- 複雑なリファクタリング
+- クリティカルな機能
+```
+
+---
+
+## 実例
+
+### 例1: 学生/学習者 (ゼロ予算)
+
+```
+セットアップ:
+1. kr/claude-sonnet-4.5 (最高品質)
+2. kr/qwen3-coder-next (高速コーディング)
+3. oc/<auto> (緊急バックアップ)
+
+月次コスト: $0
+利用: 無料階層クォータ
+
+最適:
+- コーディング学習
+- 個人プロジェクト
+- 宿題/課題
+```
+
+### 例2: フリーランサー (予算意識)
+
+```
+セットアップ:
+1. ag/gemini-3-flash (無料、Googleアカウント)
+2. glm/glm-4.7 (低価格バックアップ、100万あたり$0.6)
+3. kr/claude-sonnet-4.5 (無料フォールバック)
+
+月次コスト: $5〜10
+利用: 1億以上のトークン
+
+最適:
+- クライアントプロジェクト (有料階層)
+- テスト (無料階層)
+- 緊急バックアップ
+```
+
+### 例3: ヘビーユーザー (すべてを最大化)
+
+```
+セットアップ:
+1. ag/gemini-3-flash (無料、Googleアカウント)
+2. cc/claude-opus-5 (サブスクリプション$20〜100)
+3. cx/gpt-5.6-sol (サブスクリプション$20〜200)
+4. glm/glm-4.7 (低価格 100万あたり$0.6)
+5. minimax/MiniMax-M2.1 (最安 100万あたり$0.2)
+6. kr/claude-sonnet-4.5 (無料品質)
+7. oc/<auto> (無料無制限)
+
+月次コスト: $40〜320 (サブスクリプション) + $10〜20 (低価格階層)
+利用: 5億以上のトークン
+
+最適:
+- プロフェッショナル開発
+- チームプロジェクト
+- 24時間コーディング
+```
+
+---
+
+## コスト比較
+
+### シナリオ: 月1億トークン
+
+**オプション1: ChatGPT APIのみ**
+```
+1億 × $20/1M = 月$2,000
+```
+
+**オプション2: 9Router無料階層のみ**
+```
+無料階層経由で1億 = 月$0
+節約: 月$2,000 (100%)
+```
+
+**オプション3: 9Router完全戦略**
+```
+Antigravity経由で6000万 (無料): $0
+Claude Code経由で3000万 (サブスクリプション): $0追加
+GLM経由で800万 (低価格): $4.80
+Kiro経由で200万 (無料): $0
+合計: 月$4.80 + すでに持っているサブスクリプション
+節約: 月$1,995 (99.76%)
+```
+
+---
+
+## トラブルシューティング
+
+### "OAuth failed"
+
+**解決策:**
+- インターネット接続を確認
+- 別のブラウザを試す
+- ブラウザキャッシュをクリア
+- ダッシュボードで再接続
+
+### "モデルが利用不可"
+
+**解決策:**
+- ダッシュボードでプロバイダーが接続されているか確認
+- OAuthトークンが有効か確認
+- 必要に応じてプロバイダーを再接続
+
+### "応答が遅い"
+
+**解決策:**
+- 無料階層は優先度が低い可能性
+- ピーク外時間に使用
+- 別の無料プロバイダーへ切替
+- 速度のため低価格階層へアップグレード
+
+---
+
+## 制限事項
+
+### 無料階層の考慮事項
+
+- **速度** - 有料階層より遅い可能性
+- **優先度** - ピーク時間中は優先度が低い
+- **レート制限** - 無料クォータには制限があります (Kiroは月約50クレジット)
+- **可用性** - 時折ダウンタイムがある可能性
+
+**解決策:** 信頼性のため3階層フォールバック戦略を使用!
+
+---
+
+## 次のステップ
+
+- **サブスクリプションをセットアップ:** [サブスクリプションプロバイダー](./subscription.md)
+- **低価格バックアップを追加:** [低価格プロバイダー](./cheap.md)
+- **コンボを作成:** Dashboard → Combos → Create New
+- **コーディング開始:** 最大の信頼性のため `complete-fallback` コンボを使用
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"概要","id":"概要"},{"level":2,"text":"Kiro (Claude無料)","id":"kiro-claude無料"},{"level":3,"text":"料金","id":"料金"},{"level":3,"text":"セットアップ","id":"セットアップ"},{"level":3,"text":"利用可能なモデル","id":"利用可能なモデル"},{"level":3,"text":"プロのヒント","id":"プロのヒント"},{"level":2,"text":"OpenCode Free (ログイン不要)","id":"opencode-free-ログイン不要"},{"level":3,"text":"料金","id":"料金"},{"level":3,"text":"セットアップ","id":"セットアップ"},{"level":3,"text":"プロのヒント","id":"プロのヒント"},{"level":2,"text":"Vertex AI ($300無料クレジット)","id":"vertex-ai-300無料クレジット"},{"level":3,"text":"料金","id":"料金"},{"level":3,"text":"セットアップ","id":"セットアップ"},{"level":3,"text":"利用可能なモデル","id":"利用可能なモデル"},{"level":2,"text":"機能比較","id":"機能比較"},{"level":2,"text":"使用例","id":"使用例"},{"level":3,"text":"Cursor IDEセットアップ","id":"cursor-ideセットアップ"},{"level":3,"text":"コンボを作成 (推奨)","id":"コンボを作成-推奨"},{"level":2,"text":"完全なフォールバック戦略","id":"完全なフォールバック戦略"},{"level":3,"text":"完全な3階層コンボ","id":"完全な3階層コンボ"},{"level":2,"text":"ベストプラクティス","id":"ベストプラクティス"},{"level":3,"text":"1. 緊急バックアップとして使用","id":"1-緊急バックアップとして使用"},{"level":3,"text":"2. 適切なモデルを選択","id":"2-適切なモデルを選択"},{"level":3,"text":"3. 無料のみのコンボを作成","id":"3-無料のみのコンボを作成"},{"level":3,"text":"4. 本番前にテスト","id":"4-本番前にテスト"},{"level":2,"text":"実例","id":"実例"},{"level":3,"text":"例1: 学生/学習者 (ゼロ予算)","id":"例1-学生学習者-ゼロ予算"},{"level":3,"text":"例2: フリーランサー (予算意識)","id":"例2-フリーランサー-予算意識"},{"level":3,"text":"例3: ヘビーユーザー (すべてを最大化)","id":"例3-ヘビーユーザー-すべてを最大化"},{"level":2,"text":"コスト比較","id":"コスト比較"},{"level":3,"text":"シナリオ: 月1億トークン","id":"シナリオ-月1億トークン"},{"level":2,"text":"トラブルシューティング","id":"トラブルシューティング"},{"level":3,"text":"\"OAuth failed\"","id":"oauth-failed"},{"level":3,"text":"\"モデルが利用不可\"","id":"モデルが利用不可"},{"level":3,"text":"\"応答が遅い\"","id":"応答が遅い"},{"level":2,"text":"制限事項","id":"制限事項"},{"level":3,"text":"無料階層の考慮事項","id":"無料階層の考慮事項"},{"level":2,"text":"次のステップ","id":"次のステップ"}],"lang":"ja","children":["$","$L3",null,{"content":"$4","baseDir":"/ja/providers"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

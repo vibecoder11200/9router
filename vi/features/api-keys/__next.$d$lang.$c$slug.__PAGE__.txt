@@ -1,0 +1,82 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:Tee6,# API Key & Budget
+
+API key kiểm soát quyền truy cập endpoint 9Router khi bật **Require API key**. Key được băm khi lưu trữ, và mỗi key có thể gắn budget chi tiêu riêng với chế độ chặn cứng tùy chọn.
+
+---
+
+## Bảo mật API Key
+
+- **Băm khi lưu trữ** — key được lưu dạng HMAC-SHA256 dưới một secret riêng theo-install (file `0600` trên máy bạn), không bao giờ plaintext. Key plaintext cũ vẫn dùng được và tự chuyển đổi ngay lần sử dụng đầu tiên.
+- **Che mọi nơi** — danh sách và UI chỉ hiển thị `sk-{keyId}-••••{last4}`. Export/backup chứa hash, không bao giờ key gốc.
+- **Secret riêng theo-install** — secret dùng để băm key và khóa sudo MITM là ngẫu nhiên cho từng install; không có khóa fallback suy ra từ máy hay hardcode.
+
+> 📦 **Nâng cấp từ phiên bản cũ?** Backup DB trước khi nâng lên bản có băm key (`v0.6.36+`), và nhập lại mật khẩu sudo MITM một lần sau nâng cấp — ciphertext cũ cố tình không giải mã được dưới khóa mới.
+
+---
+
+## Budget từng Key
+
+Mỗi key có thể đặt budget để một agent "điên" hay đồng đội dùng chung không đốt sạch hạn mức của bạn.
+
+```
+Dashboard → Endpoint & Key → ✏️ Sửa key → Budget
+
+Loại budget:    USD  |  Token  |  Tắt
+Giới hạn:       ví dụ 5 (USD) hoặc 50.000.000 (token)
+Cửa sổ:         Hằng ngày  |  Hằng tháng   (giờ máy chủ)
+Ngưỡng mềm:     80%   → bắn cảnh báo budget-threshold một lần mỗi cửa sổ
+Chặn cứng:      BẬT/TẮT → 429 kèm Retry-After khi chạm giới hạn
+```
+
+### Hành vi
+
+| Thời điểm | Điều gì xảy ra |
+|---|---|
+| Chi < 80% giới hạn | Không có gì — traffic bình thường |
+| Chi ≥ ngưỡng mềm (mặc định 80%) | Một cảnh báo `budget-threshold` mỗi cửa sổ (edge-triggered, không spam); header thông tin xuất hiện từ 80% kể cả khi không bật chặn cứng |
+| Chi ≥ giới hạn **khi BẬT chặn cứng** | Request bị từ chối với `429`, header `Retry-After` trỏ tới cuối cửa sổ, và `X-9Router-Budget: limit-exceeded` |
+| Cửa sổ mới | Budget reset, cảnh báo re-arm |
+
+Chi tiêu được đọc **mới trực tiếp từ lịch sử usage lúc enforce** (query có index) — không dùng cache cũ. Key không có budget cộng thêm đúng 0 query trên hot path.
+
+### Chọn USD hay Token
+
+- **Budget token là chính xác tuyệt đối** — đếm prompt + completion token.
+- **Budget USD là ước tính** — tổng cost đã ghi nhận, vốn cần pricing được cấu hình cho model. Model không có pricing góp $0, nên budget USD có thể đếm thiếu; editor sẽ cảnh báo khi chi tiêu của key phần lớn từ model chưa gán giá.
+
+### Điều kiện & lưu ý
+
+- Budget chỉ có hiệu lực khi **Require API key** đang bật (enforce nằm trong đường xác thực key).
+- Cửa sổ tính theo **giờ máy chủ**: daily = nửa đêm địa phương, monthly = mùng 1.
+- Cảnh báo đi qua hệ thống [Cảnh báo](./alerts.md) — cấu hình kênh để nhận.
+
+---
+
+## Tạo & quản lý Key
+
+```
+Dashboard → Endpoint & Key
+
++ Tạo key   →  sk-... hiển thị MỘT LẦN (copy ngay)
+✏️ Sửa      →  đổi tên, budget, bật/tắt
+🗑 Xóa      →  thu hồi ngay lập tức
+```
+
+Nên một key cho mỗi tool/mỗi người (vd `cursor-laptop`, `cline-desktop`, `dongminh-anh`) để dòng usage và budget phân rõ trách nhiệm.
+
+---
+
+## Liên quan
+
+- [Cảnh báo](./alerts.md) - sự kiện `budget-threshold`
+- [Theo dõi hạn mức](./quota-tracking.md) - phân tích usage theo key
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"Bảo mật API Key","id":"bảo-mật-api-key"},{"level":2,"text":"Budget từng Key","id":"budget-từng-key"},{"level":3,"text":"Hành vi","id":"hành-vi"},{"level":3,"text":"Chọn USD hay Token","id":"chọn-usd-hay-token"},{"level":3,"text":"Điều kiện & lưu ý","id":"điều-kiện--lưu-ý"},{"level":2,"text":"Tạo & quản lý Key","id":"tạo--quản-lý-key"},{"level":2,"text":"Liên quan","id":"liên-quan"}],"lang":"vi","children":["$","$L3",null,{"content":"$4","baseDir":"/vi/features"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

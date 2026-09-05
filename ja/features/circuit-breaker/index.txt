@@ -1,0 +1,95 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","ja","features","circuit-breaker",""],"q":"","i":false,"f":[[["",{"children":[["lang","ja","d"],{"children":[["slug","features/circuit-breaker","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Tea2,# サーキットブレーカー
+
+アカウントごとのサーキットブレーカーは、明らかに失敗しているアカウントへリクエストを叩き続けることを防ぎます。失敗が続くアカウントはブレーカーが「オープン」になり、クールダウンの間スキップされます。その後、信頼を回復する前に静かにプローブします。
+
+チャットのフォールバックループ内で動作するため、あるアカウントが切断されてもリクエストは次の健全なアカウントへ流れます。**失敗は見えません。**
+
+---
+
+## 仕組み
+
+```
+アカウントが 60 秒以内に 5 回失敗
+        ↓
+🔴 ブレーカー OPEN — 60 秒間スキップ
+        ↓ クールダウン終了
+🟡 Half-open — 実リクエスト 1 件だけが受動プローブとして許可
+        ↓
+✅ 成功 → ブレーカーが閉じ、完全復帰
+❌ 失敗 → クールダウン ×2 で再オープン（30s→60s→120s…、上限 10 分）
+```
+
+- **失敗しきい値**: 60 秒のウィンドウ内で 5 回（デフォルト）のアカウントレベルの失敗。
+- **段階的クールダウン**: 再オープンごとに 2 倍、上限 10 分。
+- **受動プローブ**: 実ユーザーのリクエストがそのままプローブになります。合成トラフィックなし、プローブされたユーザーは決して犠牲になりません。失敗すれば次のアカウントへフォールスルーします。
+- **二重カウントなし**: antigravity の strike-block で処理済みのクォータ 429 はブレーカーの失敗に数えません。
+
+ブレーカーのオープン/復旧時に `breaker-open` / `breaker-recovered` アラートが発火します（[アラート](./alerts.md)参照）。
+
+---
+
+## ダッシュボードパネル
+
+```
+Dashboard → Quota → サーキットブレーカーパネル
+
+アカウント          状態       失敗   クールダウン
+cc/claude-opus-5   🔴 open     7      42秒後に再試行
+cx/gpt-5.6-sol   🟡 half-open 1      プローブ中…
+glm/glm-4.7        🟢 closed   —      —
+```
+
+オープン/half-open のブレーカー、直近の失敗数、クールダウンカウントダウン、antigravity の strike-block、手動リセットボタンを表示します。
+
+API での手動リセット:
+
+```bash
+POST /api/providers/{providerId}/breaker
+```
+
+---
+
+## 設定
+
+| 設定 | デフォルト | 意味 |
+|---|---|---|
+| `breakerEnabled` | `true` | キルスイッチ — `false` で旧来の挙動に正確に戻る |
+| `breakerFailureThreshold` | `5` | オープンまでのウィンドウ内失敗数 |
+| `breakerWindowSec` | `60` | 失敗カウントのウィンドウ |
+| `breakerBaseCooldownSec` | `60` | 初回クールダウン。再オープンごとに倍増 |
+
+Dashboard → Settings から調整できます。挙動が怪しい場合は `breakerEnabled` を OFF に — 旧フォールバックループと完全に同じ挙動になります。
+
+---
+
+## ブレーカーが切れるとき
+
+`breaker-open` アラートを受け取ったときに調査すべき典型的な原因:
+
+- プロバイダー側の障害・API の劣化（最も多い）
+- そのアカウントの OAuth トークンの期限切れ/失効
+- アカウント前段のプロキシの死亡（プロキシプールを確認）
+- Antigravity のクォータストライク（パネルに表示されるが、ここではカウントされない）
+
+---
+
+## 関連
+
+- [アラート](./alerts.md) - `breaker-open` / `breaker-recovered` イベント
+- [スマートルーティング](./smart-routing.md) - ブレーカーが棲むフォールバックループ
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"仕組み","id":"仕組み"},{"level":2,"text":"ダッシュボードパネル","id":"ダッシュボードパネル"},{"level":2,"text":"設定","id":"設定"},{"level":2,"text":"ブレーカーが切れるとき","id":"ブレーカーが切れるとき"},{"level":2,"text":"関連","id":"関連"}],"lang":"ja","children":["$","$Le",null,{"content":"$f","baseDir":"/ja/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

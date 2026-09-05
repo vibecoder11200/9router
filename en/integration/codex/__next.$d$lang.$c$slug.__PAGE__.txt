@@ -1,0 +1,146 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:Tb78,# OpenAI Codex CLI Integration
+
+Integrate 9Router with OpenAI Codex CLI to route your OpenAI API requests through 9Router's intelligent routing system.
+
+## Prerequisites
+
+- OpenAI Codex CLI installed
+- 9Router running locally or cloud endpoint configured
+- API key from 9Router dashboard
+
+## Setup
+
+### 1. Configure Environment Variables
+
+Set the following environment variables in your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`):
+
+```bash
+# Base URL for 9Router
+export OPENAI_BASE_URL="http://localhost:20128/v1"
+
+# API Key from 9Router dashboard
+export OPENAI_API_KEY="your-9router-api-key"
+```
+
+### 2. Reload Shell Configuration
+
+```bash
+source ~/.zshrc  # or ~/.bashrc
+```
+
+### 3. Verify Configuration
+
+Check that the environment variables are set correctly:
+
+```bash
+echo $OPENAI_BASE_URL
+echo $OPENAI_API_KEY
+```
+
+## Available Models
+
+9Router provides the following Codex models:
+
+| Model ID | Description |
+|----------|-------------|
+| `cx/gpt-5.6-sol` | GPT-5.6 Sol - Latest version |
+| `cx/gpt-5.5` | GPT-5.5 - Extended context |
+
+## Usage Examples
+
+### Basic Usage
+
+```bash
+# Use GPT-5.6 Sol
+codex --model cx/gpt-5.6-sol "Write a function to sort an array"
+
+# Use GPT-5.5
+codex --model cx/gpt-5.5 "Explain this complex algorithm"
+```
+
+### Code Generation
+
+```bash
+codex --model cx/gpt-5.6-sol "Create a REST API endpoint for user authentication"
+```
+
+### Code Explanation
+
+```bash
+codex --model cx/gpt-5.5 "Explain what this code does: $(cat myfile.js)"
+```
+
+## Configuration File
+
+You can also configure Codex CLI using a configuration file. Create or edit `~/.codex/config.json`:
+
+```json
+{
+  "baseUrl": "http://localhost:20128/v1",
+  "apiKey": "your-9router-api-key",
+  "defaultModel": "cx/gpt-5.6-sol"
+}
+```
+
+## Troubleshooting
+
+### Authentication Errors
+
+If you encounter authentication errors:
+
+1. Verify your API key is correct in 9Router dashboard
+2. Check that `OPENAI_API_KEY` environment variable is set
+3. Ensure the API key has not expired
+
+### Connection Issues
+
+If you encounter connection errors:
+
+1. Verify 9Router is running: `curl http://localhost:20128/health`
+2. Check environment variables are set correctly
+3. Ensure no firewall is blocking port 20128
+
+### Model Not Available
+
+If you get "model not available" errors:
+
+1. Verify the model name matches your 9Router configuration
+2. Check that the OpenAI provider connection is active in 9Router dashboard
+3. Ensure the model is available in your connected providers
+
+## Cloud Endpoint
+
+To use 9Router cloud endpoint instead of localhost:
+
+```bash
+export OPENAI_BASE_URL="https://9router.com"
+```
+
+Make sure you have configured your API key in the 9Router cloud dashboard.
+
+## Advanced Configuration
+
+### Custom Timeout
+
+```bash
+export OPENAI_TIMEOUT=60  # seconds
+```
+
+### Debug Mode
+
+Enable debug mode to see detailed request/response logs:
+
+```bash
+export CODEX_DEBUG=true
+codex --model cx/gpt-5.6-sol "Your prompt"
+```
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"Prerequisites","id":"prerequisites"},{"level":2,"text":"Setup","id":"setup"},{"level":3,"text":"1. Configure Environment Variables","id":"1-configure-environment-variables"},{"level":3,"text":"2. Reload Shell Configuration","id":"2-reload-shell-configuration"},{"level":3,"text":"3. Verify Configuration","id":"3-verify-configuration"},{"level":2,"text":"Available Models","id":"available-models"},{"level":2,"text":"Usage Examples","id":"usage-examples"},{"level":3,"text":"Basic Usage","id":"basic-usage"},{"level":3,"text":"Code Generation","id":"code-generation"},{"level":3,"text":"Code Explanation","id":"code-explanation"},{"level":2,"text":"Configuration File","id":"configuration-file"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"},{"level":3,"text":"Authentication Errors","id":"authentication-errors"},{"level":3,"text":"Connection Issues","id":"connection-issues"},{"level":3,"text":"Model Not Available","id":"model-not-available"},{"level":2,"text":"Cloud Endpoint","id":"cloud-endpoint"},{"level":2,"text":"Advanced Configuration","id":"advanced-configuration"},{"level":3,"text":"Custom Timeout","id":"custom-timeout"},{"level":3,"text":"Debug Mode","id":"debug-mode"}],"lang":"en","children":["$","$L3",null,{"content":"$4","baseDir":"/en/integration"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

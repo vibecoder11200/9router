@@ -1,0 +1,79 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:Tbc7,# API Key 与预算
+
+启用 **Require API key** 后，API key 控制 9Router 端点的访问。key 以哈希形式存储，且每个 key 可以携带自己的消费预算，可选硬性强制。
+
+---
+
+## API Key 安全性
+
+- **静态哈希** —— key 以 HMAC-SHA256 摘要存储，密钥为每次安装随机生成的 secret（机器上的 `0600` 文件），绝不存明文。旧的明文 key 继续可用，并在首次使用时惰性迁移。
+- **处处脱敏** —— 列表和 UI 只显示 `sk-{keyId}-••••{last4}`。导出/备份只包含哈希，绝无原始 key。
+- **按安装的 secret** —— key 哈希与 MITM sudo 加密的 secret 每次安装随机生成；没有机器推导或硬编码的兜底密钥。
+
+> 📦 **从旧版本升级？** 升级到带 key 哈希的版本（`v0.6.36+`）前请先备份数据库，并在升级后重新输入一次 MITM sudo 密码 —— 旧密文在新密钥下有意设计为不可解密。
+
+---
+
+## 按 Key 预算
+
+每个 key 可设置预算，防止失控的 agent 或共用者烧光你的配额。
+
+```
+Dashboard → Endpoint & Key → ✏️ 编辑 key → Budget
+
+预算类型:   USD  |  Token  |  关闭
+限额:       例如 5 (USD) 或 50,000,000 (token)
+窗口:       每日  |  每月   （服务器本地时间）
+软阈值:     80%   → 每窗口触发一次 budget-threshold 告警
+硬阻断:     开/关 → 到达限额时返回 429 + Retry-After
+```
+
+### 行为
+
+| 时机 | 发生什么 |
+|---|---|
+| 支出 < 限额的 80% | 正常流量 |
+| 支出 ≥ 软阈值（默认 80%） | 每窗口一次 `budget-threshold` 告警（边沿触发，不刷屏）；即使未开硬阻断，80% 起也带信息性标识 |
+| 支出 ≥ 限额 **且硬阻断开启** | 请求被拒：`429`、指向窗口结束的 `Retry-After` 头，以及 `X-9Router-Budget: limit-exceeded` |
+| 窗口滚动 | 预算重置，告警重新武装 |
+
+支出在**执行时从使用历史实时读取**（索引查询）。无预算的 key 在热路径上零额外查询。
+
+### 选 USD 还是 Token
+
+- **Token 预算精确** —— 统计 prompt + completion token。
+- **USD 预算是估算** —— 汇总已记录的成本，依赖模型已配置价格。未定价的模型计入 $0，因此可能少计；当 key 支出主要来自未定价模型时编辑器会警告。
+
+### 条件与注意
+
+- 预算仅在 **Require API key** 开启时生效。
+- 窗口按**服务器本地时间**计算：每日 = 本地零点，每月 = 1 号。
+- 告警通过[告警](./alerts.md)系统送达 —— 需配置渠道。
+
+---
+
+## 创建与管理 Key
+
+```
+Dashboard → Endpoint & Key
+
++ 创建 key  →  sk-... 只显示一次（立即复制）
+✏️ 编辑      →  重命名、预算、启用开关
+🗑 删除      →  立即吊销
+```
+
+建议每个工具/每人一个 key（如 `cursor-laptop`），使用统计与预算归属清晰。
+
+---
+
+## 相关
+
+- [告警](./alerts.md) - `budget-threshold` 事件
+- [配额追踪](./quota-tracking.md) - 按 key 的使用分析
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"API Key 安全性","id":"api-key-安全性"},{"level":2,"text":"按 Key 预算","id":"按-key-预算"},{"level":3,"text":"行为","id":"行为"},{"level":3,"text":"选 USD 还是 Token","id":"选-usd-还是-token"},{"level":3,"text":"条件与注意","id":"条件与注意"},{"level":2,"text":"创建与管理 Key","id":"创建与管理-key"},{"level":2,"text":"相关","id":"相关"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4","baseDir":"/zh-CN/features"}]}],[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

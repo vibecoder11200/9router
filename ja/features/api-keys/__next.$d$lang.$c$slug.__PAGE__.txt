@@ -1,0 +1,79 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:T100b,# API キーと予算
+
+**Require API key** を有効にすると、API キーが 9Router エンドポイントへのアクセスを制御します。キーは保存時にハッシュ化され、各キーには任意でハード強制付きの予算を設定できます。
+
+---
+
+## API キーのセキュリティ
+
+- **保存時にハッシュ化** — キーはインストールごとのシークレット（マシン上の `0600` ファイル）による HMAC-SHA256 ダイジェストとして保存され、平文では決して保管されません。レガシーの平文キーもそのまま動作し、初回使用時に段階的に移行します。
+- **あらゆる場所でマスク** — 一覧と UI は `sk-{keyId}-••••{last4}` のみ表示。エクスポート/バックアップにはハッシュのみ含まれ、生キーは含まれません。
+- **インストールごとのシークレット** — キーのハッシュ化と MITM sudo 暗号化のシークレットは各インストールでランダム生成。マシン由来やハードコードされたフォールバックキーはありません。
+
+> 📦 **旧バージョンからのアップグレード?** キーハッシュ化（`v0.6.36+`）を含むリリースに更新する前に DB をバックアップし、更新後に MITM sudo パスワードを一度再入力してください。旧暗号文は新しいキーでは意図的に復号できません。
+
+---
+
+## キーごとの予算
+
+暴走するエージェントや共有メンバーがクォータを使い果たすのを防ぐため、各キーに予算を設定できます。
+
+```
+Dashboard → Endpoint & Key → ✏️ キー編集 → Budget
+
+予算タイプ:   USD  |  トークン  |  オフ
+上限:         例: 5 (USD) または 50,000,000 (トークン)
+ウィンドウ:   日次  |  月次   （サーバーローカル時刻）
+ソフトしきい値: 80%   → ウィンドウごとに 1 回 budget-threshold アラートを発火
+ハードブロック: ON/OFF → 上限到達で 429 + Retry-After
+```
+
+### 動作
+
+| 状況 | 何が起きるか |
+|---|---|
+| 支出 < 上限の 80% | 通常どおり |
+| 支出 ≥ ソフトしきい値（デフォルト 80%） | ウィンドウごとに 1 回 `budget-threshold` アラート（エッジトリガー、スパムなし） |
+| 支出 ≥ 上限 **ハードブロック ON** | `429` で拒否、ウィンドウ終了を指す `Retry-After` ヘッダー、`X-9Router-Budget: limit-exceeded` |
+| ウィンドウ切替 | 予算リセット、アラート再武装 |
+
+支出は**強制時に使用履歴から直接**（インデックス済みクエリ）読み取られ、古いキャッシュは使われません。予算未設定のキーはホットパスにクエリを一切追加しません。
+
+### USD かトークンか
+
+- **トークン予算は正確** — プロンプト + 完了トークンを数えます。
+- **USD 予算は推定** — 記録されたコストの合計であり、モデルに価格設定が必要です。価格未設定のモデルは $0 と計上されるため過少計上になり得ます。価格未設定モデルが支出の大半を占める場合はエディターが警告します。
+
+### 条件と注意
+
+- 予算は **Require API key** が有効な場合のみ機能します。
+- ウィンドウは**サーバーローカル時刻**で計算: 日次 = ローカル午前 0 時、月次 = 1 日。
+- アラートは[アラート](./alerts.md)システム経由で届きます。チャネルを設定してください。
+
+---
+
+## キーの作成と管理
+
+```
+Dashboard → Endpoint & Key
+
++ 作成  →  sk-... は一度だけ表示（すぐコピー）
+✏️ 編集  →  名前変更、予算、有効切替
+🗑 削除  →  即時失効
+```
+
+ツールや人ごとにキーを分けると（例: `cursor-laptop`）、使用履歴と予算の帰属が明確になります。
+
+---
+
+## 関連
+
+- [アラート](./alerts.md) - `budget-threshold` イベント
+- [クォータ追跡](./quota-tracking.md) - キーごとの使用分析
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"API キーのセキュリティ","id":"api-キーのセキュリティ"},{"level":2,"text":"キーごとの予算","id":"キーごとの予算"},{"level":3,"text":"動作","id":"動作"},{"level":3,"text":"USD かトークンか","id":"usd-かトークンか"},{"level":3,"text":"条件と注意","id":"条件と注意"},{"level":2,"text":"キーの作成と管理","id":"キーの作成と管理"},{"level":2,"text":"関連","id":"関連"}],"lang":"ja","children":["$","$L3",null,{"content":"$4","baseDir":"/ja/features"}]}],[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

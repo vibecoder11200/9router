@@ -1,0 +1,5 @@
+1:"$Sreact.fragment"
+2:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+3:"$Sreact.suspense"
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"window.location.replace(\"/9router/en/\");"}}],["$","meta",null,{"httpEquiv":"refresh","content":"0; url=/9router/en/"}],["$","p",null,{"style":{"padding":"2rem","textAlign":"center"},"children":["Redirecting to ",["$","a",null,{"href":"/9router/en/","children":"/9router/en/"}],"..."]}]],null,["$","$L2",null,{"children":["$","$3",null,{"name":"Next.MetadataOutlet","children":"$@4"}]}]]}],"loading":null,"isPartial":false}
+4:null

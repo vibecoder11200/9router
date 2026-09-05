@@ -1,0 +1,424 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","vi","faq",""],"q":"","i":false,"f":[[["",{"children":[["lang","vi","d"],{"children":[["slug","faq","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:T312f,# Câu hỏi thường gặp
+
+Những câu hỏi phổ biến về 9Router.
+
+---
+
+## 9Router là gì?
+
+**9Router là bộ định tuyến mô hình AI giúp tối đa hóa giá trị subscription và giảm chi phí.**
+
+Nó định tuyến request thông minh qua nhiều provider AI bằng hệ thống fallback 3 tầng:
+1. **Tầng Subscription** - Tối đa quota Claude Code, Codex, Gemini bạn đang trả tiền
+2. **Tầng Cheap** - Lựa chọn siêu rẻ ($0.20-$0.60 per 1M tokens)
+3. **Tầng Free** - Backup khẩn cấp với model miễn phí không giới hạn
+
+**Lợi ích chính:**
+- Không bao giờ lãng phí quota subscription
+- Fallback tự động khi hết quota
+- Theo dõi quota thời gian thực
+- Tiết kiệm 90% chi phí so với dùng API trực tiếp
+
+---
+
+## Pricing hoạt động thế nào?
+
+**9Router dùng chiến lược pricing 3 tầng:**
+
+### Tier 1: Subscription (Dùng đầu tiên)
+- **Claude Code** (Pro/Max): $20-100/tháng - Quota 5 giờ + hàng tuần
+- **OpenAI Codex** (Plus/Pro): $20-200/tháng - Quota 5 giờ + hàng tuần
+- **GitHub Copilot**: $10-19/tháng - Reset hàng tháng
+- **Antigravity**: MIỄN PHÍ - Gemini 3.8 Flash + Claude, quota hàng ngày/hàng tháng
+
+**Mục tiêu:** Dùng hết mọi quota trước khi reset!
+
+### Tier 2: Cheap (Backup)
+- **GLM-4.7**: $0.60/$2.20 per 1M tokens - Reset 10AM hàng ngày
+- **MiniMax M2.1**: $0.20/$1.00 per 1M tokens - 5 giờ rolling
+- **Kimi K2**: $9/tháng cố định (10M tokens)
+
+**Mục tiêu:** Rẻ hơn 90% so với ChatGPT API ($20/1M)!
+
+### Tier 3: Free (Khẩn cấp)
+- **Kiro**: 6 model MIỄN PHÍ (~50 credits/tháng - Claude Sonnet 4.5, Haiku 4.5, GLM 5, Qwen3 Coder Next...)
+- **OpenCode Free**: không cần đăng nhập, passthrough không giới hạn
+- **Vertex AI**: $300 credit GCP miễn phí (90 ngày)
+
+> Lưu ý: iFlow chuyển sang trả phí từ 2026 và OAuth miễn phí của Qwen Code kết thúc 2026-04-15.
+
+**Mục tiêu:** Fallback chi phí 0 khi mọi thứ khác bị giới hạn quota!
+
+---
+
+## 9Router có miễn phí không?
+
+**Có, 9Router hoàn toàn miễn phí và mã nguồn mở 100%.**
+
+**Provider free tier có sẵn:**
+- **Kiro** - Claude Sonnet 4.5/Haiku 4.5 + 4 model khác (~50 credits/tháng, MIỄN PHÍ AWS Builder ID)
+- **OpenCode Free** - không cần đăng nhập, danh sách model tự động lấy
+- **Vertex AI** - $300 credit miễn phí (90 ngày)
+- **Antigravity** - MIỄN PHÍ với tài khoản Google (thay thế Gemini CLI)
+
+**Bạn có thể code MIỄN PHÍ mãi mãi chỉ dùng provider free tier!**
+
+**Provider trả phí tùy chọn:**
+- Dịch vụ subscription bạn có thể đã có (Claude Code, Codex, Copilot)
+- Lựa chọn siêu rẻ ($0.20-$0.60 per 1M tokens)
+
+---
+
+## Provider nào được hỗ trợ?
+
+### Subscription Providers
+- **Claude Code** (Pro/Max) - Claude Opus 5 / Sonnet 5 / Haiku 4.5
+- **OpenAI Codex** (Plus/Pro) - GPT 5.6 Sol, GPT 5.5
+- **GitHub Copilot** - GPT-5.4, Claude Sonnet 4.6, Gemini 3.1
+- **Antigravity** (Google) - Gemini 3.8 Flash, Claude Sonnet 4.6
+
+### Cheap Providers
+- **GLM** (Zhipu AI) - GLM 4.7, GLM 4.6V Vision
+- **MiniMax** - MiniMax M2.1
+- **Kimi** (Moonshot AI) - Kimi Latest
+- **OpenRouter** - Passthrough đến mọi model OpenRouter
+
+### Free Providers
+- **Kiro** - 6 models (Claude Sonnet 4.5, Haiku 4.5, GLM 5, MiniMax M2.5, Qwen3 Coder Next, DeepSeek 3.2)
+- **OpenCode Free** - danh sách model tự động lấy, không cần đăng nhập
+- **Vertex AI** - Gemini 3.1 Pro + model đối tác ($300 credit miễn phí)
+
+**Tổng: 15+ providers, 50+ models**
+
+Xem [tài liệu providers](providers/subscription.md) để biết chi tiết.
+
+---
+
+## Tôi có thể dùng nhiều provider không?
+
+**Có! Đây là tính năng cốt lõi của 9Router.**
+
+**Combo cho phép bạn nối nhiều provider với fallback tự động:**
+
+```
+Example combo: "premium-coding"
+1. cc/claude-opus-5 (Subscription primary)
+2. glm/glm-4.7 (Cheap backup)
+3. kr/claude-sonnet-4.5 (Free emergency)
+
+→ Auto-switches when quota exhausted
+→ Never stops coding
+→ Minimal extra cost
+```
+
+**Cách tạo combo:**
+```
+Dashboard → Combos → Create New
+→ Add models in priority order
+→ Use combo name in CLI: "premium-coding"
+```
+
+**Lợi ích:**
+- Zero downtime khi hết quota
+- Tối ưu chi phí tự động
+- Một tên model cho mọi công cụ
+
+Xem [tài liệu combos](features/combos.md) để biết ví dụ.
+
+---
+
+## Quota tracking hoạt động thế nào?
+
+**9Router theo dõi quota thời gian thực cho tất cả provider:**
+
+**Tính năng:**
+- **Token consumption** - Tokens input/output mỗi request
+- **Reset countdown** - Thời gian đến khi quota refresh
+- **Usage stats** - Báo cáo hàng ngày/tuần/tháng
+- **Cost estimation** - Dự kiến chi tiêu (tier trả phí)
+- **Quota alerts** - Thông báo khi quota thấp
+
+**Loại quota:**
+- **5 giờ rolling** - Claude Code, Codex, MiniMax
+- **Reset hàng ngày** - Antigravity, GLM (10AM)
+- **Reset hàng tuần** - Claude Code, Codex (quota thêm)
+- **Reset hàng tháng** - GitHub Copilot (ngày 1), Antigravity
+
+**Xem quota:**
+```
+Dashboard → Providers → Quota Tracking
+→ Real-time usage + reset countdown
+```
+
+Xem [tài liệu quota tracking](features/quota-tracking.md) để biết chi tiết.
+
+---
+
+## 9Router có hoạt động với Cursor không?
+
+**Có, nhưng Cursor yêu cầu endpoint cloud.**
+
+**Vấn đề:** Cursor IDE không hỗ trợ endpoint localhost.
+
+**Giải pháp:** Dùng 9Router cloud deployment:
+
+```
+Cursor Settings → Models → Advanced:
+  OpenAI API Base URL: https://9router.com/v1
+  OpenAI API Key: [from dashboard]
+  Model: cc/claude-opus-5
+```
+
+**Thay thế:** Self-host trên VPS với domain công khai:
+```bash
+# Deploy to VPS
+git clone https://github.com/vibecoder11200/9router.git
+cd 9router
+npm install && npm run build
+npm start
+
+# Configure Nginx reverse proxy
+# Point Cursor to: https://your-domain.com/v1
+```
+
+**Công cụ CLI khác hoạt động với localhost:**
+- Cline ✅
+- Claude Desktop ✅
+- Codex CLI ✅
+- Continue ✅
+- RooCode ✅
+
+Xem [hướng dẫn tích hợp Cursor](integration/cursor.md) để biết chi tiết.
+
+---
+
+## Tôi có thể self-host 9Router không?
+
+**Có! 9Router hỗ trợ nhiều tùy chọn deployment:**
+
+### Localhost (Mặc định)
+```bash
+npm install -g 9router
+9router
+→ Dashboard: http://localhost:3000
+→ API: http://localhost:20128/v1
+```
+
+### VPS/Cloud
+```bash
+git clone https://github.com/vibecoder11200/9router.git
+cd 9router
+npm install && npm run build
+
+export JWT_SECRET="your-secure-secret"
+export INITIAL_PASSWORD="your-password"
+export NODE_ENV="production"
+
+npm start
+```
+
+### Docker
+```bash
+docker build -t 9router .
+docker run -d \
+  -p 20128:20128 \
+  -e JWT_SECRET="your-secret" \
+  -v 9router-data:/app/data \
+  9router
+```
+
+### Cloudflare Workers
+```bash
+cd 9router
+npm run deploy:cloudflare
+```
+
+**Biến môi trường:**
+- `JWT_SECRET` - **PHẢI đổi trong production!**
+- `DATA_DIR` - Đường dẫn lưu database (mặc định: `~/.9router`)
+- `INITIAL_PASSWORD` - Đăng nhập Dashboard (mặc định: `123456`)
+- `NODE_ENV` - Đặt `production` để deploy
+
+Xem [hướng dẫn deployment](getting-started/installation.md#deployment) để biết chi tiết.
+
+---
+
+## Tại sao không đăng nhập từ xa được bằng mật khẩu mặc định?
+
+Với cài đặt mới, mật khẩu mặc định `123456` là công khai nên đăng nhập từ xa bị chặn cho đến khi bạn đặt mật khẩu riêng. Khi bạn thử, 9Router sẽ in một **mã thiết lập dùng một lần** ra console của server và trang đăng nhập sẽ yêu cầu mã này:
+
+```text
+[9Router] First remote login on a fresh install: use the one-time setup code A1B2-C3D4
+[9Router] on the login page (with the default password) to set your admin password.
+```
+
+Xem mã bằng `docker logs <container>` (Docker), `journalctl -u 9router` (systemd), hoặc terminal đang chạy 9Router. Nhập mã đó trên trang đăng nhập cùng mật khẩu mặc định và mật khẩu mới của bạn — mã chỉ dùng được một lần.
+
+Cách khác: đăng nhập từ `localhost` trên chính máy chủ (không cần mã), hoặc đặt `INITIAL_PASSWORD` trước khi khởi động lần đầu để bỏ qua bước này.
+
+## Dữ liệu của tôi có an toàn không?
+
+**Có, 9Router ưu tiên bảo mật và quyền riêng tư:**
+
+**Local storage:**
+- Mọi dữ liệu lưu cục bộ tại `~/.9router` (hoặc `DATA_DIR` tùy chỉnh)
+- Không gửi data đến server 9Router
+- OAuth tokens mã hóa bằng JWT
+
+**Không telemetry:**
+- Không tracking sử dụng
+- Không analytics
+- Không phone-home
+
+**Mã nguồn mở:**
+- Toàn bộ source code có trên GitHub
+- Tự audit bảo mật
+- Community review
+
+**Điểm nhấn hardening (v0.6.36+):**
+- API key được **băm khi lưu** (HMAC-SHA256 dưới secret riêng theo-install) — không bao giờ lưu plaintext; danh sách chỉ hiển thị `sk-{keyId}-••••{last4}`
+- Secret ngẫu nhiên riêng cho từng install dùng cho việc băm key và mã hóa sudo MITM — không còn khóa fallback suy từ máy
+- Chống SSRF trên mọi đường fetch ra ngoài (redirect thủ công, xác minh DNS từng hop)
+- Request log che credential kể cả chế độ verbose
+- Truy cập dashboard qua tunnel là opt-in; mật khẩu mặc định chỉ dùng được từ chính máy đó
+- Export/import database yêu cầu CLI token thật của install
+
+**Best practice:**
+- Đặt `JWT_SECRET` mạnh trong production
+- Dùng `INITIAL_PASSWORD` mạnh và đổi ngay lần đăng nhập đầu
+- Bật HTTPS cho cloud deployment
+- Xoay API key định kỳ
+
+**9Router lưu gì:**
+- Tokens OAuth của provider (mã hóa)
+- API keys (băm — HMAC-SHA256, secret theo-install)
+- Thống kê sử dụng (chỉ cục bộ)
+- Cấu hình combo
+
+**9Router KHÔNG lưu:**
+- Prompts hoặc responses của bạn
+- Code bạn tạo
+- Thông tin cá nhân
+
+---
+
+## Làm thế nào để cập nhật 9Router?
+
+**Phương thức cập nhật phụ thuộc loại cài đặt:**
+
+### Global NPM Install
+```bash
+npm update -g 9router
+```
+
+### Local Install
+```bash
+cd 9router
+git pull origin master
+npm install
+npm run build
+npm start
+```
+
+### Docker
+```bash
+docker pull vibecoder11200/9router:latest
+docker stop 9router
+docker rm 9router
+docker run -d \
+  -p 20128:20128 \
+  -v 9router-data:/app/data \
+  vibecoder11200/9router:latest
+```
+
+**Kiểm tra version:**
+```bash
+9router --version
+```
+
+**Breaking changes:**
+- Xem [CHANGELOG.md](https://github.com/vibecoder11200/9router/blob/main/CHANGELOG.md)
+- Backup `~/.9router` trước khi update lớn
+- Xem hướng dẫn migration cho major version
+
+---
+
+## Tôi có thể đóng góp như thế nào?
+
+**Chúng tôi hoan nghênh đóng góp!**
+
+### Các cách đóng góp:
+
+1. **Report bugs:**
+   - [GitHub Issues](https://github.com/vibecoder11200/9router/issues)
+   - Bao gồm error logs, các bước reproduce
+
+2. **Request features:**
+   - [GitHub Discussions](https://github.com/vibecoder11200/9router/discussions)
+   - Mô tả use case và lợi ích
+
+3. **Submit code:**
+   ```bash
+   # Fork repo
+   git clone https://github.com/YOUR_USERNAME/9router.git
+   cd 9router
+   
+   # Create branch
+   git checkout -b feature/your-feature
+   
+   # Make changes
+   npm install
+   npm run dev
+   
+   # Test
+   npm test
+   
+   # Commit and push
+   git add .
+   git commit -m "Add your feature"
+   git push origin feature/your-feature
+   
+   # Create Pull Request on GitHub
+   ```
+
+4. **Cải thiện docs:**
+   - Sửa lỗi chính tả, thêm ví dụ
+   - Dịch sang ngôn ngữ khác
+   - Viết tutorial
+
+5. **Thêm provider:**
+   - Triển khai adapter provider mới
+   - Xem `app/lib/providers/` để có ví dụ
+
+**Hướng dẫn đóng góp:**
+- Tuân theo code style hiện có
+- Thêm test cho tính năng mới
+- Cập nhật tài liệu
+- Giữ commit nhỏ gọn và mô tả rõ ràng
+
+Xem [CONTRIBUTING.md](https://github.com/vibecoder11200/9router/blob/main/CONTRIBUTING.md) để biết chi tiết.
+
+---
+
+## Cần trợ giúp thêm?
+
+- **Documentation:** [9router.com/docs](https://9router.com/docs)
+- **GitHub:** [github.com/vibecoder11200/9router](https://github.com/vibecoder11200/9router)
+- **Issues:** [github.com/vibecoder11200/9router/issues](https://github.com/vibecoder11200/9router/issues)
+- **Troubleshooting:** [troubleshooting.md](troubleshooting.md)
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"9Router là gì?","id":"9router-là-gì"},{"level":2,"text":"Pricing hoạt động thế nào?","id":"pricing-hoạt-động-thế-nào"},{"level":3,"text":"Tier 1: Subscription (Dùng đầu tiên)","id":"tier-1-subscription-dùng-đầu-tiên"},{"level":3,"text":"Tier 2: Cheap (Backup)","id":"tier-2-cheap-backup"},{"level":3,"text":"Tier 3: Free (Khẩn cấp)","id":"tier-3-free-khẩn-cấp"},{"level":2,"text":"9Router có miễn phí không?","id":"9router-có-miễn-phí-không"},{"level":2,"text":"Provider nào được hỗ trợ?","id":"provider-nào-được-hỗ-trợ"},{"level":3,"text":"Subscription Providers","id":"subscription-providers"},{"level":3,"text":"Cheap Providers","id":"cheap-providers"},{"level":3,"text":"Free Providers","id":"free-providers"},{"level":2,"text":"Tôi có thể dùng nhiều provider không?","id":"tôi-có-thể-dùng-nhiều-provider-không"},{"level":2,"text":"Quota tracking hoạt động thế nào?","id":"quota-tracking-hoạt-động-thế-nào"},{"level":2,"text":"9Router có hoạt động với Cursor không?","id":"9router-có-hoạt-động-với-cursor-không"},{"level":2,"text":"Tôi có thể self-host 9Router không?","id":"tôi-có-thể-self-host-9router-không"},{"level":3,"text":"Localhost (Mặc định)","id":"localhost-mặc-định"},{"level":3,"text":"VPS/Cloud","id":"vpscloud"},{"level":3,"text":"Docker","id":"docker"},{"level":3,"text":"Cloudflare Workers","id":"cloudflare-workers"},{"level":2,"text":"Tại sao không đăng nhập từ xa được bằng mật khẩu mặc định?","id":"tại-sao-không-đăng-nhập-từ-xa-được-bằng-mật-khẩu-mặc-định"},{"level":2,"text":"Dữ liệu của tôi có an toàn không?","id":"dữ-liệu-của-tôi-có-an-toàn-không"},{"level":2,"text":"Làm thế nào để cập nhật 9Router?","id":"làm-thế-nào-để-cập-nhật-9router"},{"level":3,"text":"Global NPM Install","id":"global-npm-install"},{"level":3,"text":"Local Install","id":"local-install"},{"level":3,"text":"Docker","id":"docker"},{"level":2,"text":"Tôi có thể đóng góp như thế nào?","id":"tôi-có-thể-đóng-góp-như-thế-nào"},{"level":3,"text":"Các cách đóng góp:","id":"các-cách-đóng-góp"},{"level":2,"text":"Cần trợ giúp thêm?","id":"cần-trợ-giúp-thêm"}],"lang":"vi","children":["$","$Le",null,{"content":"$f","baseDir":"/vi"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

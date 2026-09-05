@@ -1,0 +1,86 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:Tea2,# サーキットブレーカー
+
+アカウントごとのサーキットブレーカーは、明らかに失敗しているアカウントへリクエストを叩き続けることを防ぎます。失敗が続くアカウントはブレーカーが「オープン」になり、クールダウンの間スキップされます。その後、信頼を回復する前に静かにプローブします。
+
+チャットのフォールバックループ内で動作するため、あるアカウントが切断されてもリクエストは次の健全なアカウントへ流れます。**失敗は見えません。**
+
+---
+
+## 仕組み
+
+```
+アカウントが 60 秒以内に 5 回失敗
+        ↓
+🔴 ブレーカー OPEN — 60 秒間スキップ
+        ↓ クールダウン終了
+🟡 Half-open — 実リクエスト 1 件だけが受動プローブとして許可
+        ↓
+✅ 成功 → ブレーカーが閉じ、完全復帰
+❌ 失敗 → クールダウン ×2 で再オープン（30s→60s→120s…、上限 10 分）
+```
+
+- **失敗しきい値**: 60 秒のウィンドウ内で 5 回（デフォルト）のアカウントレベルの失敗。
+- **段階的クールダウン**: 再オープンごとに 2 倍、上限 10 分。
+- **受動プローブ**: 実ユーザーのリクエストがそのままプローブになります。合成トラフィックなし、プローブされたユーザーは決して犠牲になりません。失敗すれば次のアカウントへフォールスルーします。
+- **二重カウントなし**: antigravity の strike-block で処理済みのクォータ 429 はブレーカーの失敗に数えません。
+
+ブレーカーのオープン/復旧時に `breaker-open` / `breaker-recovered` アラートが発火します（[アラート](./alerts.md)参照）。
+
+---
+
+## ダッシュボードパネル
+
+```
+Dashboard → Quota → サーキットブレーカーパネル
+
+アカウント          状態       失敗   クールダウン
+cc/claude-opus-5   🔴 open     7      42秒後に再試行
+cx/gpt-5.6-sol   🟡 half-open 1      プローブ中…
+glm/glm-4.7        🟢 closed   —      —
+```
+
+オープン/half-open のブレーカー、直近の失敗数、クールダウンカウントダウン、antigravity の strike-block、手動リセットボタンを表示します。
+
+API での手動リセット:
+
+```bash
+POST /api/providers/{providerId}/breaker
+```
+
+---
+
+## 設定
+
+| 設定 | デフォルト | 意味 |
+|---|---|---|
+| `breakerEnabled` | `true` | キルスイッチ — `false` で旧来の挙動に正確に戻る |
+| `breakerFailureThreshold` | `5` | オープンまでのウィンドウ内失敗数 |
+| `breakerWindowSec` | `60` | 失敗カウントのウィンドウ |
+| `breakerBaseCooldownSec` | `60` | 初回クールダウン。再オープンごとに倍増 |
+
+Dashboard → Settings から調整できます。挙動が怪しい場合は `breakerEnabled` を OFF に — 旧フォールバックループと完全に同じ挙動になります。
+
+---
+
+## ブレーカーが切れるとき
+
+`breaker-open` アラートを受け取ったときに調査すべき典型的な原因:
+
+- プロバイダー側の障害・API の劣化（最も多い）
+- そのアカウントの OAuth トークンの期限切れ/失効
+- アカウント前段のプロキシの死亡（プロキシプールを確認）
+- Antigravity のクォータストライク（パネルに表示されるが、ここではカウントされない）
+
+---
+
+## 関連
+
+- [アラート](./alerts.md) - `breaker-open` / `breaker-recovered` イベント
+- [スマートルーティング](./smart-routing.md) - ブレーカーが棲むフォールバックループ
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"仕組み","id":"仕組み"},{"level":2,"text":"ダッシュボードパネル","id":"ダッシュボードパネル"},{"level":2,"text":"設定","id":"設定"},{"level":2,"text":"ブレーカーが切れるとき","id":"ブレーカーが切れるとき"},{"level":2,"text":"関連","id":"関連"}],"lang":"ja","children":["$","$L3",null,{"content":"$4","baseDir":"/ja/features"}]}],[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

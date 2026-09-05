@@ -1,0 +1,95 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","vi","features","circuit-breaker",""],"q":"","i":false,"f":[[["",{"children":[["lang","vi","d"],{"children":[["slug","features/circuit-breaker","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Td3f,# Circuit Breaker
+
+Circuit breaker từng tài khoản ngăn 9Router dồn request vào một tài khoản đang rõ ràng là hỏng. Khi một tài khoản lỗi liên tục, breaker "mở" và bỏ qua nó trong thời gian cooldown — rồi thăm dò nhẹ nhàng trước khi tin lại.
+
+Cơ chế nằm bên trong vòng fallback của chat, nên khi một tài khoản bị ngắt, request của bạn đơn giản rơi sang tài khoản khỏe tiếp theo. **Bạn không bao giờ thấy lỗi.**
+
+---
+
+## Cách hoạt động
+
+```
+Tài khoản lỗi 5 lần trong 60s
+        ↓
+🔴 Breaker MỞ — tài khoản bị bỏ qua 60s
+        ↓ hết cooldown
+🟡 Half-open — chính xác MỘT request thật được vào như probe thụ động
+        ↓
+✅ Thành công → breaker đóng, tài khoản trở lại hoàn toàn
+❌ Thất bại → mở lại với cooldown ×2 (30s→60s→120s…, tối đa 10 phút)
+```
+
+- **Ngưỡng lỗi**: 5 lỗi cấp tài khoản trong cửa sổ 60 giây (mặc định).
+- **Cooldown tăng dần**: mỗi lần mở lại nhân đôi cooldown, trần 10 phút.
+- **Probe thụ động**: một request người dùng thật đóng vai trò probe — không có traffic tổng hợp, và người phía sau không bao giờ bị hy sinh: probe fail thì request rơi sang tài khoản tiếp theo.
+- **Không đếm chồng**: quota-429 đã xử lý bởi strike-block của antigravity không bị tính là lỗi breaker.
+
+Khi breaker mở hoặc phục hồi, cảnh báo `breaker-open` / `breaker-recovered` tương ứng bắn ra (xem [Cảnh báo](./alerts.md)).
+
+---
+
+## Panel trên Dashboard
+
+```
+Dashboard → Quota → panel Circuit Breaker
+
+Tài khoản          Trạng thái  Lỗi     Cooldown
+cc/claude-opus-5   🔴 open      7       thử lại sau 42s
+cx/gpt-5.6-sol   🟡 half-open 1       đang probe…
+glm/glm-4.7        🟢 closed    —       —
+```
+
+Panel hiển thị breaker đang mở/half-open, số lỗi gần đây, đếm ngược cooldown, strike-block của antigravity, và nút **reset thủ công** khi bạn đã sửa nguyên nhân gốc và không muốn chờ hết cooldown.
+
+Reset thủ công qua API:
+
+```bash
+POST /api/providers/{providerId}/breaker
+```
+
+---
+
+## Cấu hình
+
+| Thiết lập | Mặc định | Ý nghĩa |
+|---|---|---|
+| `breakerEnabled` | `true` | Kill switch — `false` trả về đúng hành vi cũ không có breaker |
+| `breakerFailureThreshold` | `5` | Số lỗi trong cửa sổ trước khi mở |
+| `breakerWindowSec` | `60` | Cửa sổ đếm lỗi |
+| `breakerBaseCooldownSec` | `60` | Cooldown đầu; nhân đôi mỗi lần mở lại |
+
+Chỉnh qua Dashboard → Settings. Nếu nghi breaker hành xử sai, tắt `breakerEnabled` — hành vi y hệt vòng fallback cũ.
+
+---
+
+## Khi nào breaker ngắt
+
+Các nguyên nhân đáng kiểm tra khi nhận cảnh báo `breaker-open`:
+
+- Provider sập hoặc API suy giảm (phổ biến nhất)
+- OAuth token của tài khoản đó hết hạn/bị thu hồi
+- Proxy phía trước tài khoản chết (kiểm tra proxy pool)
+- Strike quota của Antigravity (hiển thị trong panel, nhưng không đếm ở đây)
+
+---
+
+## Liên quan
+
+- [Cảnh báo](./alerts.md) - sự kiện `breaker-open` / `breaker-recovered`
+- [Smart Routing](./smart-routing.md) - vòng fallback chứa breaker
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Cách hoạt động","id":"cách-hoạt-động"},{"level":2,"text":"Panel trên Dashboard","id":"panel-trên-dashboard"},{"level":2,"text":"Cấu hình","id":"cấu-hình"},{"level":2,"text":"Khi nào breaker ngắt","id":"khi-nào-breaker-ngắt"},{"level":2,"text":"Liên quan","id":"liên-quan"}],"lang":"vi","children":["$","$Le",null,{"content":"$f","baseDir":"/vi/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

@@ -1,0 +1,90 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:Tbf5,# 告警
+
+9Router 可以在需要你注意时把运维告警推送到 **Telegram**、**Discord** 或任意**通用 Webhook** —— 在你的编码会话被打断之前。
+
+告警发送是 fire-and-forget：绝不阻塞或拖慢请求处理，而且在配置渠道之前整个系统保持静默。
+
+---
+
+## 快速设置
+
+```
+Dashboard → Alerts
+
+1. 添加渠道（Telegram / Discord / Webhook）
+2. 选择你关心的事件（默认全部开启）
+3. 点击 "Test" 发送示例告警
+4. 完成 ✅
+```
+
+### Telegram
+
+1. 用 [@BotFather](https://t.me/BotFather) 创建机器人 → 复制 bot token
+2. 给机器人发任意消息，然后获取 chat ID（例如用 @userinfobot）
+3. 在 Dashboard → Alerts 粘贴 **Bot Token** + **Chat ID**
+
+### Discord
+
+1. Server Settings → Integrations → Webhooks → **New Webhook**
+2. 复制 webhook URL
+3. 粘贴到 Dashboard → Alerts
+
+Discord 消息以带颜色的 embed 呈现：蓝 = info，橙 = warn，红 = critical。
+
+### 通用 Webhook
+
+任何接受 JSON POST 的 URL：
+
+```json
+{
+  "eventType": "quota-near-limit",
+  "severity": "warn",
+  "title": "配额接近上限",
+  "body": "Claude Code: 已用 82%（2 小时后重置）",
+  "timestamp": "2026-09-05T10:00:00.000Z"
+}
+```
+
+---
+
+## 告警事件
+
+| 事件 | 级别 | 触发条件 |
+|---|---|---|
+| `all-accounts-locked` | critical | 某个 provider 的所有账号都被限流 —— 请求无法服务 |
+| `quota-near-limit` | warn | 某个 provider 的配额越过接近上限阈值 |
+| `budget-threshold` | warn | 某 API key 的支出越过软阈值（默认 80%） |
+| `breaker-open` | warn | 某账号连续失败后熔断器打开 |
+| `breaker-recovered` | info | 之前打开的熔断器在探活成功后闭合 |
+| `proxy-pool-exhausted` | critical | 某代理池的所有条目都不可用 |
+| `strictproxy-violation` | critical | 严格代理模式本需要直连 —— 请求被拒绝 |
+| `xray-node-down` | critical | 活动的 v2go/Xray 节点健康探活失败 |
+| `xray-rotation-failed` | critical | 自动轮换到下一个 Xray 节点失败 |
+| `totu-fetch-failed` | warn | TOTU 自动拉取无法刷新订阅 |
+
+每种事件可单独开关。
+
+---
+
+## 发送机制
+
+- **按渠道独立队列** —— 每个渠道有自己的带节奏控制的发送队列，事件突发也不会刷屏或阻塞任何东西。
+- **重试** —— 发送失败最多重试 3 次（带退避）；尊重上游的 `429 Retry-After`。
+- **去重窗口** —— 相同事件默认 10 分钟去重（`alertsDedupMin`），节点抖动不会每几秒骚扰你。
+- **凭据脱敏** —— 已保存的 token/webhook URL 在 UI 中脱敏显示；留空即保留已存值。
+- **不在热路径上** —— 告警发送是异步的；即使 Telegram 宕机，你的请求也不受影响。
+
+---
+
+## 相关
+
+- [API Key 与预算](./api-keys.md) - `budget-threshold` 来自按 key 的预算
+- [熔断器](./circuit-breaker.md) - `breaker-open` / `breaker-recovered` 的来源
+- [配额追踪](./quota-tracking.md) - `quota-near-limit` 与 Quota 仪表盘
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"快速设置","id":"快速设置"},{"level":3,"text":"Telegram","id":"telegram"},{"level":3,"text":"Discord","id":"discord"},{"level":3,"text":"通用 Webhook","id":"通用-webhook"},{"level":2,"text":"告警事件","id":"告警事件"},{"level":2,"text":"发送机制","id":"发送机制"},{"level":2,"text":"相关","id":"相关"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4","baseDir":"/zh-CN/features"}]}],[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

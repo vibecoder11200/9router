@@ -1,0 +1,217 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","en","integration","cline",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","integration/cline","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:T15fe,# Cline Integration
+
+Integrate 9Router with Cline VSCode extension to route your AI requests through 9Router's intelligent routing system.
+
+## Prerequisites
+
+- Visual Studio Code installed
+- Cline extension installed from VSCode marketplace
+- 9Router running locally or cloud endpoint configured
+- API key from 9Router dashboard
+
+## Setup
+
+### 1. Open Cline Settings
+
+1. Open Visual Studio Code
+2. Open the Cline extension panel (click the Cline icon in the sidebar)
+3. Click the **Settings** icon (gear icon) in the Cline panel
+
+### 2. Select API Provider
+
+1. In the Cline settings, find **API Provider** dropdown
+2. Select **Ollama** from the list
+   - Note: We use Ollama provider type because it's compatible with OpenAI-style APIs
+
+### 3. Configure Base URL
+
+Set the base URL to your 9Router endpoint:
+
+**For Local 9Router:**
+```
+http://localhost:20128/v1
+```
+
+**For Cloud 9Router:**
+```
+https://9router.com
+```
+
+**Steps:**
+1. In the **Base URL** field, enter your 9Router endpoint
+2. Make sure to include `/v1` at the end
+
+### 4. Add API Key
+
+1. In the **API Key** field, enter your 9Router API key
+2. You can find your API key in the 9Router dashboard under **Settings → API Keys**
+3. The key should start with `sk-9router-`
+
+### 5. Select Model
+
+1. In the **Model** dropdown, you can either:
+   - Select from available models (if Cline auto-detects them)
+   - Manually enter the model name from your 9Router configuration
+
+2. Common model names:
+   - `gpt-5.4`
+   - `gpt-5.5`
+   - `claude-opus-5`
+   - `claude-sonnet-5`
+   - `gemini-3-flash`
+
+### 6. Save Configuration
+
+Click **Save** or close the settings panel. Cline will automatically save your configuration.
+
+## Configuration Example
+
+Your Cline settings should look like this:
+
+```
+API Provider: Ollama
+Base URL: http://localhost:20128/v1
+API Key: sk-9router-xxxxxxxxxxxxx
+Model: gpt-5.4
+```
+
+## Available Models
+
+You can use any model configured in your 9Router dashboard. Common examples:
+
+| Model Name | Provider | Description |
+|------------|----------|-------------|
+| `gpt-5.4` | OpenAI | GPT-5.4 |
+| `gpt-5.5` | OpenAI | GPT-5.5 |
+| `claude-opus-5` | Anthropic | Claude Opus 5 |
+| `claude-sonnet-5` | Anthropic | Claude Sonnet 5 |
+| `gemini-3-flash` | Google | Gemini 3 Flash |
+
+## Usage
+
+### Chat with AI
+
+1. Open the Cline panel in VSCode
+2. Type your message in the chat input
+3. Press Enter to send
+4. Cline will use 9Router to process your request
+
+### Code Generation
+
+1. Ask Cline to generate code: "Create a React component for a login form"
+2. Cline will generate code using 9Router
+3. Review and accept the generated code
+
+### Code Explanation
+
+1. Select code in your editor
+2. Ask Cline: "Explain this code"
+3. Get AI-powered explanations through 9Router
+
+### File Operations
+
+1. Ask Cline to create, modify, or delete files
+2. Cline will use 9Router to understand context and make changes
+3. Review changes before accepting
+
+## Troubleshooting
+
+### "Connection Failed" Error
+
+1. Verify 9Router is running: `curl http://localhost:20128/health`
+2. Check that the base URL is correct and includes `/v1`
+3. Ensure no firewall is blocking port 20128
+4. Try restarting VSCode
+
+### "Invalid API Key" Error
+
+1. Verify your API key in 9Router dashboard
+2. Make sure you copied the entire key including the `sk-9router-` prefix
+3. Check that the API key has not expired
+4. Try regenerating a new API key
+
+### "Model Not Found" Error
+
+1. Verify the model name matches exactly with your 9Router configuration
+2. Check that the provider connection is active in 9Router dashboard
+3. Ensure the model is available in your connected providers
+4. Try using the full model name (e.g., `openai/gpt-5.4` instead of `gpt-5.4`)
+
+### Cline Not Responding
+
+1. Check the Cline output panel for error messages
+2. Verify your 9Router instance is running and healthy
+3. Try reloading VSCode window (Cmd/Ctrl + Shift + P → "Reload Window")
+4. Check 9Router logs for any errors
+
+## Advanced Configuration
+
+### Using Cloud Endpoint
+
+To use 9Router cloud endpoint instead of localhost:
+
+1. In Cline settings, set Base URL to: `https://9router.com`
+2. Make sure you have configured your API key in the 9Router cloud dashboard
+3. Ensure your cloud endpoint is active and accessible
+
+### Multiple Models
+
+You can quickly switch between models:
+
+1. Open Cline settings
+2. Change the **Model** field to a different model
+3. Save and continue chatting with the new model
+
+### Custom Timeout
+
+If you experience timeout issues with large requests:
+
+1. Open VSCode settings (Cmd/Ctrl + ,)
+2. Search for "Cline timeout"
+3. Increase the timeout value (default is usually 30 seconds)
+
+## Best Practices
+
+1. **Use Appropriate Models**: Choose faster models (like Haiku or Flash) for simple tasks, and more powerful models (like Opus or GPT-4) for complex tasks
+2. **Monitor Usage**: Check 9Router dashboard for usage statistics and costs
+3. **Context Management**: Keep your conversations focused to reduce token usage
+4. **Model Switching**: Switch models based on task complexity to optimize cost and performance
+5. **API Key Security**: Never commit your API key to version control
+
+## Integration with 9Router Features
+
+### Model Routing
+
+9Router automatically routes your requests to the best available provider based on:
+- Model availability
+- Provider health status
+- Cost optimization
+- Load balancing
+
+### Fallback Support
+
+If a provider fails, 9Router automatically falls back to alternative providers configured in your dashboard.
+
+### Usage Tracking
+
+Monitor your Cline usage through 9Router dashboard:
+- Total requests
+- Token usage
+- Cost per model
+- Provider distribution
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Prerequisites","id":"prerequisites"},{"level":2,"text":"Setup","id":"setup"},{"level":3,"text":"1. Open Cline Settings","id":"1-open-cline-settings"},{"level":3,"text":"2. Select API Provider","id":"2-select-api-provider"},{"level":3,"text":"3. Configure Base URL","id":"3-configure-base-url"},{"level":3,"text":"4. Add API Key","id":"4-add-api-key"},{"level":3,"text":"5. Select Model","id":"5-select-model"},{"level":3,"text":"6. Save Configuration","id":"6-save-configuration"},{"level":2,"text":"Configuration Example","id":"configuration-example"},{"level":2,"text":"Available Models","id":"available-models"},{"level":2,"text":"Usage","id":"usage"},{"level":3,"text":"Chat with AI","id":"chat-with-ai"},{"level":3,"text":"Code Generation","id":"code-generation"},{"level":3,"text":"Code Explanation","id":"code-explanation"},{"level":3,"text":"File Operations","id":"file-operations"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"},{"level":3,"text":"\"Connection Failed\" Error","id":"connection-failed-error"},{"level":3,"text":"\"Invalid API Key\" Error","id":"invalid-api-key-error"},{"level":3,"text":"\"Model Not Found\" Error","id":"model-not-found-error"},{"level":3,"text":"Cline Not Responding","id":"cline-not-responding"},{"level":2,"text":"Advanced Configuration","id":"advanced-configuration"},{"level":3,"text":"Using Cloud Endpoint","id":"using-cloud-endpoint"},{"level":3,"text":"Multiple Models","id":"multiple-models"},{"level":3,"text":"Custom Timeout","id":"custom-timeout"},{"level":2,"text":"Best Practices","id":"best-practices"},{"level":2,"text":"Integration with 9Router Features","id":"integration-with-9router-features"},{"level":3,"text":"Model Routing","id":"model-routing"},{"level":3,"text":"Fallback Support","id":"fallback-support"},{"level":3,"text":"Usage Tracking","id":"usage-tracking"}],"lang":"en","children":["$","$Le",null,{"content":"$f","baseDir":"/en/integration"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

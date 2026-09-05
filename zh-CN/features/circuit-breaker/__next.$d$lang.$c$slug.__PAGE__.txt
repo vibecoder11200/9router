@@ -1,0 +1,86 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:Ta7d,# 熔断器
+
+按账号的熔断器阻止 9Router 持续轰炸明显故障的账号。当账号持续出错，熔断器"打开"并在冷却期内跳过它 —— 之后先温和探活再恢复信任。
+
+它位于 chat 的回退循环内，所以当一个账号被切断，请求直接落到下一个健康账号。**你永远看不到故障。**
+
+---
+
+## 工作原理
+
+```
+账号在 60 秒内失败 5 次
+        ↓
+🔴 熔断打开 —— 账号被跳过 60 秒
+        ↓ 冷却结束
+🟡 半开 —— 恰好一个真实请求作为被动探针放行
+        ↓
+✅ 成功 → 熔断闭合，账号完全恢复
+❌ 失败 → 以冷却 ×2 重新打开（30s→60s→120s…，上限 10 分钟）
+```
+
+- **失败阈值**：60 秒窗口内 5 次账号级失败（默认）。
+- **递增冷却**：每次重开冷却翻倍，上限 10 分钟。
+- **被动探针**：一个真实用户请求充当探针 —— 没有合成流量，探针背后的用户也绝不会被牺牲：探针失败则请求落到下一个账号。
+- **不重复计数**：已由 antigravity strike-block 处理的配额 429 不计入熔断失败。
+
+熔断打开或恢复时触发对应的 `breaker-open` / `breaker-recovered` 告警（见[告警](./alerts.md)）。
+
+---
+
+## 仪表盘面板
+
+```
+Dashboard → Quota → 熔断器面板
+
+账号               状态       失败    冷却
+cc/claude-opus-5   🔴 open     7      42 秒后重试
+cx/gpt-5.6-sol   🟡 half-open 1      探活中…
+glm/glm-4.7        🟢 closed   —      —
+```
+
+面板显示打开/半开的熔断器、近期失败数、冷却倒计时、antigravity strike-block，以及**手动重置**按钮。
+
+通过 API 手动重置：
+
+```bash
+POST /api/providers/{providerId}/breaker
+```
+
+---
+
+## 设置
+
+| 设置 | 默认 | 含义 |
+|---|---|---|
+| `breakerEnabled` | `true` | 总开关 —— `false` 精确恢复无熔断器的旧行为 |
+| `breakerFailureThreshold` | `5` | 打开前的窗口内失败次数 |
+| `breakerWindowSec` | `60` | 失败计数窗口 |
+| `breakerBaseCooldownSec` | `60` | 首次冷却；每次重开翻倍 |
+
+在 Dashboard → Settings 调整。怀疑行为异常时可关掉 `breakerEnabled` —— 行为与旧回退循环完全一致。
+
+---
+
+## 熔断何时跳闸
+
+收到 `breaker-open` 告警时值得排查的典型原因：
+
+- 提供商侧故障或 API 劣化（最常见）
+- 该账号的 OAuth token 过期/被吊销
+- 账号前面的代理挂了（检查代理池）
+- Antigravity 配额打击（面板可见，但不计入此处）
+
+---
+
+## 相关
+
+- [告警](./alerts.md) - `breaker-open` / `breaker-recovered` 事件
+- [智能路由](./smart-routing.md) - 熔断器所在的回退循环
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"工作原理","id":"工作原理"},{"level":2,"text":"仪表盘面板","id":"仪表盘面板"},{"level":2,"text":"设置","id":"设置"},{"level":2,"text":"熔断何时跳闸","id":"熔断何时跳闸"},{"level":2,"text":"相关","id":"相关"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4","baseDir":"/zh-CN/features"}]}],[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

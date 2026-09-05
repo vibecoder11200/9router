@@ -1,0 +1,435 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T29d7,# Proveedores gratis - Fallback de cero costo
+
+Respaldo de emergencia cuando todo lo demás está limitado por cuota. ¡Codifica 24/7 con cero costo!
+
+---
+
+## Resumen
+
+Los proveedores del nivel gratis son tu **fallback** cuando se agota la cuota de suscripción y la del nivel barato:
+
+- 🆓 **Kiro** - 6 modelos GRATIS (~50 créditos/mes, incl. Claude Sonnet 4.5 y Haiku 4.5)
+- 🆓 **OpenCode Free** - sin login, lista de modelos auto-obtenida, passthrough ilimitado
+- 🆓 **Vertex AI** - $300 en créditos GCP gratis (90 días, Gemini 3.1 Pro + modelos partner)
+
+> ⚠️ **Niveles gratis descontinuados:** iFlow es de pago desde 2026, el OAuth gratis de Qwen Code terminó el 2026-04-15, y Gemini CLI fue cerrado el 2026-06-18 (usa **Antigravity** con tu cuenta de Google en su lugar).
+
+**Estrategia:** Úsalos como respaldo de emergencia. ¡Mantén los niveles de pago como principales y el nivel gratis como red de seguridad!
+
+---
+
+## Kiro (Claude GRATIS)
+
+### Precios
+
+| Plan | Costo mensual | Modelos | Cuota |
+|------|--------------|--------|-------|
+| FREE | $0 | 6 modelos | ~50 créditos/mes (500 créditos de prueba para cuentas nuevas, primeros 30 días) |
+
+**Mejor valor:** ¡Claude GRATIS! Misma calidad que Claude Code de pago.
+
+### Configuración
+
+**Paso 1: Conectar vía Dashboard**
+
+```bash
+9router
+# Dashboard → Providers → Connect Kiro
+```
+
+**Paso 2: AWS Builder ID u OAuth**
+
+- Clic en "Connect Kiro"
+- Elige método de login:
+  - AWS Builder ID (recomendado)
+  - Cuenta Google
+  - Cuenta GitHub
+- Otorga permisos
+- Auto-refresh de token habilitado
+
+**Paso 3: Usar en CLI**
+
+```
+Model: kr/claude-sonnet-4.5
+       kr/claude-haiku-4.5
+       kr/glm-5
+       kr/MiniMax-M2.5
+       kr/qwen3-coder-next
+       kr/deepseek-3.2
+```
+
+### Modelos disponibles
+
+| ID del modelo | Descripción | Ideal para |
+|----------|-------------|----------|
+| `kr/claude-sonnet-4.5` | Claude Sonnet 4.5 | Calidad/velocidad equilibrada |
+| `kr/claude-haiku-4.5` | Claude Haiku 4.5 | Respuestas rápidas |
+| `kr/glm-5` | GLM 5 | Chino + inglés |
+| `kr/MiniMax-M2.5` | MiniMax M2.5 | Contexto largo |
+| `kr/qwen3-coder-next` | Qwen3 Coder Next | Generación de código |
+| `kr/deepseek-3.2` | DeepSeek 3.2 | Tareas de razonamiento |
+
+### Pro Tips
+
+- **Claude GRATIS** - Misma calidad que el nivel de pago
+- **AWS Builder ID** - Configuración fácil con cuenta AWS
+- **500 créditos de prueba** - Las cuentas nuevas obtienen 500 créditos en los primeros 30 días
+- **Mejor calidad** - ¡Claude 4.5 gratis!
+
+---
+
+## OpenCode Free (Sin Login)
+
+### Precios
+
+| Plan | Costo mensual | Modelos | Cuota |
+|------|--------------|--------|-------|
+| FREE | $0 | Auto-obtenidos | Ilimitado (la lista de modelos fluctúa) |
+
+**Mejor valor:** La configuración más rápida — no se necesita ninguna cuenta.
+
+### Configuración
+
+**Paso 1: Conectar vía Dashboard**
+
+```bash
+9router
+# Dashboard → Providers → Connect OpenCode Free
+```
+
+**Paso 2: No se requiere login**
+
+- Clic en "Connect OpenCode Free"
+- La lista de modelos se obtiene automáticamente desde `opencode.ai/zen/v1/models`
+- Listo — sin cuenta, sin OAuth
+
+**Paso 3: Usar en CLI**
+
+```
+Model: oc/<auto>
+```
+
+### Pro Tips
+
+- **Cero configuración** - El proveedor más rápido de conectar
+- **`oc/<auto>`** - Usa este placeholder en los combos; 9Router elige un modelo disponible
+- **Lista fluctuante** - Los modelos disponibles cambian con el tiempo, los combos lo manejan sin problemas
+
+---
+
+## Vertex AI ($300 en Créditos Gratis)
+
+### Precios
+
+| Plan | Costo mensual | Modelos | Cuota |
+|------|--------------|--------|-------|
+| Prueba GRATIS | $0 | Gemini 3.1 Pro + modelos partner | $300 en créditos, 90 días |
+
+**Mejor valor:** Toda la calidad de Gemini sobre la infraestructura de Google.
+
+### Configuración
+
+**Paso 1: Conectar vía Dashboard**
+
+```bash
+9router
+# Dashboard → Providers → Connect Vertex AI
+```
+
+**Paso 2: Sube el JSON de la cuenta de servicio de GCP**
+
+- Crea una cuenta GCP (las cuentas nuevas obtienen $300 en créditos, 90 días)
+- Crea una cuenta de servicio y descarga la clave JSON
+- Súbela en el dashboard
+
+**Paso 3: Usar en CLI**
+
+```
+Model: vertex/gemini-3.1-pro-preview
+       vertex/gemini-3-flash-preview
+       vertex-partner/glm-5-maas
+       vertex-partner/deepseek-v3.2-maas
+```
+
+> **Nota:** Usa el endpoint de **Vertex AI Studio** — el endpoint de la Gemini API dejó de consumir créditos gratis en marzo de 2026.
+
+### Modelos disponibles
+
+| ID del modelo | Descripción | Ideal para |
+|----------|-------------|----------|
+| `vertex/gemini-3.1-pro-preview` | Gemini 3.1 Pro Preview | Tareas complejas |
+| `vertex/gemini-3-flash-preview` | Gemini 3 Flash Preview | Respuestas rápidas, visión |
+| `vertex-partner/glm-5-maas` | GLM 5 (MaaS) | Chino + inglés |
+| `vertex-partner/deepseek-v3.2-maas` | DeepSeek V3.2 (MaaS) | Tareas de razonamiento |
+
+---
+
+## Comparación de características
+
+| Proveedor | Modelos | Mejor modelo | Configuración | Cuota |
+|----------|--------|------------|-------|-------|
+| **Kiro** | 6 | Claude Sonnet 4.5 | AWS Builder ID | ~50 créditos/mes |
+| **OpenCode Free** | auto | `oc/<auto>` | Sin login | Ilimitado |
+| **Vertex AI** | 4+ | Gemini 3.1 Pro Preview | Cuenta de servicio GCP | $300 / 90 días |
+
+**Ganador:** ¡Kiro por calidad, OpenCode Free por cero configuración!
+
+---
+
+## Ejemplo de uso
+
+### Configuración en Cursor IDE
+
+```
+Settings → Models → Advanced:
+  OpenAI API Base URL: http://localhost:20128/v1
+  OpenAI API Key: [desde el dashboard de 9router]
+  Model: kr/claude-sonnet-4.5
+```
+
+### Crear combo (Recomendado)
+
+```
+Dashboard → Combos → Create New
+
+Name: free-combo
+Models:
+  1. kr/claude-sonnet-4.5 (Kiro calidad)
+  2. oc/<auto> (OpenCode Free respaldo)
+  3. vertex/gemini-3.1-pro-preview (Vertex emergencia)
+
+Usar en CLI: free-combo
+```
+
+**Resultado:** ¡Cero costo, máximo uptime!
+
+---
+
+## Estrategia de fallback completa
+
+### Combo completo de 3 niveles
+
+```
+Dashboard → Combos → Create New
+
+Name: complete-fallback
+Models:
+  1. ag/gemini-3-flash (GRATIS, cuenta Google)
+  2. cc/claude-opus-5 (Suscripción de pago)
+  3. glm/glm-4.7 (Respaldo barato, $0.6/1M)
+  4. minimax/MiniMax-M2.1 (Más barato, $0.2/1M)
+  5. kr/claude-sonnet-4.5 (Calidad GRATIS)
+  6. oc/<auto> (Emergencia GRATIS)
+
+Usar en CLI: complete-fallback
+```
+
+**Resultado:**
+- Nivel 1: GRATIS (Antigravity, cuenta Google)
+- Nivel 2: Suscripción de pago (Claude Code)
+- Nivel 3: Respaldo barato (GLM, MiniMax)
+- Nivel 4: Fallback GRATIS (Kiro, OpenCode Free)
+
+**¡Nunca dejes de codificar!**
+
+---
+
+## Mejores prácticas
+
+### 1. Úsalos como respaldo de emergencia
+
+```
+Prioridad:
+1. Nivel de suscripción (maximiza cuota de pago)
+2. Nivel barato (centavos por 1M tokens)
+3. Nivel GRATIS (respaldo, cero costo)
+
+Usa el nivel gratis solo cuando:
+- Cuota de suscripción agotada
+- Límite de presupuesto alcanzado
+- Pruebas/tareas no críticas
+```
+
+### 2. Elige el modelo correcto
+
+```
+Razonamiento complejo: kr/claude-sonnet-4.5
+Codificación rápida: kr/qwen3-coder-next
+Mejor calidad: kr/claude-sonnet-4.5
+Contexto largo: kr/MiniMax-M2.5
+Tareas de visión: vertex/gemini-3-flash-preview
+```
+
+### 3. Crea un combo solo-gratis
+
+```
+Para codificación de cero costo:
+
+Name: zero-cost
+Models:
+  1. kr/claude-sonnet-4.5 (Mejor calidad)
+  2. kr/qwen3-coder-next (Codificación rápida)
+  3. oc/<auto> (Respaldo de emergencia)
+
+¡Costo: $0 para siempre!
+```
+
+### 4. Prueba antes de producción
+
+```
+Usa el nivel gratis para:
+- Probar prompts
+- Prototipar características
+- Aprender nuevos frameworks
+- Tareas no críticas
+
+Guarda la cuota de pago para:
+- Código de producción
+- Refactoring complejo
+- Características críticas
+```
+
+---
+
+## Ejemplos reales
+
+### Ejemplo 1: Estudiante/Aprendiz (Cero presupuesto)
+
+```
+Configuración:
+1. kr/claude-sonnet-4.5 (Mejor calidad)
+2. kr/qwen3-coder-next (Codificación rápida)
+3. oc/<auto> (Respaldo de emergencia)
+
+Costo mensual: $0
+Uso: Cuotas del nivel gratis
+
+Perfecto para:
+- Aprender a programar
+- Proyectos personales
+- Tareas/asignaciones
+```
+
+### Ejemplo 2: Freelancer (Consciente del presupuesto)
+
+```
+Configuración:
+1. ag/gemini-3-flash (GRATIS, cuenta Google)
+2. glm/glm-4.7 (Respaldo barato, $0.6/1M)
+3. kr/claude-sonnet-4.5 (Fallback GRATIS)
+
+Costo mensual: $5-10
+Uso: 100M+ tokens
+
+Perfecto para:
+- Proyectos de cliente (nivel de pago)
+- Pruebas (nivel gratis)
+- Respaldo de emergencia
+```
+
+### Ejemplo 3: Usuario intensivo (Maximiza todo)
+
+```
+Configuración:
+1. ag/gemini-3-flash (GRATIS, cuenta Google)
+2. cc/claude-opus-5 (Suscripción $20-100)
+3. cx/gpt-5.6-sol (Suscripción $20-200)
+4. glm/glm-4.7 (Barato $0.6/1M)
+5. minimax/MiniMax-M2.1 (Más barato $0.2/1M)
+6. kr/claude-sonnet-4.5 (Calidad GRATIS)
+7. oc/<auto> (GRATIS ilimitado)
+
+Costo mensual: $40-320 (suscripciones) + $10-20 (nivel barato)
+Uso: 500M+ tokens
+
+Perfecto para:
+- Desarrollo profesional
+- Proyectos de equipo
+- Codificación 24/7
+```
+
+---
+
+## Comparación de costos
+
+### Escenario: 100M tokens/mes
+
+**Opción 1: Solo ChatGPT API**
+```
+100M × $20/1M = $2,000/mes
+```
+
+**Opción 2: Solo nivel gratis de 9Router**
+```
+100M vía nivel gratis = $0/mes
+Ahorros: $2,000/mes (100%)
+```
+
+**Opción 3: Estrategia completa de 9Router**
+```
+60M vía Antigravity (GRATIS): $0
+30M vía Claude Code (suscripción): $0 extra
+8M vía GLM (barato): $4.80
+2M vía Kiro (GRATIS): $0
+Total: $4.80/mes + suscripciones que ya tienes
+Ahorros: $1,995/mes (99.76%)
+```
+
+---
+
+## Solución de problemas
+
+### "OAuth failed"
+
+**Solución:**
+- Verifica la conexión a internet
+- Prueba otro navegador
+- Limpia la caché del navegador
+- Reconecta en el dashboard
+
+### "Modelo no disponible"
+
+**Solución:**
+- Verifica que el proveedor esté conectado en el dashboard
+- Verifica que el token OAuth sea válido
+- Reconecta el proveedor si es necesario
+
+### "Respuestas lentas"
+
+**Solución:**
+- El nivel gratis puede tener menor prioridad
+- Úsalo durante horas off-peak
+- Cambia a otro proveedor gratis
+- Mejora al nivel barato para velocidad
+
+---
+
+## Limitaciones
+
+### Consideraciones del nivel gratis
+
+- **Velocidad** - Puede ser más lento que los niveles de pago
+- **Prioridad** - Menor prioridad en horas pico
+- **Rate limits** - Las cuotas gratis son limitadas (Kiro ~50 créditos/mes)
+- **Disponibilidad** - Puede tener tiempo de inactividad ocasional
+
+**Solución:** ¡Usa la estrategia de fallback de 3 niveles para confiabilidad!
+
+---
+
+## Próximos pasos
+
+- **Configurar suscripciones:** [Proveedores de suscripción](./subscription.md)
+- **Agregar respaldo barato:** [Proveedores baratos](./cheap.md)
+- **Crear combos:** Dashboard → Combos → Create New
+- **Empezar a codificar:** Usa el combo `complete-fallback` para máxima confiabilidad
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"Resumen","id":"resumen"},{"level":2,"text":"Kiro (Claude GRATIS)","id":"kiro-claude-gratis"},{"level":3,"text":"Precios","id":"precios"},{"level":3,"text":"Configuración","id":"configuración"},{"level":3,"text":"Modelos disponibles","id":"modelos-disponibles"},{"level":3,"text":"Pro Tips","id":"pro-tips"},{"level":2,"text":"OpenCode Free (Sin Login)","id":"opencode-free-sin-login"},{"level":3,"text":"Precios","id":"precios"},{"level":3,"text":"Configuración","id":"configuración"},{"level":3,"text":"Pro Tips","id":"pro-tips"},{"level":2,"text":"Vertex AI ($300 en Créditos Gratis)","id":"vertex-ai-300-en-créditos-gratis"},{"level":3,"text":"Precios","id":"precios"},{"level":3,"text":"Configuración","id":"configuración"},{"level":3,"text":"Modelos disponibles","id":"modelos-disponibles"},{"level":2,"text":"Comparación de características","id":"comparación-de-características"},{"level":2,"text":"Ejemplo de uso","id":"ejemplo-de-uso"},{"level":3,"text":"Configuración en Cursor IDE","id":"configuración-en-cursor-ide"},{"level":3,"text":"Crear combo (Recomendado)","id":"crear-combo-recomendado"},{"level":2,"text":"Estrategia de fallback completa","id":"estrategia-de-fallback-completa"},{"level":3,"text":"Combo completo de 3 niveles","id":"combo-completo-de-3-niveles"},{"level":2,"text":"Mejores prácticas","id":"mejores-prácticas"},{"level":3,"text":"1. Úsalos como respaldo de emergencia","id":"1-úsalos-como-respaldo-de-emergencia"},{"level":3,"text":"2. Elige el modelo correcto","id":"2-elige-el-modelo-correcto"},{"level":3,"text":"3. Crea un combo solo-gratis","id":"3-crea-un-combo-solo-gratis"},{"level":3,"text":"4. Prueba antes de producción","id":"4-prueba-antes-de-producción"},{"level":2,"text":"Ejemplos reales","id":"ejemplos-reales"},{"level":3,"text":"Ejemplo 1: Estudiante/Aprendiz (Cero presupuesto)","id":"ejemplo-1-estudianteaprendiz-cero-presupuesto"},{"level":3,"text":"Ejemplo 2: Freelancer (Consciente del presupuesto)","id":"ejemplo-2-freelancer-consciente-del-presupuesto"},{"level":3,"text":"Ejemplo 3: Usuario intensivo (Maximiza todo)","id":"ejemplo-3-usuario-intensivo-maximiza-todo"},{"level":2,"text":"Comparación de costos","id":"comparación-de-costos"},{"level":3,"text":"Escenario: 100M tokens/mes","id":"escenario-100m-tokensmes"},{"level":2,"text":"Solución de problemas","id":"solución-de-problemas"},{"level":3,"text":"\"OAuth failed\"","id":"oauth-failed"},{"level":3,"text":"\"Modelo no disponible\"","id":"modelo-no-disponible"},{"level":3,"text":"\"Respuestas lentas\"","id":"respuestas-lentas"},{"level":2,"text":"Limitaciones","id":"limitaciones"},{"level":3,"text":"Consideraciones del nivel gratis","id":"consideraciones-del-nivel-gratis"},{"level":2,"text":"Próximos pasos","id":"próximos-pasos"}],"lang":"es","children":["$","$L3",null,{"content":"$4","baseDir":"/es/providers"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

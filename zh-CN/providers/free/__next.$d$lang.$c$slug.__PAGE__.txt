@@ -1,0 +1,435 @@
+1:"$Sreact.fragment"
+2:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+3:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T23fd,# 免费提供商 - 零成本回退
+
+当其他一切都受配额限制时的应急备用。零成本 24/7 编码!
+
+---
+
+## 概览
+
+免费层提供商是订阅和低价配额都耗尽时的 **回退**:
+
+- 🆓 **Kiro** - 6 个免费模型(约 50 credits/月,含 Claude Sonnet 4.5 与 Haiku 4.5)
+- 🆓 **OpenCode Free** - 无需登录,模型列表自动获取,无限透传
+- 🆓 **Vertex AI** - $300 免费 GCP 额度(90 天,Gemini 3.1 Pro + 合作伙伴模型)
+
+> ⚠️ **已停更的免费层:** iFlow 自 2026 年起转为付费,Qwen Code 免费 OAuth 已于 2026-04-15 结束,Gemini CLI 已于 2026-06-18 停止服务(请改用你的 Google 账户配合 **Antigravity**)。
+
+**策略:** 作为应急备用使用。付费层作为主力,免费层作为安全网!
+
+---
+
+## Kiro(免费 Claude)
+
+### 价格
+
+| 套餐 | 月费 | 模型 | 配额 |
+|------|--------------|--------|-------|
+| 免费 | $0 | 6 个模型 | 约 50 credits/月(新账户前 30 天有 500 试用 credits)|
+
+**最佳价值:** 免费 Claude!与付费 Claude Code 同质量。
+
+### 设置
+
+**步骤 1:通过仪表盘连接**
+
+```bash
+9router
+# 仪表盘 → 提供商 → 连接 Kiro
+```
+
+**步骤 2:AWS Builder ID 或 OAuth**
+
+- 点击 "Connect Kiro"
+- 选择登录方式:
+  - AWS Builder ID(推荐)
+  - Google 账户
+  - GitHub 账户
+- 授予权限
+- 启用自动 token 刷新
+
+**步骤 3:在 CLI 中使用**
+
+```
+Model: kr/claude-sonnet-4.5
+       kr/claude-haiku-4.5
+       kr/glm-5
+       kr/MiniMax-M2.5
+       kr/qwen3-coder-next
+       kr/deepseek-3.2
+```
+
+### 可用模型
+
+| 模型 ID | 描述 | 最佳场景 |
+|----------|-------------|----------|
+| `kr/claude-sonnet-4.5` | Claude Sonnet 4.5 | 质量/速度平衡 |
+| `kr/claude-haiku-4.5` | Claude Haiku 4.5 | 快速响应 |
+| `kr/glm-5` | GLM 5 | 中文 + 英文 |
+| `kr/MiniMax-M2.5` | MiniMax M2.5 | 长上下文 |
+| `kr/qwen3-coder-next` | Qwen3 Coder Next | 代码生成 |
+| `kr/deepseek-3.2` | DeepSeek 3.2 | 推理任务 |
+
+### 专业建议
+
+- **免费 Claude** - 与付费层同质量
+- **AWS Builder ID** - 用 AWS 账户轻松设置
+- **500 试用 credits** - 新账户在前 30 天获得 500 credits
+- **顶级质量** - 免费的 Claude 4.5!
+
+---
+
+## OpenCode Free(无需登录)
+
+### 价格
+
+| 套餐 | 月费 | 模型 | 配额 |
+|------|--------------|--------|-------|
+| 免费 | $0 | 自动获取 | 无限(模型列表会波动)|
+
+**最佳价值:** 设置最快——完全不需要账户。
+
+### 设置
+
+**步骤 1:通过仪表盘连接**
+
+```bash
+9router
+# 仪表盘 → 提供商 → 连接 OpenCode Free
+```
+
+**步骤 2:无需登录**
+
+- 点击 "Connect OpenCode Free"
+- 模型列表自动从 `opencode.ai/zen/v1/models` 获取
+- 完成——无需账户,无需 OAuth
+
+**步骤 3:在 CLI 中使用**
+
+```
+Model: oc/<auto>
+```
+
+### 专业建议
+
+- **零设置** - 连接最快的提供商
+- **`oc/<auto>`** - 在组合中使用此占位符;9Router 会自动选择可用模型
+- **列表会波动** - 可用模型会随时间变化,组合可以优雅地处理
+
+---
+
+## Vertex AI($300 免费额度)
+
+### 价格
+
+| 套餐 | 月费 | 模型 | 配额 |
+|------|--------------|--------|-------|
+| 免费试用 | $0 | Gemini 3.1 Pro + 合作伙伴模型 | $300 额度,90 天 |
+
+**最佳价值:** 在 Google 基础设施上获得完整的 Gemini 质量。
+
+### 设置
+
+**步骤 1:通过仪表盘连接**
+
+```bash
+9router
+# 仪表盘 → 提供商 → 连接 Vertex AI
+```
+
+**步骤 2:上传 GCP 服务账号 JSON**
+
+- 创建 GCP 账户(新账户获得 $300 额度,90 天)
+- 创建服务账号并下载 JSON 密钥
+- 在仪表盘中上传
+
+**步骤 3:在 CLI 中使用**
+
+```
+Model: vertex/gemini-3.1-pro-preview
+       vertex/gemini-3-flash-preview
+       vertex-partner/glm-5-maas
+       vertex-partner/deepseek-v3.2-maas
+```
+
+> **注意:** 请使用 **Vertex AI Studio 端点**——Gemini API 端点已于 2026 年 3 月起停止消耗免费额度。
+
+### 可用模型
+
+| 模型 ID | 描述 | 最佳场景 |
+|----------|-------------|----------|
+| `vertex/gemini-3.1-pro-preview` | Gemini 3.1 Pro Preview | 复杂任务 |
+| `vertex/gemini-3-flash-preview` | Gemini 3 Flash Preview | 快速响应、视觉 |
+| `vertex-partner/glm-5-maas` | GLM 5(MaaS)| 中文 + 英文 |
+| `vertex-partner/deepseek-v3.2-maas` | DeepSeek V3.2(MaaS)| 推理任务 |
+
+---
+
+## 特性对比
+
+| 提供商 | 模型 | 最佳模型 | 设置方式 | 配额 |
+|----------|--------|------------|-------|-------|
+| **Kiro** | 6 | Claude Sonnet 4.5 | AWS Builder ID | 约 50 credits/月 |
+| **OpenCode Free** | 自动 | `oc/<auto>` | 无需登录 | 无限 |
+| **Vertex AI** | 4+ | Gemini 3.1 Pro Preview | GCP 服务账号 | $300 / 90 天 |
+
+**赢家:** 质量看 Kiro,零设置看 OpenCode Free!
+
+---
+
+## 使用示例
+
+### Cursor IDE 设置
+
+```
+Settings → Models → Advanced:
+  OpenAI API Base URL: http://localhost:20128/v1
+  OpenAI API Key: [从 9router 仪表盘获取]
+  Model: kr/claude-sonnet-4.5
+```
+
+### 创建组合(推荐)
+
+```
+仪表盘 → 组合 → 新建
+
+名称: free-combo
+模型:
+  1. kr/claude-sonnet-4.5 (Kiro 质量)
+  2. oc/<auto> (OpenCode Free 备用)
+  3. vertex/gemini-3.1-pro-preview (Vertex 应急)
+
+CLI 中使用: free-combo
+```
+
+**结果:** 零成本,最大在线!
+
+---
+
+## 完整回退策略
+
+### 完整 3 层组合
+
+```
+仪表盘 → 组合 → 新建
+
+名称: complete-fallback
+模型:
+  1. ag/gemini-3-flash (免费, Google 账户)
+  2. cc/claude-opus-5 (付费订阅)
+  3. glm/glm-4.7 (低价备用, 每 1M $0.6)
+  4. minimax/MiniMax-M2.1 (最便宜, 每 1M $0.2)
+  5. kr/claude-sonnet-4.5 (免费质量)
+  6. oc/<auto> (免费应急)
+
+CLI 中使用: complete-fallback
+```
+
+**结果:**
+- 第 1 层: 免费(Antigravity, Google 账户)
+- 第 2 层: 付费订阅(Claude Code)
+- 第 3 层: 低价备用(GLM、MiniMax)
+- 第 4 层: 免费回退(Kiro、OpenCode Free)
+
+**永不停码!**
+
+---
+
+## 最佳实践
+
+### 1. 作为应急备用
+
+```
+优先级:
+1. 订阅层(最大化付费配额)
+2. 低价层(每 1M tokens 几分钱)
+3. 免费层(备用,零成本)
+
+仅在以下情况使用免费层:
+- 订阅配额耗尽
+- 预算上限达到
+- 测试/非关键任务
+```
+
+### 2. 选择合适的模型
+
+```
+复杂推理: kr/claude-sonnet-4.5
+快速编码: kr/qwen3-coder-next
+最佳质量: kr/claude-sonnet-4.5
+长上下文: kr/MiniMax-M2.5
+视觉任务: vertex/gemini-3-flash-preview
+```
+
+### 3. 创建仅免费组合
+
+```
+零成本编码:
+
+名称: zero-cost
+模型:
+  1. kr/claude-sonnet-4.5 (最佳质量)
+  2. kr/qwen3-coder-next (快速编码)
+  3. oc/<auto> (应急备用)
+
+成本: 永远 $0!
+```
+
+### 4. 上生产前先测试
+
+```
+用免费层来:
+- 测试 prompt
+- 原型功能
+- 学习新框架
+- 非关键任务
+
+把付费配额留给:
+- 生产代码
+- 复杂重构
+- 关键功能
+```
+
+---
+
+## 真实案例
+
+### 案例 1:学生/学习者(零预算)
+
+```
+设置:
+1. kr/claude-sonnet-4.5 (最佳质量)
+2. kr/qwen3-coder-next (快速编码)
+3. oc/<auto> (应急备用)
+
+月成本: $0
+用量: 免费层配额
+
+适合:
+- 学习编程
+- 个人项目
+- 作业/任务
+```
+
+### 案例 2:自由职业(预算敏感)
+
+```
+设置:
+1. ag/gemini-3-flash (免费, Google 账户)
+2. glm/glm-4.7 (低价备用, 每 1M $0.6)
+3. kr/claude-sonnet-4.5 (免费回退)
+
+月成本: $5-10
+用量: 100M+ tokens
+
+适合:
+- 客户项目(付费层)
+- 测试(免费层)
+- 应急备用
+```
+
+### 案例 3:重度用户(全部最大化)
+
+```
+设置:
+1. ag/gemini-3-flash (免费, Google 账户)
+2. cc/claude-opus-5 (订阅 $20-100)
+3. cx/gpt-5.6-sol (订阅 $20-200)
+4. glm/glm-4.7 (低价 每 1M $0.6)
+5. minimax/MiniMax-M2.1 (最便宜 每 1M $0.2)
+6. kr/claude-sonnet-4.5 (免费质量)
+7. oc/<auto> (免费无限)
+
+月成本: $40-320(订阅)+ $10-20(低价层)
+用量: 500M+ tokens
+
+适合:
+- 专业开发
+- 团队项目
+- 24/7 编码
+```
+
+---
+
+## 成本对比
+
+### 场景:每月 100M tokens
+
+**方案 1:仅 ChatGPT API**
+```
+100M × $20/1M = $2,000/月
+```
+
+**方案 2:仅 9Router 免费层**
+```
+100M 通过免费层 = $0/月
+节省: $2,000/月 (100%)
+```
+
+**方案 3:9Router 完整策略**
+```
+60M 通过 Antigravity(免费): $0
+30M 通过 Claude Code(订阅): 无额外费用
+8M 通过 GLM(低价): $4.80
+2M 通过 Kiro(免费): $0
+合计: $4.80/月 + 你已有的订阅
+节省: $1,995/月 (99.76%)
+```
+
+---
+
+## 故障排除
+
+### "OAuth failed"
+
+**方案:**
+- 检查网络连接
+- 尝试其他浏览器
+- 清除浏览器缓存
+- 在仪表盘重新连接
+
+### "Model not available"
+
+**方案:**
+- 检查仪表盘中提供商已连接
+- 确认 OAuth token 有效
+- 必要时重新连接提供商
+
+### "Slow responses"
+
+**方案:**
+- 免费层优先级较低
+- 在非高峰时段使用
+- 切换到其他免费提供商
+- 升级到低价层以提速
+
+---
+
+## 限制
+
+### 免费层注意事项
+
+- **速度** - 可能慢于付费层
+- **优先级** - 高峰期优先级较低
+- **速率限制** - 免费配额有限(Kiro 约 50 credits/月)
+- **可用性** - 偶尔可能宕机
+
+**方案:** 使用 3 层回退策略保障可靠性!
+
+---
+
+## 下一步
+
+- **设置订阅:** [订阅型提供商](./subscription.md)
+- **添加低价备用:** [低价提供商](./cheap.md)
+- **创建组合:** 仪表盘 → 组合 → 新建
+- **开始编码:** 使用 `complete-fallback` 组合最大化可靠性
+0:{"buildId":"fnz1fJSVOCDpkferGG7I_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"概览","id":"概览"},{"level":2,"text":"Kiro(免费 Claude)","id":"kiro免费-claude"},{"level":3,"text":"价格","id":"价格"},{"level":3,"text":"设置","id":"设置"},{"level":3,"text":"可用模型","id":"可用模型"},{"level":3,"text":"专业建议","id":"专业建议"},{"level":2,"text":"OpenCode Free(无需登录)","id":"opencode-free无需登录"},{"level":3,"text":"价格","id":"价格"},{"level":3,"text":"设置","id":"设置"},{"level":3,"text":"专业建议","id":"专业建议"},{"level":2,"text":"Vertex AI($300 免费额度)","id":"vertex-ai300-免费额度"},{"level":3,"text":"价格","id":"价格"},{"level":3,"text":"设置","id":"设置"},{"level":3,"text":"可用模型","id":"可用模型"},{"level":2,"text":"特性对比","id":"特性对比"},{"level":2,"text":"使用示例","id":"使用示例"},{"level":3,"text":"Cursor IDE 设置","id":"cursor-ide-设置"},{"level":3,"text":"创建组合(推荐)","id":"创建组合推荐"},{"level":2,"text":"完整回退策略","id":"完整回退策略"},{"level":3,"text":"完整 3 层组合","id":"完整-3-层组合"},{"level":2,"text":"最佳实践","id":"最佳实践"},{"level":3,"text":"1. 作为应急备用","id":"1-作为应急备用"},{"level":3,"text":"2. 选择合适的模型","id":"2-选择合适的模型"},{"level":3,"text":"3. 创建仅免费组合","id":"3-创建仅免费组合"},{"level":3,"text":"4. 上生产前先测试","id":"4-上生产前先测试"},{"level":2,"text":"真实案例","id":"真实案例"},{"level":3,"text":"案例 1:学生/学习者(零预算)","id":"案例-1学生学习者零预算"},{"level":3,"text":"案例 2:自由职业(预算敏感)","id":"案例-2自由职业预算敏感"},{"level":3,"text":"案例 3:重度用户(全部最大化)","id":"案例-3重度用户全部最大化"},{"level":2,"text":"成本对比","id":"成本对比"},{"level":3,"text":"场景:每月 100M tokens","id":"场景每月-100m-tokens"},{"level":2,"text":"故障排除","id":"故障排除"},{"level":3,"text":"\"OAuth failed\"","id":"oauth-failed"},{"level":3,"text":"\"Model not available\"","id":"model-not-available"},{"level":3,"text":"\"Slow responses\"","id":"slow-responses"},{"level":2,"text":"限制","id":"限制"},{"level":3,"text":"免费层注意事项","id":"免费层注意事项"},{"level":2,"text":"下一步","id":"下一步"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4","baseDir":"/zh-CN/providers"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

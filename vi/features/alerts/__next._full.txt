@@ -1,0 +1,99 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","vi","features","alerts",""],"q":"","i":false,"f":[[["",{"children":[["lang","vi","d"],{"children":[["slug","features/alerts","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Tf4e,# Cảnh báo
+
+9Router có thể đẩy cảnh báo vận hành tới **Telegram**, **Discord**, hoặc bất kỳ **webhook** nào khi có sự cố cần bạn chú ý — trước khi phiên code của bạn bị gián đoạn.
+
+Việc gửi cảnh báo là fire-and-forget: không bao giờ chặn hay làm chậm đường xử lý request, và toàn bộ hệ thống "ngủ" cho tới khi bạn cấu hình kênh.
+
+---
+
+## Thiết lập nhanh
+
+```
+Dashboard → Alerts (Cảnh báo)
+
+1. Thêm kênh (Telegram / Discord / Webhook)
+2. Chọn sự kiện bạn quan tâm (mặc định bật tất cả)
+3. Bấm "Test" để gửi cảnh báo thử
+4. Xong ✅
+```
+
+### Telegram
+
+1. Tạo bot với [@BotFather](https://t.me/BotFather) → copy bot token
+2. Nhắn bất kỳ tin nào cho bot, rồi lấy chat ID (ví dụ qua @userinfobot)
+3. Vào Dashboard → Alerts, dán **Bot Token** + **Chat ID**
+
+### Discord
+
+1. Server Settings → Integrations → Webhooks → **New Webhook**
+2. Copy URL webhook
+3. Dán vào Dashboard → Alerts
+
+Tin nhắn Discord đến dưới dạng embed có màu: xanh = info, cam = warn, đỏ = critical.
+
+### Webhook tổng quát
+
+Bất kỳ URL nào chấp nhận POST JSON:
+
+```json
+{
+  "eventType": "quota-near-limit",
+  "severity": "warn",
+  "title": "Hạn mức sắp hết",
+  "body": "Claude Code: đã dùng 82% (reset sau 2h)",
+  "timestamp": "2026-09-05T10:00:00.000Z"
+}
+```
+
+---
+
+## Các sự kiện cảnh báo
+
+| Sự kiện | Mức | Kích hoạt khi |
+|---|---|---|
+| `all-accounts-locked` | critical | Mọi tài khoản của một provider đều bị rate-limit — request không thể phục vụ |
+| `quota-near-limit` | warn | Hạn mức một provider vượt ngưỡng sắp hết |
+| `budget-threshold` | warn | Chi tiêu của một API key vượt ngưỡng mềm budget (mặc định 80%) |
+| `breaker-open` | warn | Circuit breaker của một tài khoản mở sau nhiều lỗi liên tiếp |
+| `breaker-recovered` | info | Breaker đã mở trước đó đóng lại sau probe thành công |
+| `proxy-pool-exhausted` | critical | Tất cả entry của một proxy pool đều không khả dụng |
+| `strictproxy-violation` | critical | Chế độ strict-proxy lẽ ra phải đi kết nối trực tiếp — request bị từ chối |
+| `xray-node-down` | critical | Node v2go/Xray đang hoạt động fail probe sức khỏe |
+| `xray-rotation-failed` | critical | Tự động xoay vòng sang node Xray tiếp theo thất bại |
+| `totu-fetch-failed` | warn | TOTU auto-fetch không làm mới được subscription |
+
+Mỗi loại sự kiện bật/tắt riêng, nên bạn có thể tắt sự kiện ồn ào và giữ lại những sự kiện nghiêm trọng.
+
+---
+
+## Cơ chế gửi
+
+- **Queue riêng cho từng kênh** — mỗi kênh có hàng đợi gửi kèm pacing, nên một loạt sự kiện cùng lúc không làm tràn chat hay chặn bất cứ thứ gì.
+- **Retry** — gửi thất bại được thử lại tối đa 3 lần với backoff; tôn trọng header `429 Retry-After` của upstream.
+- **Cửa sổ dedup** — sự kiện trùng lặp được khử trùng trong 10 phút mặc định (`alertsDedupMin`), nên node giật giật không spam bạn mỗi vài giây.
+- **Che thông tin xác thực** — token/URL webhook đã lưu được che trong UI; để trống trường nào thì giữ nguyên giá trị đã lưu.
+- **Không nằm trên hot path** — phát cảnh báo là bất đồng bộ; kể cả khi Telegram sập, request của bạn vẫn không bị ảnh hưởng.
+
+---
+
+## Liên quan
+
+- [API Key & Budget](./api-keys.md) - sự kiện `budget-threshold` đến từ budget từng key
+- [Circuit Breaker](./circuit-breaker.md) - nguồn sự kiện `breaker-open` / `breaker-recovered`
+- [Theo dõi hạn mức](./quota-tracking.md) - `quota-near-limit` và trang Quota
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Thiết lập nhanh","id":"thiết-lập-nhanh"},{"level":3,"text":"Telegram","id":"telegram"},{"level":3,"text":"Discord","id":"discord"},{"level":3,"text":"Webhook tổng quát","id":"webhook-tổng-quát"},{"level":2,"text":"Các sự kiện cảnh báo","id":"các-sự-kiện-cảnh-báo"},{"level":2,"text":"Cơ chế gửi","id":"cơ-chế-gửi"},{"level":2,"text":"Liên quan","id":"liên-quan"}],"lang":"vi","children":["$","$Le",null,{"content":"$f","baseDir":"/vi/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]

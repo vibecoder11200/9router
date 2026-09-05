@@ -1,0 +1,537 @@
+<!DOCTYPE html><!--fnz1fJSVOCDpkferGG7I_--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/9router/_next/static/chunks/f7da7c3679ddfa30.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/9router/_next/static/chunks/343aa45b5611d01d.js"/><script src="/9router/_next/static/chunks/a0aa32a146625b3a.js" async=""></script><script src="/9router/_next/static/chunks/48bbd525ca3390ef.js" async=""></script><script src="/9router/_next/static/chunks/turbopack-1c57656e6d98db0c.js" async=""></script><script src="/9router/_next/static/chunks/ff1a16fafef87110.js" async=""></script><script src="/9router/_next/static/chunks/803a574de9eda7ae.js" async=""></script><script src="/9router/_next/static/chunks/a198242ca07ac9f1.js" async=""></script><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/><title>9Router Documentation</title><meta name="description" content="Smart AI model router - Maximize subscriptions, minimize costs"/><script src="/9router/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body class="bg-[#FCFBF9] text-[#6B7280]"><div hidden=""><!--$--><!--/$--></div><div class="min-h-screen flex flex-col bg-[#FCFBF9]"><header class="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-sm border-gray-200"><div class=" mx-auto px-4 h-16 flex items-center justify-between"><button class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Open menu"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu w-6 h-6 text-gray-600" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg></button><a class="flex items-center gap-2 font-bold text-2xl text-black hover:opacity-80 transition-opacity" href="/9router/ja/"><span class="text-[#E68A6E]">9Router<!-- --> Docs</span></a><div class="flex items-center gap-2 sm:gap-3"><button class="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" aria-label="Switch language"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe w-4 h-4" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg><span class="hidden sm:inline">🇯🇵<!-- --> <!-- -->日本語</span><span class="sm:hidden">🇯🇵</span></button><a target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#E68A6E] text-white rounded-lg font-medium hover:bg-[#d67a5e] transition-colors text-sm" href="https://vibecoder11200.github.io/9router/"><span class="hidden sm:inline">アプリへ</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link w-4 h-4" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a></div></div></header><div class="flex-1 flex"><div class="hidden lg:block"><aside class="w-64 border-r bg-white border-gray-200 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto"><nav class="p-4 space-y-6"><div><button class="flex items-center justify-between w-full text-sm font-semibold text-gray-900 mb-2 hover:text-[#E68A6E] transition-colors"><span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket w-4 h-4" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>はじめに</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-4 h-4" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div><div><button class="flex items-center justify-between w-full text-sm font-semibold text-gray-900 mb-2 hover:text-[#E68A6E] transition-colors"><span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers w-4 h-4" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg>プロバイダー</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-4 h-4" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div><div><button class="flex items-center justify-between w-full text-sm font-semibold text-gray-900 mb-2 hover:text-[#E68A6E] transition-colors"><span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap w-4 h-4" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>機能</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-4 h-4" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div><div><button class="flex items-center justify-between w-full text-sm font-semibold text-gray-900 mb-2 hover:text-[#E68A6E] transition-colors"><span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plug w-4 h-4" aria-hidden="true"><path d="M12 22v-5"></path><path d="M15 8V2"></path><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"></path><path d="M9 8V2"></path></svg>連携</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-4 h-4" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div><div><button class="flex items-center justify-between w-full text-sm font-semibold text-gray-900 mb-2 hover:text-[#E68A6E] transition-colors"><span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud w-4 h-4" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>デプロイ</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-4 h-4" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div><div><button class="flex items-center justify-between w-full text-sm font-semibold text-gray-900 mb-2 hover:text-[#E68A6E] transition-colors"><span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-question-mark w-4 h-4" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>ヘルプ</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-4 h-4" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></nav></aside></div><div class="flex-1 flex min-w-0"><main class="flex-1 min-w-0 overflow-x-hidden overflow-y-auto"><article class="max-w-4xl mx-auto px-4 sm:px-6 py-8"><div class="markdown-content"><h1 id="クォータトラッキングと使用量モニタリング">クォータトラッキングと使用量モニタリング</h1>
+<p>リアルタイムのトークン消費を追跡し、クォータ制限を監視し、コストを見積もり、不足前にアラートを取得。サブスクリプションクォータを無駄にしたり、予算上限を超えたりすることはありません。</p>
+<hr/>
+<h2 id="概要">概要</h2>
+<p>9Routerはすべてのプロバイダーに対して包括的なクォータトラッキングを提供:</p>
+<ul>
+<li><strong>リアルタイムトークン消費</strong> - リクエストごとの使用トークンを表示</li>
+<li><strong>クォータ上限と残量</strong> - 使用量 vs 上限を追跡</li>
+<li><strong>リセットカウントダウン</strong> - クォータが更新されるタイミング</li>
+<li><strong>コスト見積もり</strong> - 有料階層の支出を計算</li>
+<li><strong>月次レポート</strong> - 使用パターンを分析</li>
+<li><strong>アラートと通知</strong> - 上限前に警告を取得</li>
+</ul>
+<hr/>
+<h2 id="ダッシュボード概要">ダッシュボード概要</h2>
+<h3 id="クォータサマリー">クォータサマリー</h3>
+<pre><code>Dashboard → Home → Quota Overview
+
+┌─────────────────────────────────────────────┐
+│ Claude Code (cc/)                           │
+│ ████████████░░░░░░░░ 2.5h / 5h (50%)       │
+│ Resets in: 2h 30m                           │
+│ Cost: $0 (subscription)                     │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ Antigravity (ag/)                            │
+│ ████████░░░░░░░░░░░░ 450 / 1000 (45%)      │
+│ Daily reset in: 18h 30m                     │
+│ Cost: $0 (free tier)                        │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ GLM-4.7 (glm/)                              │
+│ ██████████████░░░░░░ 7M / 10M tokens (70%)  │
+│ Resets: Daily 10:00 AM (in 5h 35m)         │
+│ Cost today: $4.20                           │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ MiniMax M2.1 (minimax/)                     │
+│ ████████████████░░░░ 4M / 5M tokens (80%)   │
+│ Rolling 5h window                           │
+│ Cost (5h): $0.80                            │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ Kiro (kr/)                                  │
+│ ████████████████████ Free (~50 credits/mo)  │
+│ Cost: $0 (free tier)                        │
+└─────────────────────────────────────────────┘
+</code></pre>
+<hr/>
+<h2 id="リアルタイムトークン消費">リアルタイムトークン消費</h2>
+<h3 id="リクエストごとのトラッキング">リクエストごとのトラッキング</h3>
+<p>各リクエストに詳細なトークン使用量が表示されます:</p>
+<pre><code>Dashboard → Activity → Recent Requests
+
+Request #1234
+Model: cc/claude-opus-5
+Timestamp: 2026-02-04 04:15:32
+
+Tokens:
+  Input: 1,250 tokens
+  Output: 850 tokens
+  Total: 2,100 tokens
+
+Cost: $0 (subscription quota)
+Duration: 3.2s
+Status: ✅ Success
+</code></pre>
+<h3 id="ライブ使用量モニター">ライブ使用量モニター</h3>
+<pre><code>Dashboard → Live Monitor
+
+Current request:
+  Model: glm/glm-4.7
+  Tokens streamed: 450 / ~800 estimated
+  Cost so far: $0.0009
+  Duration: 1.8s
+</code></pre>
+<h3 id="モデル別のトークン内訳">モデル別のトークン内訳</h3>
+<pre><code>Dashboard → Analytics → Token Usage
+
+Today (Feb 4, 2026):
+  cc/claude-opus-5: 15M tokens ($0, subscription)
+  glm/glm-4.7: 8M tokens ($4.80)
+  kr/claude-sonnet-4.5: 3M tokens ($0, free)
+  
+Total: 26M tokens
+Cost: $4.80
+</code></pre>
+<hr/>
+<h2 id="クォータ上限とリセット時間">クォータ上限とリセット時間</h2>
+<h3 id="サブスクリプションプロバイダー">サブスクリプションプロバイダー</h3>
+<p><strong>Claude Code (Pro/Max)</strong></p>
+<pre><code>クォータタイプ: 時間ベース (5時間ローリング)
+上限: 5時間の使用
+リセット: 5時間ローリングウィンドウ + 週次更新
+追跡: モデルごとの使用時間
+
+ダッシュボード表示:
+  Opus: 2.5h / 5h 使用
+  Sonnet: 1.2h / 5h 使用
+  Haiku: 0.8h / 5h 使用
+  
+週次リセット: 毎週月曜00:00 UTC
+</code></pre>
+<p><strong>OpenAI Codex (Plus/Pro)</strong></p>
+<pre><code>クォータタイプ: 時間ベース (5時間ローリング)
+上限: 5時間 (Plus) / 10時間 (Pro)
+リセット: 5時間ローリングウィンドウ + 週次更新
+
+ダッシュボード表示:
+  GPT-5.6 Sol: 3.5h / 5h 使用
+  Resets in: 1h 30m
+</code></pre>
+<p><strong>Antigravity (無料)</strong></p>
+<pre><code>クォータタイプ: リクエスト数 + 日次/月次上限
+リセット: 日次 00:00 UTC + 月次 1日
+
+ダッシュボード表示:
+  Today: 450 / 1,000 requests (45%)
+  Daily reset in: 18h 30m
+  Monthly reset in: 26 days
+</code></pre>
+<p><strong>GitHub Copilot</strong></p>
+<pre><code>クォータタイプ: 月次使用量
+上限: プランによる
+リセット: 各月1日
+
+ダッシュボード表示:
+  Usage: 60% of monthly quota
+  Resets: March 1, 2026 (in 25 days)
+</code></pre>
+<h3 id="低価格プロバイダー">低価格プロバイダー</h3>
+<p><strong>GLM-4.7</strong></p>
+<pre><code>クォータタイプ: 日次トークン上限
+上限: 10Mトークン/日 (Coding Plan)
+リセット: 毎日午前10時 北京時間 (UTC+8)
+
+ダッシュボード表示:
+  Used: 7M / 10M tokens (70%)
+  Remaining: 3M tokens
+  Resets in: 5h 35m
+  Cost today: $4.20
+</code></pre>
+<p><strong>MiniMax M2.1</strong></p>
+<pre><code>クォータタイプ: 5時間ローリングウィンドウ
+上限: 5時間あたり5Mトークン
+リセット: 連続ローリングウィンドウ
+
+ダッシュボード表示:
+  Used (5h): 4M / 5M tokens (80%)
+  Oldest usage expires in: 45m
+  Cost (5h): $0.80
+</code></pre>
+<p><strong>Kimi K2</strong></p>
+<pre><code>クォータタイプ: 月次サブスクリプション
+上限: 10Mトークン/月 ($9固定)
+リセット: サブスクリプション日に月次
+
+ダッシュボード表示:
+  Used: 6M / 10M tokens (60%)
+  Resets: Feb 15, 2026 (in 11 days)
+  Cost: $9/month (prepaid)
+</code></pre>
+<h3 id="無料プロバイダー">無料プロバイダー</h3>
+<p><strong>Kiro / OpenCode Free / Vertex AI</strong></p>
+<pre><code>クォータタイプ: 無料クレジット / 無制限パススルー
+上限: Kiroは月約50クレジット。OpenCodeはレート制限あり。Vertexは$300/90日
+リセット: Kiroは月次、Vertexは一回限りのトライアル
+
+ダッシュボード表示:
+  Used today: 5M tokens
+  Cost: $0 (free tier)
+  Status: ✅ Available
+</code></pre>
+<hr/>
+<h2 id="コスト見積もり">コスト見積もり</h2>
+<h3 id="リアルタイムコストトラッキング">リアルタイムコストトラッキング</h3>
+<pre><code>Dashboard → Costs → Today
+
+Subscription providers: $0
+  Claude Code: 15M tokens ($0, included)
+  Antigravity: 3M tokens ($0, free tier)
+
+Paid providers: $4.80
+  GLM-4.7: 8M tokens ($4.80)
+    Input: 6M × $0.60/1M = $3.60
+    Output: 2M × $2.20/1M = $4.40
+    Total: $4.80
+
+Free providers: $0
+  Kiro: 3M tokens ($0)
+
+Total today: $4.80
+</code></pre>
+<h3 id="月次支出レポート">月次支出レポート</h3>
+<pre><code>Dashboard → Costs → This Month (February 2026)
+
+Week 1 (Feb 1-7):
+  Subscription: $0 (80M tokens)
+  Paid: $15.20 (25M tokens)
+  Free: $0 (10M tokens)
+  Total: $15.20
+
+Week 2 (Feb 8-14):
+  Subscription: $0 (75M tokens)
+  Paid: $12.80 (20M tokens)
+  Free: $0 (8M tokens)
+  Total: $12.80
+
+Month to date: $28.00
+Projected (30 days): ~$120
+
+Breakdown by provider:
+  GLM-4.7: $22.00 (78%)
+  MiniMax M2.1: $6.00 (22%)
+  
+Average cost per 1M tokens: $0.62
+Savings vs ChatGPT API: 97% ($4,000 → $120)
+</code></pre>
+<h3 id="コスト予測">コスト予測</h3>
+<pre><code>Dashboard → Costs → Projections
+
+Based on last 7 days usage:
+  Daily average: 50M tokens
+  Daily cost: $4.50
+
+Monthly projection:
+  Tokens: 1,500M (1.5B)
+  Cost: $135
+  
+Breakdown:
+  Subscription: 900M tokens ($0)
+  GLM-4.7: 450M tokens ($90)
+  MiniMax: 120M tokens ($24)
+  Free: 30M tokens ($0)
+
+Budget status:
+  Daily limit: $5 → 90% used today
+  Monthly limit: $150 → 90% projected
+  ⚠️ Warning: May exceed monthly budget
+</code></pre>
+<hr/>
+<h2 id="使用量ダッシュボード">使用量ダッシュボード</h2>
+<h3 id="概要統計">概要統計</h3>
+<pre><code>Dashboard → Analytics → Overview
+
+Today (Feb 4, 2026):
+  Requests: 1,234
+  Tokens: 26M
+  Cost: $4.80
+  Avg response time: 2.1s
+
+This week:
+  Requests: 8,456
+  Tokens: 180M
+  Cost: $28.00
+  Success rate: 99.2%
+
+This month:
+  Requests: 15,234
+  Tokens: 320M
+  Cost: $52.00
+  Top model: cc/claude-opus-5 (45%)
+</code></pre>
+<h3 id="モデル別使用量">モデル別使用量</h3>
+<pre><code>Dashboard → Analytics → Models
+
+Top models (this month):
+1. cc/claude-opus-5: 145M tokens (45%)
+2. glm/glm-4.7: 95M tokens (30%)
+3. kr/claude-sonnet-4.5: 50M tokens (16%)
+4. minimax/MiniMax-M2.1: 20M tokens (6%)
+5. ag/gemini-3-flash: 10M tokens (3%)
+
+Cost breakdown:
+  cc/claude-opus-5: $0 (subscription)
+  glm/glm-4.7: $45.00
+  kr/claude-sonnet-4.5: $0 (free)
+  minimax/MiniMax-M2.1: $7.00
+  ag/gemini-3-flash: $0 (free)
+</code></pre>
+<h3 id="時間別使用量">時間別使用量</h3>
+<pre><code>Dashboard → Analytics → Timeline
+
+Hourly usage (today):
+00:00 - 01:00: 0.5M tokens
+01:00 - 02:00: 0.2M tokens
+...
+08:00 - 09:00: 3.2M tokens (peak)
+09:00 - 10:00: 2.8M tokens
+...
+23:00 - 00:00: 0.8M tokens
+
+Peak hours: 08:00 - 12:00 (morning coding)
+Low hours: 00:00 - 06:00 (night)
+</code></pre>
+<h3 id="コンボ別使用量">コンボ別使用量</h3>
+<pre><code>Dashboard → Analytics → Combos
+
+premium-coding:
+  Requests: 456
+  Tokens: 12M
+  Cost: $2.40
+  
+  Breakdown:
+    cc/claude-opus-5: 8M tokens (67%, $0)
+    glm/glm-4.7: 3M tokens (25%, $1.80)
+    minimax/MiniMax-M2.1: 1M tokens (8%, $0.20)
+
+budget-combo:
+  Requests: 234
+  Tokens: 6M
+  Cost: $1.20
+  
+  Breakdown:
+    glm/glm-4.7: 4M tokens (67%, $2.40)
+    kr/claude-sonnet-4.5: 2M tokens (33%, $0)
+</code></pre>
+<hr/>
+<h2 id="アラートと通知">アラートと通知</h2>
+<p>実際の通知は<strong>アラート</strong>システム（Dashboard → Alerts）経由で、Telegram・Discord・汎用 Webhook チャネルで届きます。メールはありません。<a href="/9router/ja/features/alerts">アラートガイド</a>を参照。</p>
+<h2 id="実際に見られるイベント">実際に見られるイベント</h2>
+<pre><code>⚠️ quota-near-limit
+   Claude Code: 82% 使用済み（2時間後にリセット）
+
+🚨 budget-threshold
+   キー sk-abc123…•789: 日次予算 $4.10 / $5.00（82%）
+
+🔴 breaker-open
+   cx/gpt-5.6-sol: 60秒で5回失敗 — 60秒間スキップ
+
+🔴 all-accounts-locked
+   glm の全アカウントがレート制限中。リクエスト処理不可
+</code></pre>
+<p>同一イベントは 10 分間重複排除されます。イベント種別ごとに個別 ON/OFF 可能です。</p>
+<h3 id="キーごとの予算">キーごとの予算</h3>
+<p>予算は API キーごとに設定します（<a href="/9router/ja/features/api-keys">API キーと予算</a>参照）:</p>
+<ul>
+<li>日次/月次ウィンドウで USD またはトークン予算</li>
+<li>ソフトしきい値（デフォルト 80%）がウィンドウごとに 1 回 <code>budget-threshold</code> アラートを発火</li>
+<li>任意のハードブロックは上限で <code>429</code> + <code>Retry-After</code> を返す</li>
+</ul>
+<h2 id="サーキットブレーカーとノード健全性">サーキットブレーカーとノード健全性</h2>
+<p>Quota ページには 2 つの運用パネルもあります:</p>
+<h3 id="サーキットブレーカーパネル">サーキットブレーカーパネル</h3>
+<p>アカウントごとのオープン/half-open ブレーカー、失敗数、クールダウンカウントダウン、手動リセットボタンを表示。失敗中のアカウントは自動スキップされます — <a href="/9router/ja/features/circuit-breaker">サーキットブレーカー</a>参照。</p>
+<h3 id="キャッシュ分析">キャッシュ分析</h3>
+<p>使用テーブルに <strong>Cached</strong> と <strong>Cached Cost</strong> 列があり、統計ペイロードはプロバイダー/モデルごとのキャッシュブロックを運びます:</p>
+<ul>
+<li><strong>キャッシュ済みトークン</strong>と推定<strong>ヒット率</strong>（cached ÷ プロンプトトークン）</li>
+<li><strong>推定節約額</strong> — 設定済み価格に基づく、キャッシュなしの場合のコスト（価格未設定モデルは n/a 表示。偽の $0 は出しません）</li>
+</ul>
+<h2 id="ベストプラクティス">ベストプラクティス</h2>
+<h3 id="1-クォータを毎日モニター">1. クォータを毎日モニター</h3>
+<pre><code>日課:
+1. ダッシュボードクォータ概要を確認 (30秒)
+2. リセット時間を確認
+3. クォータ可用性に合わせて使用量を計画
+</code></pre>
+<p><strong>例:</strong></p>
+<pre><code>朝の確認:
+  ✅ Claude Code: 5時間利用可 (新鮮なリセット)
+  ✅ Antigravity: 1Kリクエスト利用可
+  ⚠️ GLM-4.7: 2Mトークン残 (午前10時リセット)
+  
+アクション: 朝の作業にClaude Codeを使用
+</code></pre>
+<h3 id="2-予算上限を設定">2. 予算上限を設定</h3>
+<pre><code>Dashboard → Settings → Budget:
+  Daily: $5 (使いすぎ防止)
+  Monthly: $150 (予算に整合)
+</code></pre>
+<p><strong>結果</strong>: 上限到達時に自動的に無料階層へ切替。</p>
+<h3 id="3-コンボ使用を最適化">3. コンボ使用を最適化</h3>
+<pre><code>Dashboard → Analytics → Combos:
+  どのモデルが最もよく使われているか確認
+  コストを最小化するためにコンボ順序を調整
+</code></pre>
+<p><strong>例:</strong></p>
+<pre><code>現在: cc/claude-opus-5 → glm/glm-4.7
+  80% Claude経由 (良好)
+  20% GLM経由 ($12/月)
+
+最適化後: ag/gemini-3-flash → cc/claude-opus-5 → glm/glm-4.7
+  50% Antigravity経由 (無料)
+  40% Claude経由 (サブスクリプション)
+  10% GLM経由 ($6/月)
+  
+節約: $6/月
+</code></pre>
+<h3 id="4-リセット時間を追跡">4. リセット時間を追跡</h3>
+<pre><code>Dashboard → Quota → Reset Schedule:
+  Claude Code: 5時間ローリング + 週次月曜
+  Antigravity: 日次 00:00 UTC + 月次 1日
+  GLM-4.7: 毎日午前10時 北京時間
+  MiniMax: 5時間ローリングウィンドウ
+</code></pre>
+<p><strong>戦略</strong>: クォータが新鮮な時にプロバイダーを使用。</p>
+<h3 id="5-月次レポートを確認">5. 月次レポートを確認</h3>
+<pre><code>Dashboard → Analytics → Monthly Report:
+  Total tokens: 1.5B
+  Total cost: $120
+  Savings: 97% vs ChatGPT API
+  
+インサイト:
+  - 60% サブスクリプション経由の使用 ($0)
+  - 30% GLM経由 ($90)
+  - 10% 無料階層経由 ($0)
+  
+最適化:
+  - Antigravity使用を増やす (無料)
+  - GLM使用を減らす (高価)
+</code></pre>
+<hr/>
+<h2 id="apiアクセス">APIアクセス</h2>
+<h3 id="クォータステータスを取得">クォータステータスを取得</h3>
+<pre><code class="hljs language-bash">GET http://localhost:20128/api/quota
+Authorization: Bearer your-api-key
+
+Response:
+{
+  <span class="hljs-string">&quot;providers&quot;</span>: [
+    {
+      <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;cc&quot;</span>,
+      <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;Claude Code&quot;</span>,
+      <span class="hljs-string">&quot;quota&quot;</span>: {
+        <span class="hljs-string">&quot;used&quot;</span>: 2.5,
+        <span class="hljs-string">&quot;limit&quot;</span>: 5,
+        <span class="hljs-string">&quot;unit&quot;</span>: <span class="hljs-string">&quot;hours&quot;</span>,
+        <span class="hljs-string">&quot;percentage&quot;</span>: 50
+      },
+      <span class="hljs-string">&quot;reset&quot;</span>: {
+        <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;rolling&quot;</span>,
+        <span class="hljs-string">&quot;window&quot;</span>: <span class="hljs-string">&quot;5h&quot;</span>,
+        <span class="hljs-string">&quot;nextReset&quot;</span>: <span class="hljs-string">&quot;2026-02-04T06:45:00Z&quot;</span>
+      },
+      <span class="hljs-string">&quot;cost&quot;</span>: {
+        <span class="hljs-string">&quot;today&quot;</span>: 0,
+        <span class="hljs-string">&quot;month&quot;</span>: 0,
+        <span class="hljs-string">&quot;currency&quot;</span>: <span class="hljs-string">&quot;USD&quot;</span>
+      }
+    },
+    {
+      <span class="hljs-string">&quot;id&quot;</span>: <span class="hljs-string">&quot;glm&quot;</span>,
+      <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;GLM-4.7&quot;</span>,
+      <span class="hljs-string">&quot;quota&quot;</span>: {
+        <span class="hljs-string">&quot;used&quot;</span>: 7000000,
+        <span class="hljs-string">&quot;limit&quot;</span>: 10000000,
+        <span class="hljs-string">&quot;unit&quot;</span>: <span class="hljs-string">&quot;tokens&quot;</span>,
+        <span class="hljs-string">&quot;percentage&quot;</span>: 70
+      },
+      <span class="hljs-string">&quot;reset&quot;</span>: {
+        <span class="hljs-string">&quot;type&quot;</span>: <span class="hljs-string">&quot;daily&quot;</span>,
+        <span class="hljs-string">&quot;time&quot;</span>: <span class="hljs-string">&quot;10:00 AM UTC+8&quot;</span>,
+        <span class="hljs-string">&quot;nextReset&quot;</span>: <span class="hljs-string">&quot;2026-02-04T10:00:00+08:00&quot;</span>
+      },
+      <span class="hljs-string">&quot;cost&quot;</span>: {
+        <span class="hljs-string">&quot;today&quot;</span>: 4.20,
+        <span class="hljs-string">&quot;month&quot;</span>: 52.00,
+        <span class="hljs-string">&quot;currency&quot;</span>: <span class="hljs-string">&quot;USD&quot;</span>
+      }
+    }
+  ]
+}
+</code></pre>
+<h3 id="使用統計を取得">使用統計を取得</h3>
+<pre><code class="hljs language-bash">GET http://localhost:20128/api/usage?period=today
+Authorization: Bearer your-api-key
+
+Response:
+{
+  <span class="hljs-string">&quot;period&quot;</span>: <span class="hljs-string">&quot;today&quot;</span>,
+  <span class="hljs-string">&quot;date&quot;</span>: <span class="hljs-string">&quot;2026-02-04&quot;</span>,
+  <span class="hljs-string">&quot;summary&quot;</span>: {
+    <span class="hljs-string">&quot;requests&quot;</span>: 1234,
+    <span class="hljs-string">&quot;tokens&quot;</span>: 26000000,
+    <span class="hljs-string">&quot;cost&quot;</span>: 4.80
+  },
+  <span class="hljs-string">&quot;byModel&quot;</span>: [
+    {
+      <span class="hljs-string">&quot;model&quot;</span>: <span class="hljs-string">&quot;cc/claude-opus-5&quot;</span>,
+      <span class="hljs-string">&quot;requests&quot;</span>: 456,
+      <span class="hljs-string">&quot;tokens&quot;</span>: 15000000,
+      <span class="hljs-string">&quot;cost&quot;</span>: 0
+    },
+    {
+      <span class="hljs-string">&quot;model&quot;</span>: <span class="hljs-string">&quot;glm/glm-4.7&quot;</span>,
+      <span class="hljs-string">&quot;requests&quot;</span>: 234,
+      <span class="hljs-string">&quot;tokens&quot;</span>: 8000000,
+      <span class="hljs-string">&quot;cost&quot;</span>: 4.80
+    }
+  ]
+}
+</code></pre>
+<hr/>
+<h2 id="トラブルシューティング">トラブルシューティング</h2>
+<p><strong>問題: クォータが0%を表示するがリクエストが失敗</strong></p>
+<p><strong>解決策:</strong></p>
+<ol>
+<li>プロバイダー接続を確認 (Dashboard → Providers)</li>
+<li>APIキーが有効か確認</li>
+<li>プロバイダーがダウンしているか確認 (ステータスページ)</li>
+<li>OAuthプロバイダーを再接続してみる</li>
+</ol>
+<p><strong>問題: コスト見積もりが正しくない</strong></p>
+<p><strong>解決策:</strong></p>
+<ol>
+<li>Dashboard → Settings → Pricing</li>
+<li>プロバイダーごとの料金が現在のレートと一致するか確認</li>
+<li>プロバイダーがレートを変更した場合は料金を更新</li>
+<li>不一致が続く場合はサポートに連絡</li>
+</ol>
+<p><strong>問題: リセット時間が更新されない</strong></p>
+<p><strong>解決策:</strong></p>
+<ol>
+<li>ダッシュボードを更新 (F5)</li>
+<li>システム時刻が正しいか確認</li>
+<li>タイムゾーン設定を確認</li>
+<li>問題が続く場合は9Routerを再起動</li>
+</ol>
+<p><strong>問題: アラートが受信されない</strong></p>
+<p><strong>解決策:</strong></p>
+<ol>
+<li>Dashboard → Alerts — チャネルが設定・有効化されているか確認</li>
+<li>チャネルの <strong>Test</strong> ボタンをクリック</li>
+<li>イベント種別が無効になっていないか確認</li>
+<li>Telegram の場合: ボットがあなたのチャット ID に送信できる必要があります</li>
+</ol>
+<hr/>
+<h2 id="関連">関連</h2>
+<ul>
+<li><a href="/9router/ja/features/smart-routing">スマートルーティング</a> - クォータに基づく自動フォールバック</li>
+<li><a href="/9router/ja/features/combos">コンボ</a> - カスタムフォールバックチェーンを作成</li>
+</ul></div></article></main><div class="hidden lg:block"><aside class="hidden xl:block w-64 border-l bg-white border-gray-200 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto"><nav class="p-4"><h3 class="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list w-4 h-4" aria-hidden="true"><path d="M3 5h.01"></path><path d="M3 12h.01"></path><path d="M3 19h.01"></path><path d="M8 5h13"></path><path d="M8 12h13"></path><path d="M8 19h13"></path></svg>このページ</h3><ul class="space-y-2"><li><a href="#概要" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">概要</a></li><li><a href="#ダッシュボード概要" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">ダッシュボード概要</a></li><li><a href="#クォータサマリー" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">クォータサマリー</a></li><li><a href="#リアルタイムトークン消費" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">リアルタイムトークン消費</a></li><li><a href="#リクエストごとのトラッキング" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">リクエストごとのトラッキング</a></li><li><a href="#ライブ使用量モニター" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">ライブ使用量モニター</a></li><li><a href="#モデル別のトークン内訳" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">モデル別のトークン内訳</a></li><li><a href="#クォータ上限とリセット時間" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">クォータ上限とリセット時間</a></li><li><a href="#サブスクリプションプロバイダー" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">サブスクリプションプロバイダー</a></li><li><a href="#低価格プロバイダー" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">低価格プロバイダー</a></li><li><a href="#無料プロバイダー" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">無料プロバイダー</a></li><li><a href="#コスト見積もり" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">コスト見積もり</a></li><li><a href="#リアルタイムコストトラッキング" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">リアルタイムコストトラッキング</a></li><li><a href="#月次支出レポート" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">月次支出レポート</a></li><li><a href="#コスト予測" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">コスト予測</a></li><li><a href="#使用量ダッシュボード" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">使用量ダッシュボード</a></li><li><a href="#概要統計" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">概要統計</a></li><li><a href="#モデル別使用量" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">モデル別使用量</a></li><li><a href="#時間別使用量" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">時間別使用量</a></li><li><a href="#コンボ別使用量" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">コンボ別使用量</a></li><li><a href="#アラートと通知" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">アラートと通知</a></li><li><a href="#実際に見られるイベント" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">実際に見られるイベント</a></li><li><a href="#キーごとの予算" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">キーごとの予算</a></li><li><a href="#サーキットブレーカーとノード健全性" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">サーキットブレーカーとノード健全性</a></li><li><a href="#サーキットブレーカーパネル" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">サーキットブレーカーパネル</a></li><li><a href="#キャッシュ分析" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">キャッシュ分析</a></li><li><a href="#ベストプラクティス" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">ベストプラクティス</a></li><li><a href="#1-クォータを毎日モニター" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">1. クォータを毎日モニター</a></li><li><a href="#2-予算上限を設定" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">2. 予算上限を設定</a></li><li><a href="#3-コンボ使用を最適化" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">3. コンボ使用を最適化</a></li><li><a href="#4-リセット時間を追跡" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">4. リセット時間を追跡</a></li><li><a href="#5-月次レポートを確認" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">5. 月次レポートを確認</a></li><li><a href="#apiアクセス" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">APIアクセス</a></li><li><a href="#クォータステータスを取得" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">クォータステータスを取得</a></li><li><a href="#使用統計を取得" class="block text-sm transition-colors pl-4 text-gray-600 hover:text-gray-900">使用統計を取得</a></li><li><a href="#トラブルシューティング" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">トラブルシューティング</a></li><li><a href="#関連" class="block text-sm transition-colors  text-gray-600 hover:text-gray-900">関連</a></li></ul></nav></aside></div></div></div></div><!--$--><!--/$--><script src="/9router/_next/static/chunks/343aa45b5611d01d.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[39756,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/803a574de9eda7ae.js\"],\"default\"]\n3:I[37457,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/803a574de9eda7ae.js\"],\"default\"]\n5:I[97367,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/803a574de9eda7ae.js\"],\"OutletBoundary\"]\n6:\"$Sreact.suspense\"\n8:I[97367,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/803a574de9eda7ae.js\"],\"ViewportBoundary\"]\na:I[97367,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/803a574de9eda7ae.js\"],\"MetadataBoundary\"]\nc:I[68027,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/803a574de9eda7ae.js\"],\"default\"]\n:HL[\"/9router/_next/static/chunks/f7da7c3679ddfa30.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"fnz1fJSVOCDpkferGG7I_\",\"c\":[\"\",\"ja\",\"features\",\"quota-tracking\",\"\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[[\"lang\",\"ja\",\"d\"],{\"children\":[[\"slug\",\"features/quota-tracking\",\"c\"],{\"children\":[\"__PAGE__\",{}]}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/9router/_next/static/chunks/f7da7c3679ddfa30.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"children\":[[\"$\",\"head\",null,{\"children\":[[\"$\",\"link\",null,{\"rel\":\"preconnect\",\"href\":\"https://fonts.googleapis.com\"}],[\"$\",\"link\",null,{\"rel\":\"preconnect\",\"href\":\"https://fonts.gstatic.com\",\"crossOrigin\":\"anonymous\"}]]}],[\"$\",\"body\",null,{\"className\":\"bg-[#FCFBF9] text-[#6B7280]\",\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[\"$L4\",[[\"$\",\"script\",\"script-0\",{\"src\":\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"async\":true,\"nonce\":\"$undefined\"}],[\"$\",\"script\",\"script-1\",{\"src\":\"/9router/_next/static/chunks/a198242ca07ac9f1.js\",\"async\":true,\"nonce\":\"$undefined\"}]],[\"$\",\"$L5\",null,{\"children\":[\"$\",\"$6\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@7\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[null,[\"$\",\"$L8\",null,{\"children\":\"$L9\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$La\",null,{\"children\":[\"$\",\"$6\",null,{\"name\":\"Next.Metadata\",\"children\":\"$Lb\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$c\",[]],\"S\":true}\n"])</script><script>self.__next_f.push([1,"d:I[81956,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/a198242ca07ac9f1.js\"],\"default\"]\ne:I[22982,[\"/9router/_next/static/chunks/ff1a16fafef87110.js\",\"/9router/_next/static/chunks/a198242ca07ac9f1.js\"],\"default\"]\nf:T4309,"])</script><script>self.__next_f.push([1,"# クォータトラッキングと使用量モニタリング\n\nリアルタイムのトークン消費を追跡し、クォータ制限を監視し、コストを見積もり、不足前にアラートを取得。サブスクリプションクォータを無駄にしたり、予算上限を超えたりすることはありません。\n\n---\n\n## 概要\n\n9Routerはすべてのプロバイダーに対して包括的なクォータトラッキングを提供:\n\n- **リアルタイムトークン消費** - リクエストごとの使用トークンを表示\n- **クォータ上限と残量** - 使用量 vs 上限を追跡\n- **リセットカウントダウン** - クォータが更新されるタイミング\n- **コスト見積もり** - 有料階層の支出を計算\n- **月次レポート** - 使用パターンを分析\n- **アラートと通知** - 上限前に警告を取得\n\n---\n\n## ダッシュボード概要\n\n### クォータサマリー\n\n```\nDashboard → Home → Quota Overview\n\n┌─────────────────────────────────────────────┐\n│ Claude Code (cc/)                           │\n│ ████████████░░░░░░░░ 2.5h / 5h (50%)       │\n│ Resets in: 2h 30m                           │\n│ Cost: $0 (subscription)                     │\n└─────────────────────────────────────────────┘\n\n┌─────────────────────────────────────────────┐\n│ Antigravity (ag/)                            │\n│ ████████░░░░░░░░░░░░ 450 / 1000 (45%)      │\n│ Daily reset in: 18h 30m                     │\n│ Cost: $0 (free tier)                        │\n└─────────────────────────────────────────────┘\n\n┌─────────────────────────────────────────────┐\n│ GLM-4.7 (glm/)                              │\n│ ██████████████░░░░░░ 7M / 10M tokens (70%)  │\n│ Resets: Daily 10:00 AM (in 5h 35m)         │\n│ Cost today: $4.20                           │\n└─────────────────────────────────────────────┘\n\n┌─────────────────────────────────────────────┐\n│ MiniMax M2.1 (minimax/)                     │\n│ ████████████████░░░░ 4M / 5M tokens (80%)   │\n│ Rolling 5h window                           │\n│ Cost (5h): $0.80                            │\n└─────────────────────────────────────────────┘\n\n┌─────────────────────────────────────────────┐\n│ Kiro (kr/)                                  │\n│ ████████████████████ Free (~50 credits/mo)  │\n│ Cost: $0 (free tier)                        │\n└─────────────────────────────────────────────┘\n```\n\n---\n\n## リアルタイムトークン消費\n\n### リクエストごとのトラッキング\n\n各リクエストに詳細なトークン使用量が表示されます:\n\n```\nDashboard → Activity → Recent Requests\n\nRequest #1234\nModel: cc/claude-opus-5\nTimestamp: 2026-02-04 04:15:32\n\nTokens:\n  Input: 1,250 tokens\n  Output: 850 tokens\n  Total: 2,100 tokens\n\nCost: $0 (subscription quota)\nDuration: 3.2s\nStatus: ✅ Success\n```\n\n### ライブ使用量モニター\n\n```\nDashboard → Live Monitor\n\nCurrent request:\n  Model: glm/glm-4.7\n  Tokens streamed: 450 / ~800 estimated\n  Cost so far: $0.0009\n  Duration: 1.8s\n```\n\n### モデル別のトークン内訳\n\n```\nDashboard → Analytics → Token Usage\n\nToday (Feb 4, 2026):\n  cc/claude-opus-5: 15M tokens ($0, subscription)\n  glm/glm-4.7: 8M tokens ($4.80)\n  kr/claude-sonnet-4.5: 3M tokens ($0, free)\n  \nTotal: 26M tokens\nCost: $4.80\n```\n\n---\n\n## クォータ上限とリセット時間\n\n### サブスクリプションプロバイダー\n\n**Claude Code (Pro/Max)**\n```\nクォータタイプ: 時間ベース (5時間ローリング)\n上限: 5時間の使用\nリセット: 5時間ローリングウィンドウ + 週次更新\n追跡: モデルごとの使用時間\n\nダッシュボード表示:\n  Opus: 2.5h / 5h 使用\n  Sonnet: 1.2h / 5h 使用\n  Haiku: 0.8h / 5h 使用\n  \n週次リセット: 毎週月曜00:00 UTC\n```\n\n**OpenAI Codex (Plus/Pro)**\n```\nクォータタイプ: 時間ベース (5時間ローリング)\n上限: 5時間 (Plus) / 10時間 (Pro)\nリセット: 5時間ローリングウィンドウ + 週次更新\n\nダッシュボード表示:\n  GPT-5.6 Sol: 3.5h / 5h 使用\n  Resets in: 1h 30m\n```\n\n**Antigravity (無料)**\n```\nクォータタイプ: リクエスト数 + 日次/月次上限\nリセット: 日次 00:00 UTC + 月次 1日\n\nダッシュボード表示:\n  Today: 450 / 1,000 requests (45%)\n  Daily reset in: 18h 30m\n  Monthly reset in: 26 days\n```\n\n**GitHub Copilot**\n```\nクォータタイプ: 月次使用量\n上限: プランによる\nリセット: 各月1日\n\nダッシュボード表示:\n  Usage: 60% of monthly quota\n  Resets: March 1, 2026 (in 25 days)\n```\n\n### 低価格プロバイダー\n\n**GLM-4.7**\n```\nクォータタイプ: 日次トークン上限\n上限: 10Mトークン/日 (Coding Plan)\nリセット: 毎日午前10時 北京時間 (UTC+8)\n\nダッシュボード表示:\n  Used: 7M / 10M tokens (70%)\n  Remaining: 3M tokens\n  Resets in: 5h 35m\n  Cost today: $4.20\n```\n\n**MiniMax M2.1**\n```\nクォータタイプ: 5時間ローリングウィンドウ\n上限: 5時間あたり5Mトークン\nリセット: 連続ローリングウィンドウ\n\nダッシュボード表示:\n  Used (5h): 4M / 5M tokens (80%)\n  Oldest usage expires in: 45m\n  Cost (5h): $0.80\n```\n\n**Kimi K2**\n```\nクォータタイプ: 月次サブスクリプション\n上限: 10Mトークン/月 ($9固定)\nリセット: サブスクリプション日に月次\n\nダッシュボード表示:\n  Used: 6M / 10M tokens (60%)\n  Resets: Feb 15, 2026 (in 11 days)\n  Cost: $9/month (prepaid)\n```\n\n### 無料プロバイダー\n\n**Kiro / OpenCode Free / Vertex AI**\n```\nクォータタイプ: 無料クレジット / 無制限パススルー\n上限: Kiroは月約50クレジット。OpenCodeはレート制限あり。Vertexは$300/90日\nリセット: Kiroは月次、Vertexは一回限りのトライアル\n\nダッシュボード表示:\n  Used today: 5M tokens\n  Cost: $0 (free tier)\n  Status: ✅ Available\n```\n\n---\n\n## コスト見積もり\n\n### リアルタイムコストトラッキング\n\n```\nDashboard → Costs → Today\n\nSubscription providers: $0\n  Claude Code: 15M tokens ($0, included)\n  Antigravity: 3M tokens ($0, free tier)\n\nPaid providers: $4.80\n  GLM-4.7: 8M tokens ($4.80)\n    Input: 6M × $0.60/1M = $3.60\n    Output: 2M × $2.20/1M = $4.40\n    Total: $4.80\n\nFree providers: $0\n  Kiro: 3M tokens ($0)\n\nTotal today: $4.80\n```\n\n### 月次支出レポート\n\n```\nDashboard → Costs → This Month (February 2026)\n\nWeek 1 (Feb 1-7):\n  Subscription: $0 (80M tokens)\n  Paid: $15.20 (25M tokens)\n  Free: $0 (10M tokens)\n  Total: $15.20\n\nWeek 2 (Feb 8-14):\n  Subscription: $0 (75M tokens)\n  Paid: $12.80 (20M tokens)\n  Free: $0 (8M tokens)\n  Total: $12.80\n\nMonth to date: $28.00\nProjected (30 days): ~$120\n\nBreakdown by provider:\n  GLM-4.7: $22.00 (78%)\n  MiniMax M2.1: $6.00 (22%)\n  \nAverage cost per 1M tokens: $0.62\nSavings vs ChatGPT API: 97% ($4,000 → $120)\n```\n\n### コスト予測\n\n```\nDashboard → Costs → Projections\n\nBased on last 7 days usage:\n  Daily average: 50M tokens\n  Daily cost: $4.50\n\nMonthly projection:\n  Tokens: 1,500M (1.5B)\n  Cost: $135\n  \nBreakdown:\n  Subscription: 900M tokens ($0)\n  GLM-4.7: 450M tokens ($90)\n  MiniMax: 120M tokens ($24)\n  Free: 30M tokens ($0)\n\nBudget status:\n  Daily limit: $5 → 90% used today\n  Monthly limit: $150 → 90% projected\n  ⚠️ Warning: May exceed monthly budget\n```\n\n---\n\n## 使用量ダッシュボード\n\n### 概要統計\n\n```\nDashboard → Analytics → Overview\n\nToday (Feb 4, 2026):\n  Requests: 1,234\n  Tokens: 26M\n  Cost: $4.80\n  Avg response time: 2.1s\n\nThis week:\n  Requests: 8,456\n  Tokens: 180M\n  Cost: $28.00\n  Success rate: 99.2%\n\nThis month:\n  Requests: 15,234\n  Tokens: 320M\n  Cost: $52.00\n  Top model: cc/claude-opus-5 (45%)\n```\n\n### モデル別使用量\n\n```\nDashboard → Analytics → Models\n\nTop models (this month):\n1. cc/claude-opus-5: 145M tokens (45%)\n2. glm/glm-4.7: 95M tokens (30%)\n3. kr/claude-sonnet-4.5: 50M tokens (16%)\n4. minimax/MiniMax-M2.1: 20M tokens (6%)\n5. ag/gemini-3-flash: 10M tokens (3%)\n\nCost breakdown:\n  cc/claude-opus-5: $0 (subscription)\n  glm/glm-4.7: $45.00\n  kr/claude-sonnet-4.5: $0 (free)\n  minimax/MiniMax-M2.1: $7.00\n  ag/gemini-3-flash: $0 (free)\n```\n\n### 時間別使用量\n\n```\nDashboard → Analytics → Timeline\n\nHourly usage (today):\n00:00 - 01:00: 0.5M tokens\n01:00 - 02:00: 0.2M tokens\n...\n08:00 - 09:00: 3.2M tokens (peak)\n09:00 - 10:00: 2.8M tokens\n...\n23:00 - 00:00: 0.8M tokens\n\nPeak hours: 08:00 - 12:00 (morning coding)\nLow hours: 00:00 - 06:00 (night)\n```\n\n### コンボ別使用量\n\n```\nDashboard → Analytics → Combos\n\npremium-coding:\n  Requests: 456\n  Tokens: 12M\n  Cost: $2.40\n  \n  Breakdown:\n    cc/claude-opus-5: 8M tokens (67%, $0)\n    glm/glm-4.7: 3M tokens (25%, $1.80)\n    minimax/MiniMax-M2.1: 1M tokens (8%, $0.20)\n\nbudget-combo:\n  Requests: 234\n  Tokens: 6M\n  Cost: $1.20\n  \n  Breakdown:\n    glm/glm-4.7: 4M tokens (67%, $2.40)\n    kr/claude-sonnet-4.5: 2M tokens (33%, $0)\n```\n\n---\n\n## アラートと通知\n\n実際の通知は**アラート**システム（Dashboard → Alerts）経由で、Telegram・Discord・汎用 Webhook チャネルで届きます。メールはありません。[アラートガイド](./alerts.md)を参照。\n\n## 実際に見られるイベント\n\n```\n⚠️ quota-near-limit\n   Claude Code: 82% 使用済み（2時間後にリセット）\n\n🚨 budget-threshold\n   キー sk-abc123…•789: 日次予算 $4.10 / $5.00（82%）\n\n🔴 breaker-open\n   cx/gpt-5.6-sol: 60秒で5回失敗 — 60秒間スキップ\n\n🔴 all-accounts-locked\n   glm の全アカウントがレート制限中。リクエスト処理不可\n```\n\n同一イベントは 10 分間重複排除されます。イベント種別ごとに個別 ON/OFF 可能です。\n\n### キーごとの予算\n\n予算は API キーごとに設定します（[API キーと予算](./api-keys.md)参照）:\n\n- 日次/月次ウィンドウで USD またはトークン予算\n- ソフトしきい値（デフォルト 80%）がウィンドウごとに 1 回 `budget-threshold` アラートを発火\n- 任意のハードブロックは上限で `429` + `Retry-After` を返す\n\n## サーキットブレーカーとノード健全性\n\nQuota ページには 2 つの運用パネルもあります:\n\n### サーキットブレーカーパネル\n\nアカウントごとのオープン/half-open ブレーカー、失敗数、クールダウンカウントダウン、手動リセットボタンを表示。失敗中のアカウントは自動スキップされます — [サーキットブレーカー](./circuit-breaker.md)参照。\n\n### キャッシュ分析\n\n使用テーブルに **Cached** と **Cached Cost** 列があり、統計ペイロードはプロバイダー/モデルごとのキャッシュブロックを運びます:\n\n- **キャッシュ済みトークン**と推定**ヒット率**（cached ÷ プロンプトトークン）\n- **推定節約額** — 設定済み価格に基づく、キャッシュなしの場合のコスト（価格未設定モデルは n/a 表示。偽の $0 は出しません）\n\n\n## ベストプラクティス\n\n### 1. クォータを毎日モニター\n\n```\n日課:\n1. ダッシュボードクォータ概要を確認 (30秒)\n2. リセット時間を確認\n3. クォータ可用性に合わせて使用量を計画\n```\n\n**例:**\n```\n朝の確認:\n  ✅ Claude Code: 5時間利用可 (新鮮なリセット)\n  ✅ Antigravity: 1Kリクエスト利用可\n  ⚠️ GLM-4.7: 2Mトークン残 (午前10時リセット)\n  \nアクション: 朝の作業にClaude Codeを使用\n```\n\n### 2. 予算上限を設定\n\n```\nDashboard → Settings → Budget:\n  Daily: $5 (使いすぎ防止)\n  Monthly: $150 (予算に整合)\n```\n\n**結果**: 上限到達時に自動的に無料階層へ切替。\n\n### 3. コンボ使用を最適化\n\n```\nDashboard → Analytics → Combos:\n  どのモデルが最もよく使われているか確認\n  コストを最小化するためにコンボ順序を調整\n```\n\n**例:**\n```\n現在: cc/claude-opus-5 → glm/glm-4.7\n  80% Claude経由 (良好)\n  20% GLM経由 ($12/月)\n\n最適化後: ag/gemini-3-flash → cc/claude-opus-5 → glm/glm-4.7\n  50% Antigravity経由 (無料)\n  40% Claude経由 (サブスクリプション)\n  10% GLM経由 ($6/月)\n  \n節約: $6/月\n```\n\n### 4. リセット時間を追跡\n\n```\nDashboard → Quota → Reset Schedule:\n  Claude Code: 5時間ローリング + 週次月曜\n  Antigravity: 日次 00:00 UTC + 月次 1日\n  GLM-4.7: 毎日午前10時 北京時間\n  MiniMax: 5時間ローリングウィンドウ\n```\n\n**戦略**: クォータが新鮮な時にプロバイダーを使用。\n\n### 5. 月次レポートを確認\n\n```\nDashboard → Analytics → Monthly Report:\n  Total tokens: 1.5B\n  Total cost: $120\n  Savings: 97% vs ChatGPT API\n  \nインサイト:\n  - 60% サブスクリプション経由の使用 ($0)\n  - 30% GLM経由 ($90)\n  - 10% 無料階層経由 ($0)\n  \n最適化:\n  - Antigravity使用を増やす (無料)\n  - GLM使用を減らす (高価)\n```\n\n---\n\n## APIアクセス\n\n### クォータステータスを取得\n\n```bash\nGET http://localhost:20128/api/quota\nAuthorization: Bearer your-api-key\n\nResponse:\n{\n  \"providers\": [\n    {\n      \"id\": \"cc\",\n      \"name\": \"Claude Code\",\n      \"quota\": {\n        \"used\": 2.5,\n        \"limit\": 5,\n        \"unit\": \"hours\",\n        \"percentage\": 50\n      },\n      \"reset\": {\n        \"type\": \"rolling\",\n        \"window\": \"5h\",\n        \"nextReset\": \"2026-02-04T06:45:00Z\"\n      },\n      \"cost\": {\n        \"today\": 0,\n        \"month\": 0,\n        \"currency\": \"USD\"\n      }\n    },\n    {\n      \"id\": \"glm\",\n      \"name\": \"GLM-4.7\",\n      \"quota\": {\n        \"used\": 7000000,\n        \"limit\": 10000000,\n        \"unit\": \"tokens\",\n        \"percentage\": 70\n      },\n      \"reset\": {\n        \"type\": \"daily\",\n        \"time\": \"10:00 AM UTC+8\",\n        \"nextReset\": \"2026-02-04T10:00:00+08:00\"\n      },\n      \"cost\": {\n        \"today\": 4.20,\n        \"month\": 52.00,\n        \"currency\": \"USD\"\n      }\n    }\n  ]\n}\n```\n\n### 使用統計を取得\n\n```bash\nGET http://localhost:20128/api/usage?period=today\nAuthorization: Bearer your-api-key\n\nResponse:\n{\n  \"period\": \"today\",\n  \"date\": \"2026-02-04\",\n  \"summary\": {\n    \"requests\": 1234,\n    \"tokens\": 26000000,\n    \"cost\": 4.80\n  },\n  \"byModel\": [\n    {\n      \"model\": \"cc/claude-opus-5\",\n      \"requests\": 456,\n      \"tokens\": 15000000,\n      \"cost\": 0\n    },\n    {\n      \"model\": \"glm/glm-4.7\",\n      \"requests\": 234,\n      \"tokens\": 8000000,\n      \"cost\": 4.80\n    }\n  ]\n}\n```\n\n---\n\n## トラブルシューティング\n\n**問題: クォータが0%を表示するがリクエストが失敗**\n\n**解決策:**\n1. プロバイダー接続を確認 (Dashboard → Providers)\n2. APIキーが有効か確認\n3. プロバイダーがダウンしているか確認 (ステータスページ)\n4. OAuthプロバイダーを再接続してみる\n\n**問題: コスト見積もりが正しくない**\n\n**解決策:**\n1. Dashboard → Settings → Pricing\n2. プロバイダーごとの料金が現在のレートと一致するか確認\n3. プロバイダーがレートを変更した場合は料金を更新\n4. 不一致が続く場合はサポートに連絡\n\n**問題: リセット時間が更新されない**\n\n**解決策:**\n1. ダッシュボードを更新 (F5)\n2. システム時刻が正しいか確認\n3. タイムゾーン設定を確認\n4. 問題が続く場合は9Routerを再起動\n\n**問題: アラートが受信されない**\n\n**解決策:**\n1. Dashboard → Alerts — チャネルが設定・有効化されているか確認\n2. チャネルの **Test** ボタンをクリック\n3. イベント種別が無効になっていないか確認\n4. Telegram の場合: ボットがあなたのチャット ID に送信できる必要があります\n\n---\n\n## 関連\n\n- [スマートルーティング](./smart-routing.md) - クォータに基づく自動フォールバック\n- [コンボ](./combos.md) - カスタムフォールバックチェーンを作成\n"])</script><script>self.__next_f.push([1,"4:[\"$\",\"$Ld\",null,{\"headings\":[{\"level\":2,\"text\":\"概要\",\"id\":\"概要\"},{\"level\":2,\"text\":\"ダッシュボード概要\",\"id\":\"ダッシュボード概要\"},{\"level\":3,\"text\":\"クォータサマリー\",\"id\":\"クォータサマリー\"},{\"level\":2,\"text\":\"リアルタイムトークン消費\",\"id\":\"リアルタイムトークン消費\"},{\"level\":3,\"text\":\"リクエストごとのトラッキング\",\"id\":\"リクエストごとのトラッキング\"},{\"level\":3,\"text\":\"ライブ使用量モニター\",\"id\":\"ライブ使用量モニター\"},{\"level\":3,\"text\":\"モデル別のトークン内訳\",\"id\":\"モデル別のトークン内訳\"},{\"level\":2,\"text\":\"クォータ上限とリセット時間\",\"id\":\"クォータ上限とリセット時間\"},{\"level\":3,\"text\":\"サブスクリプションプロバイダー\",\"id\":\"サブスクリプションプロバイダー\"},{\"level\":3,\"text\":\"低価格プロバイダー\",\"id\":\"低価格プロバイダー\"},{\"level\":3,\"text\":\"無料プロバイダー\",\"id\":\"無料プロバイダー\"},{\"level\":2,\"text\":\"コスト見積もり\",\"id\":\"コスト見積もり\"},{\"level\":3,\"text\":\"リアルタイムコストトラッキング\",\"id\":\"リアルタイムコストトラッキング\"},{\"level\":3,\"text\":\"月次支出レポート\",\"id\":\"月次支出レポート\"},{\"level\":3,\"text\":\"コスト予測\",\"id\":\"コスト予測\"},{\"level\":2,\"text\":\"使用量ダッシュボード\",\"id\":\"使用量ダッシュボード\"},{\"level\":3,\"text\":\"概要統計\",\"id\":\"概要統計\"},{\"level\":3,\"text\":\"モデル別使用量\",\"id\":\"モデル別使用量\"},{\"level\":3,\"text\":\"時間別使用量\",\"id\":\"時間別使用量\"},{\"level\":3,\"text\":\"コンボ別使用量\",\"id\":\"コンボ別使用量\"},{\"level\":2,\"text\":\"アラートと通知\",\"id\":\"アラートと通知\"},{\"level\":2,\"text\":\"実際に見られるイベント\",\"id\":\"実際に見られるイベント\"},{\"level\":3,\"text\":\"キーごとの予算\",\"id\":\"キーごとの予算\"},{\"level\":2,\"text\":\"サーキットブレーカーとノード健全性\",\"id\":\"サーキットブレーカーとノード健全性\"},{\"level\":3,\"text\":\"サーキットブレーカーパネル\",\"id\":\"サーキットブレーカーパネル\"},{\"level\":3,\"text\":\"キャッシュ分析\",\"id\":\"キャッシュ分析\"},{\"level\":2,\"text\":\"ベストプラクティス\",\"id\":\"ベストプラクティス\"},{\"level\":3,\"text\":\"1. クォータを毎日モニター\",\"id\":\"1-クォータを毎日モニター\"},{\"level\":3,\"text\":\"2. 予算上限を設定\",\"id\":\"2-予算上限を設定\"},{\"level\":3,\"text\":\"3. コンボ使用を最適化\",\"id\":\"3-コンボ使用を最適化\"},{\"level\":3,\"text\":\"4. リセット時間を追跡\",\"id\":\"4-リセット時間を追跡\"},{\"level\":3,\"text\":\"5. 月次レポートを確認\",\"id\":\"5-月次レポートを確認\"},{\"level\":2,\"text\":\"APIアクセス\",\"id\":\"apiアクセス\"},{\"level\":3,\"text\":\"クォータステータスを取得\",\"id\":\"クォータステータスを取得\"},{\"level\":3,\"text\":\"使用統計を取得\",\"id\":\"使用統計を取得\"},{\"level\":2,\"text\":\"トラブルシューティング\",\"id\":\"トラブルシューティング\"},{\"level\":2,\"text\":\"関連\",\"id\":\"関連\"}],\"lang\":\"ja\",\"children\":[\"$\",\"$Le\",null,{\"content\":\"$f\",\"baseDir\":\"/ja/features\"}]}]\n"])</script><script>self.__next_f.push([1,"9:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"7:null\nb:[[\"$\",\"title\",\"0\",{\"children\":\"9Router Documentation\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Smart AI model router - Maximize subscriptions, minimize costs\"}]]\n"])</script></body></html>

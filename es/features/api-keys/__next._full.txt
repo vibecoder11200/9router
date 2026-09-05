@@ -1,0 +1,88 @@
+1:"$Sreact.fragment"
+2:I[39756,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/9router/_next/static/chunks/f7da7c3679ddfa30.css","style"]
+0:{"P":null,"b":"fnz1fJSVOCDpkferGG7I_","c":["","es","features","api-keys",""],"q":"","i":false,"f":[[["",{"children":[["lang","es","d"],{"children":[["slug","features/api-keys","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/9router/_next/static/chunks/f7da7c3679ddfa30.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/9router/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/9router/_next/static/chunks/a198242ca07ac9f1.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+e:I[22982,["/9router/_next/static/chunks/ff1a16fafef87110.js","/9router/_next/static/chunks/a198242ca07ac9f1.js"],"default"]
+f:Td73,# API Keys & Presupuestos
+
+Las API keys controlan el acceso a tu endpoint de 9Router cuando **Require API key** está activo. Las keys se guardan hasheadas, y cada key puede llevar su propio presupuesto con bloqueo duro opcional.
+
+---
+
+## Seguridad de las API Keys
+
+- **Hasheadas en reposo** — las keys se almacenan como dígestos HMAC-SHA256 bajo un secreto por instalación (un archivo `0600` en tu máquina), nunca en texto plano. Las keys legacy en texto plano siguen funcionando y migran perezosamente en el primer uso.
+- **Enmascaradas en todas partes** — los listados y la UI solo muestran `sk-{keyId}-••••{last4}`. Los backups exportan hashes, nunca keys crudas.
+- **Secretos por instalación** — el secreto de hashing y la clave sudo de MITM son aleatorios por instalación; sin claves derivadas de la máquina ni fallbacks hardcodeados.
+
+> 📦 **¿Actualizas desde una versión antigua?** Haz backup de la DB antes de actualizar a una versión con hashing de keys (`v0.6.36+`) y reintroduce la contraseña sudo de MITM una vez tras actualizar — el ciphertext antiguo es intencionalmente indescifrable con la nueva clave.
+
+---
+
+## Presupuestos por Key
+
+Cada key puede fijar un presupuesto para que un agente descontrolado o un compañero no queme toda tu cuota.
+
+```
+Dashboard → Endpoint & Key → ✏️ Editar key → Budget
+
+Tipo:          USD  |  Tokens  |  Off
+Límite:        p. ej. 5 (USD) o 50.000.000 (tokens)
+Ventana:       Diaria  |  Mensual   (hora local del servidor)
+Umbral blando: 80%   → dispara la alerta budget-threshold una vez por ventana
+Bloqueo duro:  ON/OFF → 429 con Retry-After al alcanzar el límite
+```
+
+### Comportamiento
+
+| Momento | Qué ocurre |
+|---|---|
+| Gasto < 80% del límite | Nada — tráfico normal |
+| Gasto ≥ umbral blando (80%) | Una alerta `budget-threshold` por ventana (edge-triggered, sin spam) |
+| Gasto ≥ límite **con bloqueo duro ON** | Petición rechazada con `429`, header `Retry-After` hacia el fin de la ventana y `X-9Router-Budget: limit-exceeded` |
+| Nueva ventana | El presupuesto se resetea y la alerta se rearma |
+
+El gasto se lee **fresco desde el historial de uso en el momento de aplicar** (query indexada). Las keys sin presupuesto añaden cero queries al hot path.
+
+### ¿USD o Tokens?
+
+- **Los presupuestos en tokens son exactos** — cuentan prompt + completion tokens.
+- **Los presupuestos en USD son estimaciones** — suman costes registrados que requieren pricing configurado; los modelos sin precio aportan $0, así que pueden contar de menos. El editor avisa cuando el gasto dominado por modelos sin precio.
+
+### Requisitos y advertencias
+
+- Los presupuestos solo aplican con **Require API key** activo.
+- Las ventanas se calculan en **hora local del servidor**: diaria = medianoche local, mensual = día 1.
+- La alerta llega por el sistema de [Alertas](./alerts.md) — configura un canal para recibirla.
+
+---
+
+## Crear y gestionar Keys
+
+```
+Dashboard → Endpoint & Key
+
++ Crear key  →  sk-... se muestra UNA vez (cópiala ya)
+✏️ Editar    →  renombrar, presupuesto, activar/desactivar
+🗑 Eliminar  →  revocación inmediata
+```
+
+Usa una key por herramienta o por persona (p. ej. `cursor-laptop`, `cline-desktop`) para que el uso y los presupuestos sean atribuibles.
+
+---
+
+## Relacionado
+
+- [Alertas](./alerts.md) - el evento `budget-threshold`
+- [Seguimiento de cuota](./quota-tracking.md) - analíticas de uso por key
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Seguridad de las API Keys","id":"seguridad-de-las-api-keys"},{"level":2,"text":"Presupuestos por Key","id":"presupuestos-por-key"},{"level":3,"text":"Comportamiento","id":"comportamiento"},{"level":3,"text":"¿USD o Tokens?","id":"usd-o-tokens"},{"level":3,"text":"Requisitos y advertencias","id":"requisitos-y-advertencias"},{"level":2,"text":"Crear y gestionar Keys","id":"crear-y-gestionar-keys"},{"level":2,"text":"Relacionado","id":"relacionado"}],"lang":"es","children":["$","$Le",null,{"content":"$f","baseDir":"/es/features"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"9Router Documentation"}],["$","meta","1",{"name":"description","content":"Smart AI model router - Maximize subscriptions, minimize costs"}]]
