@@ -95,7 +95,10 @@ export default function DonateModal({ isOpen, onClose }) {
 }
 
 function DonateChannelCard({ channel }) {
-  const { label, description, icon, color, url, qr } = channel;
+  const { label, description, icon, color, url, qr, qrFallback, altText } = channel;
+  // QR stages: 0 = primary image, 1 = fallback provider, 2 = exhausted → show altText
+  const [qrStage, setQrStage] = useState(0);
+  const qrSrc = qrStage === 0 ? qr : qrStage === 1 ? qrFallback : null;
   const content = (
     <>
       <div
@@ -108,14 +111,20 @@ function DonateChannelCard({ channel }) {
       {description && (
         <div className="text-xs text-text-muted mb-3 text-center">{description}</div>
       )}
-      {qr && (
+      {qrSrc && (
         <img
-          src={qr}
+          src={qrSrc}
           alt={`${label} QR`}
           className="w-full max-w-[180px] aspect-square object-contain rounded-lg bg-white p-1"
-        loading="lazy"
-        decoding="async"
+          loading="lazy"
+          decoding="async"
+          onError={() => setQrStage((s) => (s === 0 && qrFallback ? 1 : 2))}
         />
+      )}
+      {!qrSrc && altText && (
+        <div className="text-xs text-text-muted text-center bg-surface rounded-lg px-3 py-2 border border-black/5 dark:border-white/5">
+          {altText}
+        </div>
       )}
     </>
   );

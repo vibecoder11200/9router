@@ -9,7 +9,9 @@
       "icon": "account_balance",
       "color": "#0072bc",
       "url": "",
-      "qr": "https://api.vietqr.io/image/970416-43269867-xtJ7AHD.jpg?accountName=TRAN%20QUOC%20AN"
+      "qr": "https://api.vietqr.io/image/970416-43269867-xtJ7AHD.jpg?accountName=TRAN%20QUOC%20AN",
+      "qrFallback": "https://img.vietqr.io/image/970416-43269867-compact2.png?accountName=TRAN%20QUOC%20AN",
+      "altText": "QR unavailable — manual transfer: ACB · 43269867 · TRAN QUOC AN"
     },
     {
       "id": "kofi",
@@ -18,7 +20,8 @@
       "icon": "local_cafe",
       "color": "#ff5e5b",
       "url": "https://ko-fi.com/vibecoder11200",
-      "qr": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=https%3A%2F%2Fko-fi.com%2Fvibecoder11200"
+      "qr": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=https%3A%2F%2Fko-fi.com%2Fvibecoder11200",
+      "qrFallback": "https://quickchart.io/qr?size=400&text=https%3A%2F%2Fko-fi.com%2Fvibecoder11200"
     },
     {
       "id": "paypal",
@@ -27,7 +30,8 @@
       "icon": "payments",
       "color": "#0070ba",
       "url": "https://paypal.me/vibecoder11200",
-      "qr": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=https%3A%2F%2Fpaypal.me%2Fvibecoder11200"
+      "qr": "https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=M&data=https%3A%2F%2Fpaypal.me%2Fvibecoder11200",
+      "qrFallback": "https://quickchart.io/qr?size=400&text=https%3A%2F%2Fpaypal.me%2Fvibecoder11200"
     }
   ]
 }
