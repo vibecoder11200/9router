@@ -81,12 +81,13 @@ function configure(options = {}) {
  * @param {string} method - HTTP method
  * @param {string} path - API path
  * @param {Object} body - Request body (optional)
+ * @param {Object} extraHeaders - Extra headers merged after the token header (optional)
  * @returns {Promise<Object>} Response with { success, data/error }
  */
-function makeRequest(method, path, body = null) {
+function makeRequest(method, path, body = null, extraHeaders = {}) {
   return new Promise((resolve) => {
     const httpModule = config.protocol === "https:" ? https : http;
-    
+
     const options = {
       hostname: config.host,
       port: config.port,
@@ -95,6 +96,7 @@ function makeRequest(method, path, body = null) {
       headers: {
         "Content-Type": "application/json",
         [CLI_TOKEN_HEADER]: getCliToken(),
+        ...extraHeaders,
       },
     };
 
@@ -306,6 +308,42 @@ async function createApiKey(name) {
  */
 async function deleteApiKey(id) {
   return makeRequest("DELETE", `/api/keys/${id}`);
+}
+
+/**
+ * Re-key an imported key against THIS install's secret (phase 03).
+ * Only valid for rows flagged needsRekey — server returns 409 otherwise.
+ * @param {string} id - Key ID
+ * @param {string} rawKey - Raw key pasted by the user (never echoed back)
+ * @returns {Promise<Object>} { success, data: { key } } (masked only)
+ */
+async function rekeyApiKey(id, rawKey) {
+  return makeRequest("POST", `/api/keys/${id}/rekey`, { rawKey });
+}
+
+// ============================================================================
+// DATABASE BACKUP API (v0.6.45)
+// ============================================================================
+
+// Password path on purpose: only a password-authenticated export embeds the
+// wrapped key secret (CLI token alone yields an envelope-less backup).
+/**
+ * Export full database backup (sealed with the dashboard password)
+ * @param {string} password - Dashboard password (sent once, never stored)
+ * @returns {Promise<Object>} { success, data: backup payload with warnings }
+ */
+async function exportDatabase(password) {
+  return makeRequest("GET", "/api/settings/database", null, { "x-9r-password": password });
+}
+
+/**
+ * Import database backup
+ * @param {Object} payload - Parsed backup JSON
+ * @param {string} password - Password used when the backup was exported
+ * @returns {Promise<Object>} { success, data: { success, warnings, needsRekeyCount } }
+ */
+async function importDatabase(payload, password) {
+  return makeRequest("POST", "/api/settings/database", { ...payload, password });
 }
 
 // ============================================================================
@@ -520,6 +558,11 @@ module.exports = {
   getApiKeys,
   createApiKey,
   deleteApiKey,
+  rekeyApiKey,
+
+  // Database Backup
+  exportDatabase,
+  importDatabase,
   
   // Combos
   getCombos,

@@ -56,6 +56,38 @@ async function prompt(question) {
   }));
 }
 
+/**
+ * Prompt for a secret without echoing it (RT-14). Emits "*" per keystroke;
+ * Enter submits; Ctrl+C cancels and resolves null so the menu survives.
+ * Call sites should include "(input hidden)" in the prompt text.
+ */
+async function promptSecret(question) {
+  return suspendRawFor(() => new Promise((resolve) => {
+    const realWrite = process.stdout.write.bind(process.stdout);
+    realWrite(question);
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    let done = false;
+    const finish = (answer) => {
+      if (done) return;
+      done = true;
+      process.stdout.write = realWrite;
+      realWrite("\n");
+      rl.close();
+      resolve(answer);
+    };
+    // Proxy stdout so typed characters echo as "*" (prompt was already written).
+    process.stdout.write = (chunk, ...rest) => {
+      if (typeof chunk === "string" && chunk && !chunk.includes("\n") && !chunk.includes("\r")) {
+        return realWrite("*", ...rest);
+      }
+      return realWrite(chunk, ...rest);
+    };
+    rl.question("", (answer) => finish((answer || "").trim()));
+    rl.on("SIGINT", () => finish(null));
+    rl.on("close", () => finish(null));
+  }));
+}
+
 async function select(question, options) {
   console.log(question);
   options.forEach((opt, i) => console.log(`  ${i + 1}. ${opt}`));
@@ -148,6 +180,7 @@ async function selectMenu(title, items, defaultIndex = 0, subtitle = "", headerC
 
 module.exports = {
   prompt,
+  promptSecret,
   select,
   confirm,
   pause,

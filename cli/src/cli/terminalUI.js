@@ -5,6 +5,7 @@ const { showApiKeysMenu } = require("./menus/apiKeys");
 const { showCombosMenu } = require("./menus/combos");
 const { showSettingsMenu } = require("./menus/settings");
 const { showCliToolsMenu } = require("./menus/cliTools");
+const { showBackupMenu } = require("./menus/backup");
 
 const COLORS = {
   reset: "\x1b[0m",
@@ -110,6 +111,13 @@ async function startTerminalUI(port) {
         label: "Settings",
         action: async () => {
           await showSettingsMenu([...basePath, "Settings"]);
+          return true;
+        }
+      },
+      {
+        label: "Backup & Restore",
+        action: async () => {
+          await showBackupMenu(port, [...basePath, "Backup & Restore"]);
           return true;
         }
       }

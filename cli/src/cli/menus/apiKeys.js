@@ -1,5 +1,5 @@
 const api = require("../api/client");
-const { prompt, confirm, pause } = require("../utils/input");
+const { prompt, promptSecret, confirm, pause } = require("../utils/input");
 const { clearScreen, showStatus, showHeader } = require("../utils/display");
 const { maskKey, formatDate, getRelativeTime } = require("../utils/format");
 const { showMenuWithBack } = require("../utils/menuHelper");
@@ -181,6 +181,35 @@ async function showKeyActions(key, port, breadcrumb = []) {
           return true;
         }
       },
+      // RT-11/RT-12: shown ONLY for flagged rows — the server rejects
+      // re-key otherwise (409 not_needed). Raw key prompted via promptSecret
+      // so it never lands in terminal scrollback.
+      ...(key.needsRekey === true
+        ? [
+            {
+              label: "Re-key (paste raw key)",
+              action: async () => {
+                const raw = await promptSecret(
+                  "Paste the RAW key for this entry (input hidden): "
+                );
+                if (raw === null || raw === "") {
+                  showStatus("Re-key cancelled", "info");
+                  await pause();
+                  return true;
+                }
+                const result = await api.rekeyApiKey(key.id, raw);
+                showStatus(
+                  result.success
+                    ? `Re-keyed: ${result.data.key.key} — now valid on this install`
+                    : `Re-key failed: ${result.error}`,
+                  result.success ? "success" : "error"
+                );
+                await pause();
+                return true;
+              }
+            }
+          ]
+        : []),
       {
         label: "Delete Key",
         action: async () => {
