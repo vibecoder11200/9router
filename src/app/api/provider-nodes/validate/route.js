@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { assertPublicUrl, fetchPublic } from "@/shared/utils/ssrfGuard.js";
 import { isLocalRequest } from "@/dashboardGuard";
+import { hasTrustedPeerHeaders } from "@/lib/auth/trustedPeer";
 
 // Fetch with timeout wrapper. Routes through fetchPublic (S2): every hop is
 // DNS-resolved against the private-IP blocklist and redirects are re-validated
 // — a plain fetch() would auto-follow into 169.254.169.254 et al.
-const fetchWithTimeout = (url, options, timeout = 10000) => {
+// allowPrivate (S2 follow-up): local callers may validate SELF-HOSTED nodes
+// (http://localhost:11434, LAN vLLM) — the hardening must not defeat the
+// local-carve-out this route keeps below. Remote callers stay fully guarded.
+const makeFetchWithTimeout = (allowPrivate) => (url, options, timeout = 10000) => {
   return Promise.race([
-    fetchPublic(url, options),
-    new Promise((_, reject) => 
+    fetchPublic(url, options, { allowPrivate }),
+    new Promise((_, reject) =>
       setTimeout(() => reject(new Error("Request timeout")), timeout)
     )
   ]);
@@ -55,6 +59,13 @@ const getChatErrorMessage = (status) => {
 
 // POST /api/provider-nodes/validate - Validate API key against base URL
 export async function POST(request) {
+  // allowPrivate only for provably-local callers: in production that means
+  // the unspoofable per-boot peer stamp from custom-server.js. Dev mode keeps
+  // the locality fallback (no stamp exists there) — confined to development
+  // like every other requestLocality consumer.
+  const localCaller = isLocalRequest(request)
+    && (hasTrustedPeerHeaders(request) || process.env.NODE_ENV === "development");
+  const fetchWithTimeout = makeFetchWithTimeout(localCaller);
   try {
     const body = await request.json();
     const { baseUrl, apiKey, type, modelId } = body;

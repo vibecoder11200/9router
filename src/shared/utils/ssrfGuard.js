@@ -194,22 +194,57 @@ export async function assertPublicUrlResolved(rawUrl) {
   }
 }
 
+// Credential headers must never be replayed to a cross-origin redirect
+// target — undici's auto-follow stripped Authorization there, and manual
+// handling has to keep that guarantee (S2 follow-up).
+const CREDENTIAL_HEADERS = new Set(["authorization", "cookie", "x-api-key"]);
+
+function stripCredentialHeaders(init) {
+  if (!init || !init.headers) return init;
+  const { headers } = init;
+  if (typeof Headers !== "undefined" && headers instanceof Headers) {
+    const next = new Headers();
+    for (const [name, value] of headers.entries()) {
+      if (!CREDENTIAL_HEADERS.has(name.toLowerCase())) next.set(name, value);
+    }
+    return { ...init, headers: next };
+  }
+  if (Array.isArray(headers)) {
+    return { ...init, headers: headers.filter(([name]) => !CREDENTIAL_HEADERS.has(String(name).toLowerCase())) };
+  }
+  const filtered = Object.fromEntries(
+    Object.entries(headers).filter(([name]) => !CREDENTIAL_HEADERS.has(name.toLowerCase()))
+  );
+  return { ...init, headers: filtered };
+}
+
 // fetch() with SSRF-safe manual redirect handling: each hop's target is
 // re-validated through assertPublicUrlResolved before being followed, so a
 // validated public URL can't 30x its way to an internal target. Bounded to
-// maxRedirects hops (fetch's own default following behavior has no bound
-// relevant here since we never let it auto-follow).
-export async function fetchPublic(url, init = {}, { maxRedirects = 5 } = {}) {
-  await assertPublicUrlResolved(url);
+// maxRedirects hops (default 20 — the same bound undici's auto-follow had
+// before manual handling replaced it).
+//
+// opts.allowPrivate skips the public-URL assertion on ALL hops. Only pass it
+// when the CALLER is verified local (isLocalRequest): the S2 hardening must
+// not break validating self-hosted nodes (http://localhost:11434, LAN vLLM)
+// from the dashboard on the same host. The redirect chain stays bounded and
+// credential headers are still stripped on origin changes.
+export async function fetchPublic(url, init = {}, { maxRedirects = 20, allowPrivate = false } = {}) {
+  if (!allowPrivate) await assertPublicUrlResolved(url);
   let currentUrl = url;
+  let currentOrigin = new URL(url).origin;
+  let hopInit = init;
   for (let hop = 0; ; hop++) {
-    const res = await fetch(currentUrl, { ...init, redirect: "manual" });
+    const res = await fetch(currentUrl, { ...hopInit, redirect: "manual" });
     const isRedirect = res.status >= 300 && res.status < 400;
     const location = isRedirect ? res.headers.get("location") : null;
     if (!location) return res;
     if (hop >= maxRedirects) throw new Error("Blocked URL: too many redirects");
     const nextUrl = new URL(location, currentUrl).toString();
-    await assertPublicUrlResolved(nextUrl);
+    if (!allowPrivate) await assertPublicUrlResolved(nextUrl);
+    const nextOrigin = new URL(nextUrl).origin;
+    if (nextOrigin !== currentOrigin) hopInit = stripCredentialHeaders(hopInit);
     currentUrl = nextUrl;
+    currentOrigin = nextOrigin;
   }
 }

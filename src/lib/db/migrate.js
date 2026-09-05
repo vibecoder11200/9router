@@ -6,7 +6,7 @@ import { MIGRATIONS, latestVersion } from "./migrations/index.js";
 import { getMetaSync, setMetaSync } from "./helpers/metaStore.js";
 import { makeBackupDir, backupFile, backupDbLite, pruneOldBackups } from "./backup.js";
 import { getAppVersion } from "./version.js";
-import { stringifyJson } from "./helpers/jsonCol.js";
+import { stringifyJson, parseJson } from "./helpers/jsonCol.js";
 
 // Marker file: prevents re-importing legacy JSON when user wipes data.sqlite.
 const MIGRATED_MARKER = path.join(DB_DIR, ".migrated-from-json");
@@ -248,6 +248,47 @@ export async function runMigrationOnce(adapter) {
 
   // 2. Additive sync (auto add missing columns/indexes declared in TABLES)
   syncSchemaFromTables(adapter);
+
+  // 2b. S6 follow-up: an install that predates the tunnelDashboardAccess
+  // default flip (v0.6.36) ran on the old implicit TRUE and never stored the
+  // key — the flip locked those users out of their own dashboard over the
+  // tunnel with no in-product warning. One-time migration: pre-flip installs
+  // get the key persisted as true (their effective pre-upgrade behavior);
+  // installs that explicitly saved the key keep it; fresh installs stay on
+  // the secure opt-in default. Install age is judged by the oldest apiKeys
+  // row (the S7 release date is the flip boundary); a keyless install has
+  // nothing to preserve and keeps the default.
+  try {
+    if (getMetaSync(adapter, "s6-tunnel-migration-v1", null) === null) {
+      const s6Row = adapter.get(`SELECT data FROM settings WHERE id = 1`);
+      const s6Raw = s6Row ? parseJson(s6Row.data, {}) : {};
+      const oldestKey = adapter.get(`SELECT MIN(createdAt) AS ts FROM apiKeys`);
+      const oldestKeyTs = oldestKey?.ts ? Date.parse(oldestKey.ts) : NaN;
+      const PRE_S6_FLIP_MS = Date.parse("2026-09-05T00:00:00Z"); // v0.6.36 release
+      if (
+        s6Row && !("tunnelDashboardAccess" in s6Raw) &&
+        Number.isFinite(oldestKeyTs) && oldestKeyTs < PRE_S6_FLIP_MS
+      ) {
+        // Read-modify-write + flag inside one transaction (updateSettings
+        // convention) so a crash mid-migration retries on the next boot
+        // instead of being permanently skipped by the stamped flag.
+        adapter.transaction(() => {
+          const fresh = adapter.get(`SELECT data FROM settings WHERE id = 1`);
+          const raw = fresh ? parseJson(fresh.data, {}) : s6Raw;
+          if (!("tunnelDashboardAccess" in raw)) {
+            const next = stringifyJson({ ...raw, tunnelDashboardAccess: true });
+            adapter.run(`UPDATE settings SET data = ? WHERE id = 1`, [next]);
+          }
+          setMetaSync(adapter, "s6-tunnel-migration-v1", new Date().toISOString());
+        });
+        console.log("[DB][migrate] pre-v0.6.36 install: tunnelDashboardAccess preserved as true (S6 default flip)");
+      } else {
+        setMetaSync(adapter, "s6-tunnel-migration-v1", new Date().toISOString());
+      }
+    }
+  } catch (e) {
+    console.warn(`[DB][migrate] S6 tunnel-access migration skipped: ${e.message}`);
+  }
 
   // Stamp the schema version we just reached so future boots skip re-backup.
   setMetaSync(adapter, "backupSchemaVersion", SCHEMA_VERSION);

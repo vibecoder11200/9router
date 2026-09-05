@@ -145,3 +145,68 @@ describe("fetchPublic: redirect-target re-validation from #3714", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 });
+
+// S2 follow-up (audit v0.6.35→0.6.41): switching provider-nodes/validate to
+// fetchPublic defeated the route's own LOCAL carve-out — self-hosted nodes
+// (http://localhost:11434, LAN vLLM) could no longer be validated from the
+// host. allowPrivate restores that; the default stays fully guarded, and
+// credential headers are stripped on cross-origin redirects (undici's
+// auto-follow used to do this before manual redirect handling replaced it).
+describe("fetchPublic: allowPrivate for local callers + credential stripping", () => {
+  const originalFetch = global.fetch;
+  afterEach(() => { global.fetch = originalFetch; });
+  beforeEach(() => {
+    lookupMock.mockReset();
+    lookupMock.mockResolvedValue([{ address: "203.0.113.10", family: 4 }]);
+  });
+
+  it("allowPrivate lets a local caller reach loopback/LAN nodes", async () => {
+    global.fetch = vi.fn(async () => new Response("ollama-ok", { status: 200 }));
+    const res = await fetchPublic("http://127.0.0.1:11434/v1/models", {}, { allowPrivate: true });
+    expect(res.status).toBe(200);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("allowPrivate skips the per-hop assertion too (private redirect targets allowed)", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 302, headers: { Location: "http://192.168.1.10:8000/v1" } }))
+      .mockResolvedValueOnce(new Response("lan-ok", { status: 200 }));
+    const res = await fetchPublic("https://public.example.test/r", {}, { allowPrivate: true });
+    expect(await res.text()).toBe("lan-ok");
+  });
+
+  it("default (no allowPrivate) still blocks loopback before fetching", async () => {
+    global.fetch = vi.fn();
+    await expect(fetchPublic("http://127.0.0.1:11434/v1/models")).rejects.toThrow();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("strips credential headers when a redirect changes origin", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 302, headers: { Location: "https://other.example.test/t" } }))
+      .mockImplementationOnce(async (_url, init = {}) =>
+        new Response(JSON.stringify({
+          auth: init.headers?.authorization ?? null,
+          cookie: init.headers?.cookie ?? null,
+          keep: init.headers?.["x-keep"] ?? null,
+        }), { status: 200 }));
+    const res = await fetchPublic("https://start.example.test/x", {
+      headers: { authorization: "Bearer sk-secret", cookie: "session=1", "x-keep": "yes" },
+    });
+    const body = await res.json();
+    expect(body.auth).toBeNull();
+    expect(body.cookie).toBeNull();
+    expect(body.keep).toBe("yes");
+  });
+
+  it("keeps credential headers on a same-origin redirect", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 307, headers: { Location: "https://start.example.test/y" } }))
+      .mockImplementationOnce(async (_url, init = {}) =>
+        new Response(JSON.stringify({ auth: init.headers?.authorization ?? null }), { status: 200 }));
+    const res = await fetchPublic("https://start.example.test/x", {
+      headers: { authorization: "Bearer sk-secret" },
+    });
+    expect((await res.json()).auth).toBe("Bearer sk-secret");
+  });
+});

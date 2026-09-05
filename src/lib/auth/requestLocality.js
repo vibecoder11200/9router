@@ -19,7 +19,19 @@ export function isLoopbackHostname(h) {
   } else if (name.indexOf(":") !== -1 && name.indexOf(":") === name.lastIndexOf(":")) {
     name = name.slice(0, name.indexOf(":"));
   }
-  if (name.startsWith("::ffff:")) name = name.slice(7);
+  if (name.startsWith("::ffff:")) {
+    // IPv4-mapped IPv6 comes in two textual forms: dotted ("::ffff:127.0.0.1",
+    // which strips to "127.0.0.1" below) and hex ("::ffff:7f00:1", which Node's
+    // URL parser can emit). Expand the hex form's embedded IPv4 tail.
+    const rest = name.slice(7);
+    const hex = rest.match(/^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+    if (hex) {
+      const hi = parseInt(hex[1], 16);
+      const lo = parseInt(hex[2], 16);
+      return `${(hi >>> 8) & 0xff}.${hi & 0xff}.${(lo >>> 8) & 0xff}.${lo & 0xff}` === "127.0.0.1";
+    }
+    name = rest;
+  }
   return LOOPBACK_HOSTS.has(name);
 }
 
