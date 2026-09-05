@@ -51,11 +51,6 @@ export default function CoworkToolCard({
   const [addMcpOpen, setAddMcpOpen] = useState(false);
   const [addMcpForm, setAddMcpForm] = useState({ name: "", url: "" });
 
-  useEffect(() => {
-    if (apiKeys?.length > 0 && !selectedApiKey) {
-      setSelectedApiKey(apiKeys[0].key);
-    }
-  }, [apiKeys, selectedApiKey]);
 
   useEffect(() => {
     if (initialStatus) setStatus(initialStatus);
@@ -134,7 +129,6 @@ export default function CoworkToolCard({
     setApplying(true);
     try {
       const keyToUse = selectedApiKey?.trim()
-        || (apiKeys?.length > 0 ? apiKeys[0].key : null)
         || (!cloudEnabled ? "sk_9router" : null);
 
       const res = await fetch(ENDPOINT, {

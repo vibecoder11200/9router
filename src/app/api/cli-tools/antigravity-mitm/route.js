@@ -96,11 +96,33 @@ export async function POST(request) {
     const { apiKey, sudoPassword, mitmRouterBaseUrl, forceKillPort443 } = await request.json();
     const pwd = getPassword(sudoPassword) || await loadEncryptedPassword() || "";
 
-    if (!apiKey || requiresSudoPassword(pwd)) {
+    // S7 follow-up: the server can no longer mint an API credential (raw keys
+    // are hashed at rest), so apiKey is optional. A pasted MASKED display
+    // value (sk-{id}-••••{last4}) is a hard error — U+2022 breaks fetch
+    // headers and it would never validate. When Require-API-Key is on, the
+    // MITM child needs a real raw key or every proxied request gets a 401.
+    const maskedValue = typeof apiKey === "string" && apiKey.includes("•");
+    if (maskedValue) {
       return NextResponse.json(
-        { error: !apiKey ? "Missing apiKey" : "Missing sudoPassword" },
+        { error: "That is the masked key display, not a usable credential. Paste the RAW key (shown once when the key was created), or leave the field empty when Require-API-Key is off." },
         { status: 400 }
       );
+    }
+    const trimmedKey = typeof apiKey === "string" ? apiKey.trim() : "";
+    if (requiresSudoPassword(pwd)) {
+      return NextResponse.json(
+        { error: "Missing sudoPassword" },
+        { status: 400 }
+      );
+    }
+    if (!trimmedKey) {
+      const settings = await getSettings();
+      if (settings.requireApiKey) {
+        return NextResponse.json(
+          { error: "Require-API-Key is enabled: the MITM proxy needs the RAW API key (shown once at key creation). Paste it in the API-key field, or turn Require-API-Key off for local-only use." },
+          { status: 400 }
+        );
+      }
     }
 
     if (!checkPrivilege(pwd)) {
@@ -122,7 +144,7 @@ export async function POST(request) {
       }
     }
 
-    const result = await startServer(apiKey, pwd, !!forceKillPort443);
+    const result = await startServer(trimmedKey || null, pwd, !!forceKillPort443);
     if (!isWin) setCachedPassword(pwd);
 
     return NextResponse.json({ success: true, running: result.running, pid: result.pid });

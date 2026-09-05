@@ -26,11 +26,6 @@ export default function CopilotToolCard({ tool, isExpanded, onToggle, baseUrl, a
     selectedModelsRef.current = selectedModels;
   }, [selectedModels]);
 
-  useEffect(() => {
-    if (apiKeys?.length > 0 && !selectedApiKey) {
-      setSelectedApiKey(apiKeys[0].key);
-    }
-  }, [apiKeys, selectedApiKey]);
 
   useEffect(() => {
     if (initialStatus) setStatus(initialStatus);

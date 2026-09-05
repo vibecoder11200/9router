@@ -12,10 +12,9 @@ export default function DefaultToolCard({ toolId, tool, isExpanded, onToggle, ba
   const [showModelModal, setShowModelModal] = useState(false);
   const [modelValue, setModelValue] = useState("");
   
-  // Initialize state directly with computed value - no need for useEffect
-  const [selectedApiKey, setSelectedApiKey] = useState(() => 
-    apiKeys?.length > 0 ? apiKeys[0].key : ""
-  );
+  // S7: raw keys are never stored — apiKeys[].key is the masked display, so
+  // there is nothing to prefill. Empty falls back to the local-mode default.
+  const [selectedApiKey, setSelectedApiKey] = useState("");
 
   const replaceVars = (text) => {
     const keyToUse = (selectedApiKey && selectedApiKey.trim()) 

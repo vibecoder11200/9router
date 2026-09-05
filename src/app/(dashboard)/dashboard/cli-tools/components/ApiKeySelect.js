@@ -18,13 +18,22 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
     return subscribeKeyPresets(sync);
   }, []);
 
+  // S7: apiKeys[].key is the MASKED display string (sk-{id}-••••{last4}) —
+  // it is not a credential, so it must never be offered as a selectable
+  // value (a masked token written into a tool config can never authenticate).
+  // Only user-pasted raw keys (saved presets) are offered as real options.
+  const usableKeys = useMemo(
+    () => apiKeys.filter((k) => k.key && !String(k.key).includes("•")),
+    [apiKeys]
+  );
+
   const options = useMemo(
     () => [
-      ...apiKeys.map((k) => ({ value: k.key, label: k.key })),
+      ...usableKeys.map((k) => ({ value: k.key, label: k.key })),
       ...savedKeys.map((p) => ({ value: `saved:${p.name}`, label: p.key, url: p.key, saved: true })),
       { value: CUSTOM_VALUE, label: "Custom...", url: "" },
     ],
-    [apiKeys, savedKeys]
+    [usableKeys, savedKeys]
   );
 
   // Derive the active option from value — no sync effects needed when the parent updates it
@@ -34,7 +43,7 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
   const isSaved = typeof mode === "string" && mode.startsWith("saved:");
   const isCustom = mode === CUSTOM_VALUE;
   const canSave = isCustom && (value || "").trim().length > 0 && !apiKeys.some((k) => k.key === value);
-  const noKeys = apiKeys.length === 0 && savedKeys.length === 0 && !customMode && !value;
+  const noKeys = usableKeys.length === 0 && savedKeys.length === 0 && !customMode && !value;
 
   const handleSelect = (e) => {
     const next = e.target.value;
@@ -73,7 +82,11 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
   if (noKeys) {
     return (
       <span className={`min-w-0 rounded bg-surface/40 px-2 py-2 text-xs text-text-muted sm:py-1.5 ${className}`}>
-        {cloudEnabled ? "No API keys - Create one in Keys page" : "sk_9router (default)"}
+        {cloudEnabled
+          ? (apiKeys.length > 0
+            ? "Raw keys are never stored — paste your RAW key (shown once at creation) via Custom"
+            : "No API keys - Create one in Keys page")
+          : "sk_9router (default)"}
       </span>
     );
   }

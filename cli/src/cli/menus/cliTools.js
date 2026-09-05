@@ -23,13 +23,18 @@ const CLAUDE_MODEL_TYPES = [
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
 /**
- * Get first available API key from server
+ * Get first available API key from server.
+ * Returns null when the stored value is the MASKED display string (S7,
+ * v0.6.36+): raw keys are never stored, so a masked value is not a
+ * credential and would make every tool request fail.
  * @returns {Promise<string|null>}
  */
 async function getFirstApiKey() {
   const result = await api.getApiKeys();
   const keys = result.success ? (result.data.keys || []) : [];
-  return keys.length > 0 ? keys[0].key : null;
+  const key = keys.length > 0 ? keys[0].key : null;
+  if (key && key.includes("•")) return null;
+  return key;
 }
 
 // ─── Claude Code ──────────────────────────────────────────────────────────────
@@ -80,7 +85,7 @@ async function claudeQuickSetup(port) {
   const apiKey = await getFirstApiKey();
 
   if (!apiKey) {
-    showStatus("No API keys found. Create one in API Keys menu first.", "error");
+    showStatus("No usable API key available. Raw keys are never stored (v0.6.36+) — recreate a key in 9Router → API Keys, then paste the new key here, or run with Require-API-Key off.", "error");
     await pause();
     return;
   }
@@ -210,7 +215,7 @@ async function codexQuickSetup(port) {
   const apiKey = await getFirstApiKey();
 
   if (!apiKey) {
-    showStatus("No API keys found. Create one in API Keys menu first.", "error");
+    showStatus("No usable API key available. Raw keys are never stored (v0.6.36+) — recreate a key in 9Router → API Keys, then paste the new key here, or run with Require-API-Key off.", "error");
     await pause();
     return;
   }
@@ -294,7 +299,7 @@ async function droidQuickSetup(port) {
   const apiKey = await getFirstApiKey();
 
   if (!apiKey) {
-    showStatus("No API keys found. Create one in API Keys menu first.", "error");
+    showStatus("No usable API key available. Raw keys are never stored (v0.6.36+) — recreate a key in 9Router → API Keys, then paste the new key here, or run with Require-API-Key off.", "error");
     await pause();
     return;
   }
@@ -379,7 +384,7 @@ async function openClawQuickSetup(port) {
   const apiKey = await getFirstApiKey();
 
   if (!apiKey) {
-    showStatus("No API keys found. Create one in API Keys menu first.", "error");
+    showStatus("No usable API key available. Raw keys are never stored (v0.6.36+) — recreate a key in 9Router → API Keys, then paste the new key here, or run with Require-API-Key off.", "error");
     await pause();
     return;
   }
@@ -455,7 +460,7 @@ async function openCodeQuickSetup(port) {
   const apiKey = await getFirstApiKey();
 
   if (!apiKey) {
-    showStatus("No API keys found. Create one in API Keys menu first.", "error");
+    showStatus("No usable API key available. Raw keys are never stored (v0.6.36+) — recreate a key in 9Router → API Keys, then paste the new key here, or run with Require-API-Key off.", "error");
     await pause();
     return;
   }
@@ -541,7 +546,7 @@ async function hermesQuickSetup(port) {
   const apiKey = await getFirstApiKey();
 
   if (!apiKey) {
-    showStatus("No API keys found. Create one in API Keys menu first.", "error");
+    showStatus("No usable API key available. Raw keys are never stored (v0.6.36+) — recreate a key in 9Router → API Keys, then paste the new key here, or run with Require-API-Key off.", "error");
     await pause();
     return;
   }

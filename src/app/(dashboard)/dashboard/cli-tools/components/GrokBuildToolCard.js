@@ -165,7 +165,6 @@ export default function GrokBuildToolCard({
     setMessage(null);
     try {
       const keyToUse = selectedApiKey?.trim()
-        || (apiKeys?.length > 0 ? apiKeys[0].key : null)
         || (!cloudEnabled ? "sk_9router" : null);
       const mappedSubagents = {};
       for (const type of SUBAGENT_TYPES) {

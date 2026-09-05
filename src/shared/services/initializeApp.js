@@ -2,7 +2,7 @@ import os from "os";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { existsSync } from "fs";
-import { cleanupProviderConnections, getSettings, updateSettings, getApiKeys } from "@/lib/localDb";
+import { cleanupProviderConnections, getSettings, updateSettings } from "@/lib/localDb";
 import {
   enableTunnel, enableTailscale,
   isTunnelManuallyDisabled, isTunnelReconnecting, isTailscaleReconnecting,
@@ -208,11 +208,18 @@ async function autoStartMitm(settings) {
       return;
     }
 
-    const keys = await getApiKeys();
-    const activeKey = keys.find(k => k.isActive !== false);
+    // S7 follow-up: apiKeys.key stores the MASKED display string now, so the
+    // server cannot mint the credential the MITM child used to present to
+    // /v1. When Require-API-Key is on, a keyless MITM would 401 every proxied
+    // request — refuse loudly instead of auto-starting into a broken state.
+    // With it off (the common local-mode setup), start with no ROUTER_API_KEY.
+    if (settings.requireApiKey) {
+      console.warn("[InitApp] MITM auto-start skipped: Require-API-Key is enabled and raw keys are never stored (v0.6.36+). Start MITM once from the dashboard and paste a raw API key.");
+      return;
+    }
 
     console.log("[InitApp] MITM was enabled, auto-starting...");
-    await startMitm(activeKey?.key || "sk_9router", password);
+    await startMitm(null, password);
     console.log("[InitApp] MITM auto-started");
     try {
       await restoreToolDNS(password);

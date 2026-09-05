@@ -31,11 +31,6 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
     selectedModelsRef.current = selectedModels;
   }, [selectedModels]);
 
-  useEffect(() => {
-    if (apiKeys?.length > 0 && !selectedApiKey) {
-      setSelectedApiKey(apiKeys[0].key);
-    }
-  }, [apiKeys, selectedApiKey]);
 
   useEffect(() => {
     if (initialStatus) setStatus(initialStatus);

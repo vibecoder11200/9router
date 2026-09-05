@@ -233,7 +233,17 @@ async function loadEncryptedPassword() {
   try {
     const settings = await _getSettings();
     if (!settings.mitmSudoEncrypted) return null;
-    return decryptPassword(settings.mitmSudoEncrypted);
+    const password = decryptPassword(settings.mitmSudoEncrypted);
+    if (!password) {
+      // S5 follow-up: ciphertext that no longer decrypts (pre-v0.6.36 blob
+      // encrypted under the removed public-key scheme, or a corrupted value)
+      // used to linger forever and quietly disable MITM auto-start on
+      // macOS/Linux. Clear it so the stored state is honest — the sudo
+      // prompt re-asks on the next start.
+      console.warn("[MITM] stored sudo password could not be decrypted (stale scheme or corrupt) — clearing it; you will be prompted again");
+      await clearEncryptedPassword();
+    }
+    return password;
   } catch {
     return null;
   }
@@ -486,6 +496,13 @@ async function killPort443Owner(owner, sudoPassword) {
 }
 
 async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
+  // S7: the masked display value (sk-{id}-••••{last4}) is not a credential —
+  // U+2022 breaks header ByteString conversion and it would never validate.
+  // Normalize to no-key: the child then runs without ROUTER_API_KEY, which is
+  // fine when the router runs without Require-API-Key (local mode).
+  const routerApiKey = typeof apiKey === "string" && apiKey.trim() && !apiKey.includes("•")
+    ? apiKey.trim()
+    : null;
   if (!serverProcess || serverProcess.killed) {
     try {
       if (fs.existsSync(PID_FILE)) {
@@ -627,7 +644,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
         stdio: ["ignore", "pipe", "pipe"],
         env: {
           ...process.env,
-          ROUTER_API_KEY: apiKey,
+          ...(routerApiKey ? { ROUTER_API_KEY: routerApiKey } : {}),
           NODE_ENV: "production",
           MITM_ROUTER_BASE: mitmRouterBase,
         },
@@ -640,7 +657,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
     // instead of /root when sudo resets the environment.
     const inlineCmd = [
       `HOME=${shellQuoteSingle(os.homedir())}`,
-      `ROUTER_API_KEY=${shellQuoteSingle(apiKey)}`,
+      ...(routerApiKey ? [`ROUTER_API_KEY=${shellQuoteSingle(routerApiKey)}`] : []),
       `MITM_ROUTER_BASE=${shellQuoteSingle(mitmRouterBase)}`,
       "NODE_ENV=production",
       shellQuoteSingle(process.execPath),
@@ -661,7 +678,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
-        ROUTER_API_KEY: apiKey,
+        ...(routerApiKey ? { ROUTER_API_KEY: routerApiKey } : {}),
         NODE_ENV: "production",
         MITM_ROUTER_BASE: mitmRouterBase,
       },

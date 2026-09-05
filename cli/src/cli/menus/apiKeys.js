@@ -215,7 +215,9 @@ async function showApiKeysMenu(port, breadcrumb = []) {
       }
       return { items: result.data.keys || [] };
     },
-    formatItem: (key) => `${key.name} (${maskKey(key.key)})`,
+    // S7: key.key arrives already masked (sk-{id}-••••{last4}) — maskKey
+    // again would just mangle the display value.
+    formatItem: (key) => `${key.name} (${key.key})`,
     onSelect: async (key) => {
       await showKeyActions(key, port, breadcrumb);
     },

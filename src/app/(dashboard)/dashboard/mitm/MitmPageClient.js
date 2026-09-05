@@ -85,7 +85,6 @@ export default function MitmPageClient() {
 
       {/* MITM Server Card */}
       <MitmServerCard
-        apiKeys={apiKeys}
         cloudEnabled={cloudEnabled}
         onStatusChange={setMitmStatus}
       />
