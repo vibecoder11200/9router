@@ -186,7 +186,9 @@ export async function inspectAndWrapCommandCodeResponse(originalResponse, model)
 
   const recordLine = (line) => {
     bufferedLines.push(line);
-    bufferedBytes += line.length + 1;
+    // Count UTF-8 bytes, not JS chars — a char-only cap can undercount up to
+    // 4x on multi-byte content and let the buffer exceed the real limit.
+    bufferedBytes += Buffer.byteLength(line, "utf8") + 1;
   };
 
   try {

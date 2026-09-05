@@ -96,10 +96,11 @@ export function createStreamController({ onDisconnect, onError, log, provider, m
  * for long periods while raw bytes still flow (e.g. Kiro EventStream
  * binary frames buffering, Claude reasoning streams).
  */
-export function createDisconnectAwareStream(transformStream, streamController, onAbortTerminal = null) {
+export function createDisconnectAwareStream(transformStream, streamController, onAbortTerminal = null, onFirstChunk = null) {
   const reader = transformStream.readable.getReader();
   const writer = transformStream.writable.getWriter();
   let terminalEmitted = false;
+  let firstChunkSeen = false;
 
   // Emit a synthesized terminal payload (e.g. Responses response.failed + [DONE]) once
   const emitTerminal = (controller) => {
@@ -126,6 +127,15 @@ export function createDisconnectAwareStream(transformStream, streamController, o
           streamController.handleComplete();
           controller.close();
           return;
+        }
+        // N7: the first chunk READ from the transform is the honest success
+        // signal — the account produced real output that is about to be
+        // forwarded. Firing here (instead of in a client-side tap) keeps
+        // lock-heal and the breaker's recordSuccess working even when the
+        // client cancels before it ever pulls a byte.
+        if (!firstChunkSeen && value != null) {
+          firstChunkSeen = true;
+          try { onFirstChunk?.(); } catch { /* signal must never break piping */ }
         }
         controller.enqueue(value);
       } catch (error) {
@@ -189,7 +199,7 @@ export function createDisconnectAwareStream(transformStream, streamController, o
  * @param {TransformStream} transformStream - Transform stream for SSE
  * @param {object} streamController - Stream controller from createStreamController
  */
-export function pipeWithDisconnect(providerResponse, transformStream, streamController, onAbortTerminal = null, stallTimeoutMs = STREAM_STALL_TIMEOUT_MS) {
+export function pipeWithDisconnect(providerResponse, transformStream, streamController, onAbortTerminal = null, stallTimeoutMs = STREAM_STALL_TIMEOUT_MS, onFirstChunk = null) {
   let stallTimer = null;
   let chunkCount = 0;
   let totalBytes = 0;
@@ -249,7 +259,8 @@ export function pipeWithDisconnect(providerResponse, transformStream, streamCont
   return createDisconnectAwareStream(
     { readable: transformedBody, writable: { getWriter: () => ({ abort: () => Promise.resolve() }) } },
     wrappedController,
-    onAbortTerminal
+    onAbortTerminal,
+    onFirstChunk
   );
 }
 

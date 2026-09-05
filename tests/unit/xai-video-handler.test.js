@@ -15,7 +15,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const authMocks = vi.hoisted(() => ({
   getProviderCredentials: vi.fn(),
-  markAccountUnavailable: vi.fn(async () => ({ shouldFallback: true, cooldownMs: 0 })),
+  // Delegate to the REAL fallback classifier instead of a bare
+  // { shouldFallback: true } — a hardcoded mock let the C4
+  // NO_FALLBACK_STATUSES change silently kill 401 rotation while this
+  // suite stayed green (finding F1 of the v0.6.35→0.6.41 audit).
+  markAccountUnavailable: vi.fn(async (connectionId, status, errorText) => {
+    const fallback = await import("../../open-sse/services/accountFallback.js");
+    return fallback.checkFallbackError(status, errorText);
+  }),
   clearAccountError: vi.fn(async () => {}),
   extractApiKey: vi.fn(() => null),
   isValidApiKey: vi.fn(async () => true),

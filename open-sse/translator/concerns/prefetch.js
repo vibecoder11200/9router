@@ -14,6 +14,42 @@ function isRemoteUrl(url) {
   return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
+// C2 follow-up: the body isolation fix made every fallback attempt re-run
+// prefetchRemoteImages on a pristine clone, so without memoization a request
+// with remote images re-downloaded them per attempt (and per fusion member).
+// Short TTL cache keyed by URL — chat images are effectively immutable over
+// seconds, and a stale image is bounded by the TTL.
+const IMAGE_FETCH_CACHE = new Map();
+const IMAGE_FETCH_TTL_MS = 5 * 60 * 1000;
+const IMAGE_FETCH_CACHE_MAX = 100;
+// Data URIs are ~1.33x the image bytes — cap per-entry size and the total
+// resident budget so a burst of multi-MB images cannot balloon the heap.
+const IMAGE_FETCH_MAX_ENTRY_BYTES = 2 * 1024 * 1024;
+const IMAGE_FETCH_MAX_TOTAL_BYTES = 32 * 1024 * 1024;
+let imageCacheTotalBytes = 0;
+
+async function fetchImageAsBase64Cached(url, options) {
+  const now = Date.now();
+  const hit = IMAGE_FETCH_CACHE.get(url);
+  if (hit && now - hit.ts < IMAGE_FETCH_TTL_MS) return hit.value;
+  const value = await fetchImageAsBase64(url, options);
+  if (value) {
+    const entryBytes = (value.url || "").length;
+    if (entryBytes <= IMAGE_FETCH_MAX_ENTRY_BYTES) {
+      while (IMAGE_FETCH_CACHE.size > 0
+        && (imageCacheTotalBytes + entryBytes > IMAGE_FETCH_MAX_TOTAL_BYTES || IMAGE_FETCH_CACHE.size >= IMAGE_FETCH_CACHE_MAX)) {
+        const oldestKey = IMAGE_FETCH_CACHE.keys().next().value;
+        const oldest = IMAGE_FETCH_CACHE.get(oldestKey);
+        imageCacheTotalBytes -= oldest?.bytes || 0;
+        IMAGE_FETCH_CACHE.delete(oldestKey);
+      }
+      IMAGE_FETCH_CACHE.set(url, { value, ts: now, bytes: entryBytes });
+      imageCacheTotalBytes += entryBytes;
+    }
+  }
+  return value;
+}
+
 // Collect {get,set} accessors for every remote image URL in a source body.
 function collectImageRefs(body, sourceFormat) {
   const refs = [];
@@ -85,7 +121,7 @@ export async function prefetchRemoteImages(body, sourceFormat, targetFormat, opt
   for (const ref of refs) {
     const url = ref.get();
     if (parseDataUri(url)) continue; // already inline
-    const fetched = await fetchImageAsBase64(url, options);
+    const fetched = await fetchImageAsBase64Cached(url, options);
     if (!fetched) continue;
     if (ref.set) ref.set(fetched.url);
     else if (ref.part) { delete ref.part.fileData; ref.part.inlineData = { mimeType: fetched.mimeType, data: fetched.url.split(",")[1] }; }

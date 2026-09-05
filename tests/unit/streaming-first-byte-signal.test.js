@@ -60,6 +60,11 @@ function baseArgs(overrides = {}) {
       startTime: Date.now(),
       isConnected: () => true,
       handleError: vi.fn(),
+      // Full createStreamController contract — the response body IS the
+      // disconnect-aware stream now, so cancel() reaches the controller.
+      handleComplete: vi.fn(),
+      handleDisconnect: vi.fn(),
+      abort: vi.fn(),
     },
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), errorLine: vi.fn() },
     ...overrides,

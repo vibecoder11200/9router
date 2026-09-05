@@ -44,10 +44,13 @@ function buildTransformStream({ provider, sourceFormat, targetFormat, userAgent,
  * Handle streaming response — pipe provider SSE through transform stream to client.
  */
 export async function handleStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, userAgent, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, streamController, onStreamComplete, streamDetailId, pxpipe, reqTag, log }) {
-  // N7: success is the FIRST BYTE FORWARDED to the client — not the arrival
-  // of 200 headers. An upstream that dies right after accept used to "heal"
-  // modelLock (and, in phase 06, the breaker) on a stream the client never
-  // received. The tap below fires the callback on its first forwarded chunk.
+  // N7: success is the FIRST chunk the upstream transform produces — not the
+  // arrival of 200 headers, and not the client pulling the byte. An upstream
+  // that dies right after accept used to "heal" modelLock (and, in phase 06,
+  // the breaker) on a stream the client never received; conversely, firing
+  // inside a client-side tap lost lock-heal/recordSuccess when the client
+  // cancelled before pulling. The callback is handed to pipeWithDisconnect,
+  // which fires it when the first transformed chunk is ready for forwarding.
   let firstByteSignaled = false;
   const signalFirstByte = () => {
     if (firstByteSignaled) return;
@@ -94,7 +97,7 @@ export async function handleStreamingResponse({ providerResponse, provider, mode
   const isResponsesPassthrough = sourceFormat === FORMATS.OPENAI_RESPONSES && targetFormat === FORMATS.OPENAI_RESPONSES;
   const onAbortTerminal = isResponsesPassthrough ? buildAbortedResponsesTerminalBytes : null;
   const stallTimeoutMs = PROVIDERS[provider]?.stallTimeoutMs || STREAM_STALL_TIMEOUT_MS;
-  const transformedBody = pipeWithDisconnect(providerResponse, transformStream, streamController, onAbortTerminal, stallTimeoutMs);
+  const transformedBody = pipeWithDisconnect(providerResponse, transformStream, streamController, onAbortTerminal, stallTimeoutMs, signalFirstByte);
 
   saveRequestDetail(buildRequestDetail({
     provider, model, connectionId,
@@ -110,16 +113,9 @@ export async function handleStreamingResponse({ providerResponse, provider, mode
     console.error("[RequestDetail] Failed to save streaming request:", err.message);
   });
 
-  const firstByteTap = new TransformStream({
-    transform(chunk, controller) {
-      signalFirstByte();
-      controller.enqueue(chunk);
-    },
-  });
-
   return {
     success: true,
-    response: new Response(transformedBody.pipeThrough(firstByteTap), { headers: SSE_HEADERS })
+    response: new Response(transformedBody, { headers: SSE_HEADERS })
   };
 }
 

@@ -66,6 +66,28 @@ export const ERROR_RULES = [
   { text: "quota exceeded",           backoff: true },
   { text: "capacity",                 backoff: true },
   { text: "overloaded",               backoff: true },
+  // C4 follow-up: account-specific auth/billing failures that several
+  // executors surface as BARE 401/402 with these messages. Without text
+  // evidence, NO_FALLBACK_STATUSES suppresses fallback entirely and a single
+  // expired cookie / empty balance would end the request instead of rotating
+  // to the next account. All of these name the ACCOUNT, not the request.
+  { text: "cookie expired",           cooldownMs: COOLDOWN.long },  // gemini-web
+  { text: "cookie may be expired",    cooldownMs: COOLDOWN.long },  // genspark/grok/perplexity
+  { text: "auth failed",              cooldownMs: COOLDOWN.long },  // genspark/grok/perplexity
+  { text: "unauthorized",             cooldownMs: COOLDOWN.long },  // commandcode parse
+  { text: "invalid api key",          cooldownMs: COOLDOWN.long },  // commandcode parse
+  { text: "pat exchange failed",      cooldownMs: COOLDOWN.long },  // qoder
+  { text: "missing userid",           cooldownMs: COOLDOWN.long },  // qoder
+  { text: "missing accesstoken",      cooldownMs: COOLDOWN.long },  // qoder
+  { text: "cosy signing failed",      cooldownMs: COOLDOWN.long },  // qoder
+  { text: "spending-limit",           cooldownMs: COOLDOWN.long },  // grok-cli 402 code
+  { text: "insufficient credits",     cooldownMs: COOLDOWN.long },  // openrouter 402
+  { text: "credit balance is too low", cooldownMs: COOLDOWN.long }, // anthropic 400
+  { text: "billing",                  cooldownMs: COOLDOWN.long },  // commandcode/qoder billing
+  // NOTE: deliberately NO "payment required" rule — it is a bare restatement
+  // of the 402 status (no account-specific evidence), and the C4 contract
+  // test (github-monthly-usage-lock) pins bare-"Payment required" 402s to
+  // fail fast. Provider-scoped rules are the eventual fix.
 
   // --- Status-based rules (fallback when text doesn't match) ---
   { status: 401, cooldownMs: COOLDOWN.long },

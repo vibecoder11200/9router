@@ -239,8 +239,12 @@ export function createSSEStream(options = {}) {
           // C7: forwarding the terminal sentinel finalizes usage NOW — a
           // client that closes right after [DONE] cancels the reader and
           // flush() never runs, losing usage/logging. C9: mark it sent so
-          // flush() can't emit a second [DONE] frame.
-          if (trimmed === "data: [DONE]") {
+          // flush() can't emit a second [DONE] frame. Both `data: [DONE]` and
+          // the no-space `data:[DONE]` framing count — the no-space form is
+          // normalized at output time (line 228) but `trimmed` still holds
+          // the raw form, and missing it here meant a duplicate sentinel
+          // from flush() and late usage finalize.
+          if (trimmed === "data: [DONE]" || trimmed === "data:[DONE]") {
             streamDoneSent = true;
             finalizeStream();
           }
@@ -397,6 +401,12 @@ export function createSSEStream(options = {}) {
             }
             reqLogger?.appendConvertedChunk?.(output);
             controller.enqueue(sharedEncoder.encode(output));
+            // A trailing no-newline sentinel flushed from the partial-line
+            // buffer counts too — mark it so flush() can't add a duplicate.
+            const flushedTrimmed = buffer.trim();
+            if (flushedTrimmed === "data: [DONE]" || flushedTrimmed === "data:[DONE]") {
+              streamDoneSent = true;
+            }
           }
 
           // IMPORTANT: In passthrough mode we still must terminate the SSE stream.
