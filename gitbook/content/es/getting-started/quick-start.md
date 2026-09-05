@@ -32,7 +32,7 @@ Tienes 3 formas de conectar proveedores:
 
 #### Opción A: OAuth (Proveedores de suscripción)
 
-**Ideal para:** Claude Code, Codex, Gemini CLI, GitHub Copilot
+**Ideal para:** Claude Code, Codex, Antigravity, GitHub Copilot
 
 ```
 Dashboard → Providers → Connect [Provider]
@@ -44,7 +44,7 @@ Dashboard → Providers → Connect [Provider]
 1. Clic en "Connect Claude Code"
 2. Inicia sesión con tu cuenta de Claude
 3. Autoriza 9Router
-4. ✅ ¡Listo! Usa el modelo: `cc/claude-opus-4-5-20251101`
+4. ✅ ¡Listo! Usa el modelo: `cc/claude-opus-5`
 
 #### Opción B: API Key (Proveedores baratos)
 
@@ -65,19 +65,19 @@ Dashboard → Providers → Add API Key
 
 #### Opción C: Proveedores gratis (Sin costo)
 
-**Ideal para:** iFlow, Qwen, Kiro
+**Ideal para:** Kiro, OpenCode Free, Vertex AI
 
 ```
 Dashboard → Providers → Connect [Free Provider]
-→ Device code u OAuth
-→ Uso ilimitado
+→ OAuth (Kiro) o sin login (OpenCode Free)
+→ Cuota gratis / passthrough ilimitado
 ```
 
-**Ejemplo: iFlow**
-1. Clic en "Connect iFlow"
-2. Inicia sesión con tu cuenta de iFlow
+**Ejemplo: Kiro**
+1. Clic en "Connect Kiro"
+2. Inicia sesión con AWS Builder ID (o Google/GitHub)
 3. Autoriza
-4. ✅ ¡Listo! Usa 8 modelos: `if/kimi-k2-thinking`, `if/qwen3-coder-plus`, etc.
+4. ✅ ¡Listo! Usa 6 modelos: `kr/claude-sonnet-4.5`, `kr/qwen3-coder-next`, etc.
 
 ---
 
@@ -91,7 +91,7 @@ Apunta tu herramienta de codificación a 9Router:
 Settings → Models → Advanced:
   OpenAI API Base URL: http://localhost:20128/v1
   OpenAI API Key: [desde el dashboard de 9router]
-  Model: cc/claude-opus-4-5-20251101
+  Model: cc/claude-opus-5
 ```
 
 ### Claude Desktop
@@ -111,7 +111,7 @@ Edita `~/.claude/config.json`:
 Provider: OpenAI Compatible
 Base URL: http://localhost:20128/v1
 API Key: [desde el dashboard]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 ### Codex CLI
@@ -134,9 +134,9 @@ Dashboard → Combos → Create New
 
 Name: premium-coding
 Models:
-  1. cc/claude-opus-4-5-20251101 (Suscripción principal)
+  1. cc/claude-opus-5 (Suscripción principal)
   2. glm/glm-4.7 (Respaldo barato, $0.6/1M)
-  3. if/kimi-k2-thinking (Fallback gratis)
+  3. kr/claude-sonnet-4.5 (Fallback gratis)
 
 Usar en CLI: premium-coding
 ```
@@ -144,7 +144,7 @@ Usar en CLI: premium-coding
 **Cómo funciona:**
 1. Intenta primero Claude Opus (tu suscripción)
 2. Si la cuota se agota → GLM-4.7 (ultra-barato)
-3. Si llega al límite de presupuesto → iFlow (gratis)
+3. Si llega al límite de presupuesto → Kiro (gratis)
 4. ¡Cero tiempo de inactividad, cambio automático!
 
 ---
@@ -154,21 +154,21 @@ Usar en CLI: premium-coding
 ### Modelos de suscripción (Maximiza primero)
 
 **Claude Code (`cc/`)** - Suscripción Pro/Max:
-- `cc/claude-opus-4-5-20251101` - Claude 4.5 Opus
-- `cc/claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet
+- `cc/claude-opus-5` - Claude Opus 5
+- `cc/claude-sonnet-5` - Claude Sonnet 5
 - `cc/claude-haiku-4-5-20251001` - Claude 4.5 Haiku
 
 **Codex (`cx/`)** - Suscripción Plus/Pro:
-- `cx/gpt-5.2-codex` - GPT 5.2 Codex
-- `cx/gpt-5.1-codex-max` - GPT 5.1 Codex Max
+- `cx/gpt-5.6-sol` - GPT 5.6 Sol
+- `cx/gpt-5.5` - GPT 5.5
 
-**Gemini CLI (`gc/`)** - GRATIS 180K/mes:
-- `gc/gemini-3-flash-preview` - Gemini 3 Flash Preview
-- `gc/gemini-2.5-pro` - Gemini 2.5 Pro
+**Antigravity (`ag/`)** - GRATIS con cuenta Google:
+- `ag/gemini-3-flash` - Gemini 3 Flash
+- `ag/claude-sonnet-4-6` - Claude Sonnet 4.6
 
 **GitHub Copilot (`gh/`)** - Suscripción:
-- `gh/gpt-5` - GPT-5
-- `gh/claude-4.5-sonnet` - Claude 4.5 Sonnet
+- `gh/gpt-5.4` - GPT-5.4
+- `gh/claude-sonnet-4.6` - Claude Sonnet 4.6
 
 ### Modelos baratos (Respaldo)
 
@@ -183,19 +183,20 @@ Usar en CLI: premium-coding
 
 ### Modelos GRATIS (Emergencia)
 
-**iFlow (`if/`)** - 8 modelos GRATIS:
-- `if/kimi-k2-thinking` - Kimi K2 Thinking
-- `if/qwen3-coder-plus` - Qwen3 Coder Plus
-- `if/glm-4.7` - GLM 4.7
-- `if/deepseek-r1` - DeepSeek R1
-
-**Qwen (`qw/`)** - 3 modelos GRATIS:
-- `qw/qwen3-coder-plus` - Qwen3 Coder Plus
-- `qw/qwen3-coder-flash` - Qwen3 Coder Flash
-
-**Kiro (`kr/`)** - 2 modelos GRATIS:
+**Kiro (`kr/`)** - 6 modelos GRATIS (~50 créditos/mes):
 - `kr/claude-sonnet-4.5` - Claude Sonnet 4.5
 - `kr/claude-haiku-4.5` - Claude Haiku 4.5
+- `kr/glm-5` - GLM 5
+- `kr/MiniMax-M2.5` - MiniMax M2.5
+- `kr/qwen3-coder-next` - Qwen3 Coder Next
+- `kr/deepseek-3.2` - DeepSeek 3.2
+
+**OpenCode Free (`oc/`)** - sin login:
+- `oc/<auto>` - lista de modelos auto-obtenida
+
+**Vertex AI (`vertex/`)** - $300 en créditos gratis:
+- `vertex/gemini-3.1-pro-preview` - Gemini 3.1 Pro Preview
+- `vertex/gemini-3-flash-preview` - Gemini 3 Flash Preview
 
 ---
 
@@ -204,13 +205,13 @@ Usar en CLI: premium-coding
 ### Presupuesto mensual: $10-20/mes
 
 ```
-1. Usa el nivel gratis de Gemini CLI (180K/mes) para tareas rápidas
+1. Usa el nivel gratis de Antigravity (cuenta Google) para tareas rápidas
 2. Usa la cuota de suscripción de Claude Code al máximo (ya pagas)
 3. Fallback a GLM ($0.6/1M) cuando se agote la cuota
-4. Emergencia: MiniMax M2.1 ($0.20/1M) o iFlow (gratis)
+4. Emergencia: MiniMax M2.1 ($0.20/1M) o Kiro (gratis)
 
 Ejemplo real (100M tokens/mes):
-  60M vía Gemini CLI: $0 (nivel gratis)
+  60M vía Antigravity: $0 (nivel gratis)
   30M vía Claude Code: $0 (suscripción que ya tienes)
   8M vía GLM: $4.80
   2M vía MiniMax: $0.40
@@ -222,9 +223,9 @@ Ejemplo real (100M tokens/mes):
 ```
 Rutina diaria:
 1. Mañana: Cuota fresca de Claude Code (reinicio 5h)
-2. Tarde: Cambia a Gemini CLI (1K/día)
+2. Tarde: Cambia a Antigravity (cuota diaria gratis)
 3. Noche: Cuota diaria de GLM (reinicio 10AM del día siguiente)
-4. Madrugada: MiniMax (rolling 5h) o iFlow (gratis)
+4. Madrugada: MiniMax (rolling 5h) o Kiro (gratis)
 
 → ¡Codifica 24/7 con costo extra mínimo!
 ```

@@ -18,7 +18,7 @@
 
 **Empieza a maximizar el valor:**
 - ✅ **Maximiza tus suscripciones** - Rastrea y usa cada bit de cuota de Claude Code, Codex, Gemini
-- ✅ **GRATIS disponible** - Accede a modelos iFlow, Qwen, Kiro vía CLI
+- ✅ **GRATIS disponible** - Accede a modelos Kiro, OpenCode Free, Vertex AI vía CLI
 - ✅ **Respaldo ultra-barato** - GLM ($0.6/1M), MiniMax M2.1 ($0.20/1M)
 - ✅ **Fallback inteligente** - Suscripción → Barato → Gratis, cambio automático
 
@@ -35,7 +35,7 @@ Nivel 1 (SUSCRIPCIÓN): Claude Code → Codex → Gemini
   ↓ cuota agotada
 Nivel 2 (BARATO): GLM-4.7 → MiniMax M2.1 → Kimi
   ↓ límite de presupuesto
-Nivel 3 (GRATIS): iFlow → Qwen → Kiro
+Nivel 3 (GRATIS): Kiro → OpenCode Free → Vertex AI
 
 → Cambio automático, sin tiempo de inactividad!
 ```
@@ -63,7 +63,7 @@ Funciona con cualquier herramienta que soporte endpoints personalizados de OpenA
 
 **Ejemplo real (100M tokens/mes):**
 ```
-60M vía Gemini CLI: $0 (nivel gratis)
+60M vía Antigravity: $0 (nivel gratis)
 30M vía Claude Code: $0 (suscripción que ya tienes)
 8M vía GLM: $4.80
 2M vía MiniMax: $0.40
@@ -81,7 +81,7 @@ Total: $5.20/mes vs $2000 en ChatGPT API!
 - Rastrea el uso de cuota en tiempo real
 - Cambio automático cuando se reinicia la cuota (5 horas, semanal)
 - Usa cada token antes de que expire
-- Gemini CLI: 180K completados/mes **GRATIS**
+- Antigravity: GRATIS con cuenta Google (reemplaza a Gemini CLI)
 
 ### Respaldo ultra-barato
 
@@ -99,9 +99,9 @@ Cuando se agota la cuota de suscripción, paga centavos:
 
 Respaldo de emergencia cuando todo lo demás está limitado por cuota:
 
-- **iFlow**: 8 modelos (Kimi K2, Qwen3 Coder Plus, GLM 4.7, MiniMax M2)
-- **Qwen**: 3 modelos (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro**: Claude Sonnet 4.5, Haiku 4.5 (AWS Builder ID)
+- **Kiro**: 6 modelos (Claude Sonnet 4.5, Haiku 4.5, GLM 5, MiniMax M2.5, Qwen3 Coder Next, DeepSeek 3.2)
+- **OpenCode Free**: sin login, lista de modelos auto-obtenida
+- **Vertex AI**: Gemini 3.1 Pro + modelos partner ($300 en créditos gratis)
 
 ---
 
@@ -124,7 +124,7 @@ npm install -g 9router
 ```
 Endpoint: http://localhost:20128/v1
 API Key: [desde el dashboard]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 [→ Guía completa para empezar](getting-started/quick-start.md)
@@ -136,7 +136,7 @@ Model: cc/claude-opus-4-5-20251101
 ### Para desarrolladores individuales
 
 - Maximiza tu suscripción de Claude Code/Codex
-- Usa el nivel gratis de Gemini CLI (180K/mes)
+- Usa el nivel gratis de Antigravity (cuenta Google)
 - Fallback a modelos ultra-baratos ($0.20/1M)
 - Codifica 24/7 sin límites de tasa
 

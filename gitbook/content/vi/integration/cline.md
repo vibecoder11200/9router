@@ -54,11 +54,11 @@ https://9router.com
    - Nhập tên model thủ công từ cấu hình 9Router
 
 2. Tên model phổ biến:
-   - `gpt-4`
-   - `gpt-4o`
-   - `claude-opus-4-5`
-   - `claude-sonnet-4-5`
-   - `gemini-2.0-flash`
+   - `gpt-5.4`
+   - `gpt-5.5`
+   - `claude-opus-5`
+   - `claude-sonnet-5`
+   - `gemini-3-flash`
 
 ### 6. Lưu Cấu hình
 
@@ -72,7 +72,7 @@ Cline settings của bạn nên trông như sau:
 API Provider: Ollama
 Base URL: http://localhost:20128/v1
 API Key: sk-9router-xxxxxxxxxxxxx
-Model: gpt-4
+Model: gpt-5.4
 ```
 
 ## Model có sẵn
@@ -81,11 +81,11 @@ Bạn có thể dùng bất kỳ model nào đã cấu hình trong 9Router dashb
 
 | Tên Model | Provider | Mô tả |
 |------------|----------|-------------|
-| `gpt-4` | OpenAI | GPT-4 Turbo |
-| `gpt-4o` | OpenAI | GPT-4 Optimized |
-| `claude-opus-4-5` | Anthropic | Claude Opus 4.5 |
-| `claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `gemini-2.0-flash` | Google | Gemini 2.0 Flash |
+| `gpt-5.4` | OpenAI | GPT-5.4 |
+| `gpt-5.5` | OpenAI | GPT-5.5 |
+| `claude-opus-5` | Anthropic | Claude Opus 5 |
+| `claude-sonnet-5` | Anthropic | Claude Sonnet 5 |
+| `gemini-3-flash` | Google | Gemini 3 Flash |
 
 ## Sử dụng
 
@@ -135,7 +135,7 @@ Bạn có thể dùng bất kỳ model nào đã cấu hình trong 9Router dashb
 1. Xác minh tên model khớp chính xác với cấu hình 9Router
 2. Kiểm tra kết nối provider đang hoạt động trong 9Router dashboard
 3. Đảm bảo model có sẵn trong các provider đã kết nối
-4. Thử dùng tên model đầy đủ (ví dụ: `openai/gpt-4` thay vì `gpt-4`)
+4. Thử dùng tên model đầy đủ (ví dụ: `openai/gpt-5.4` thay vì `gpt-5.4`)
 
 ### Cline không phản hồi
 

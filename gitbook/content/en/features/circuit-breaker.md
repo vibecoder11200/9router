@@ -35,7 +35,7 @@ Dashboard → Quota → Circuit Breaker panel
 
 Account            State      Failures  Cooldown
 cc/claude-opus-5   🔴 open     7         re-try in 42s
-cx/gpt-5.2-codex   🟡 half-open 1         probing…
+cx/gpt-5.6-sol   🟡 half-open 1         probing…
 glm/glm-4.7        🟢 closed   —         —
 ```
 

@@ -266,10 +266,10 @@ Dashboard → Combos → Create New
 
 Name: cheap-backup
 Models:
-  1. cc/claude-opus-4-5 (Subscription primary)
+  1. cc/claude-opus-5 (Subscription primary)
   2. glm/glm-4.7 (Cheap backup, daily reset)
   3. minimax/MiniMax-M2.1 (Cheapest fallback)
-  4. if/kimi-k2-thinking (FREE emergency)
+  4. kr/claude-sonnet-4.5 (FREE emergency)
 
 Use in CLI: cheap-backup
 ```
@@ -293,7 +293,7 @@ Afternoon: Subscription quota
 Evening: MiniMax (5h reset)
 → Cheap fallback for late work
 
-Night: Free tier (iFlow)
+Night: Free tier (Kiro)
 → Zero cost emergency backup
 ```
 
@@ -315,14 +315,14 @@ vs 1M tokens for $20 on ChatGPT API!
 
 ```
 Priority:
-1. Gemini CLI (180K/month FREE)
+1. Antigravity (FREE, Google account)
 2. Claude Code (subscription you already pay)
 3. GLM-4.7 (cheap backup, $0.6/1M)
 4. MiniMax M2.1 (cheapest, $0.2/1M)
-5. iFlow (FREE emergency)
+5. Kiro (FREE emergency)
 
 Monthly cost example (100M tokens):
-- 60M via Gemini CLI: $0 (free)
+- 60M via Antigravity: $0 (free)
 - 30M via Claude Code: $0 (subscription)
 - 8M via GLM: $4.80
 - 2M via MiniMax: $0.40
@@ -406,10 +406,10 @@ Coding Plan: 3× quota (same price!)
 
 ```
 Combo:
-1. gc/gemini-3-flash (FREE primary)
+1. ag/gemini-3-flash (FREE primary)
 2. glm/glm-4.7 (cheap backup)
 3. minimax/MiniMax-M2.1 (cheapest)
-4. if/kimi-k2-thinking (FREE emergency)
+4. kr/claude-sonnet-4.5 (FREE emergency)
 
 Result: Minimize costs, maximize uptime
 ```

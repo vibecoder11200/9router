@@ -266,10 +266,10 @@ Dashboard → Combos → Create New
 
 Name: cheap-backup
 Models:
-  1. cc/claude-opus-4-5 (サブスクリプション優先)
+  1. cc/claude-opus-5 (サブスクリプション優先)
   2. glm/glm-4.7 (低価格バックアップ、日次リセット)
   3. minimax/MiniMax-M2.1 (最安フォールバック)
-  4. if/kimi-k2-thinking (無料緊急時)
+  4. kr/claude-sonnet-4.5 (無料緊急時)
 
 CLIで使用: cheap-backup
 ```
@@ -293,7 +293,7 @@ CLIで使用: cheap-backup
 夕方: MiniMax (5時間リセット)
 → 遅い作業の低価格フォールバック
 
-夜: 無料階層 (iFlow)
+夜: 無料階層 (Kiro)
 → ゼロコスト緊急バックアップ
 ```
 
@@ -315,14 +315,14 @@ vs ChatGPT APIでは$20で100万トークン!
 
 ```
 優先順位:
-1. Gemini CLI (月18万無料)
+1. Antigravity (無料、Googleアカウント)
 2. Claude Code (すでに支払っているサブスクリプション)
 3. GLM-4.7 (低価格バックアップ、100万あたり$0.6)
 4. MiniMax M2.1 (最安、100万あたり$0.2)
-5. iFlow (無料緊急時)
+5. Kiro (無料緊急時)
 
 月次コスト例 (1億トークン):
-- Gemini CLI経由で6000万: $0 (無料)
+- Antigravity経由で6000万: $0 (無料)
 - Claude Code経由で3000万: $0 (サブスクリプション)
 - GLM経由で800万: $4.80
 - MiniMax経由で200万: $0.40
@@ -406,10 +406,10 @@ Coding Plan: 3×クォータ (同じ価格!)
 
 ```
 コンボ:
-1. gc/gemini-3-flash (無料プライマリ)
+1. ag/gemini-3-flash (無料プライマリ)
 2. glm/glm-4.7 (低価格バックアップ)
 3. minimax/MiniMax-M2.1 (最安)
-4. if/kimi-k2-thinking (無料緊急時)
+4. kr/claude-sonnet-4.5 (無料緊急時)
 
 結果: コストを最小化、アップタイムを最大化
 ```

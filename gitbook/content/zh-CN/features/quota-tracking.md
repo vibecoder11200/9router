@@ -32,10 +32,9 @@
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│ Gemini CLI (gc/)                            │
+│ Antigravity (ag/)                           │
 │ ████████░░░░░░░░░░░░ 450 / 1000 (45%)      │
 │ 每日重置剩余: 18h 30m                       │
-│ 本月: 45K / 180K (25%)                      │
 │ 成本: $0(免费层)                           │
 └─────────────────────────────────────────────┘
 
@@ -54,9 +53,9 @@
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│ iFlow (if/)                                 │
-│ ████████████████████ 无限                   │
-│ 成本: $0(永久免费)                        │
+│ Kiro (kr/)                                  │
+│ ████████████████████ 免费(约 50 credits/月) │
+│ 成本: $0(免费层)                           │
 └─────────────────────────────────────────────┘
 ```
 
@@ -72,7 +71,7 @@
 仪表盘 → 活动 → 最近请求
 
 请求 #1234
-模型: cc/claude-opus-4-5-20251101
+模型: cc/claude-opus-5
 时间戳: 2026-02-04 04:15:32
 
 Tokens:
@@ -103,9 +102,9 @@ Tokens:
 仪表盘 → 分析 → Token 使用
 
 今日(2026-02-04):
-  cc/claude-opus-4-5: 15M tokens($0,订阅)
+  cc/claude-opus-5: 15M tokens($0,订阅)
   glm/glm-4.7: 8M tokens($4.80)
-  if/kimi-k2-thinking: 3M tokens($0,免费)
+  kr/claude-sonnet-4.5: 3M tokens($0,免费)
   
 合计: 26M tokens
 成本: $4.80
@@ -139,20 +138,17 @@ Tokens:
 重置: 5 小时滚动窗口 + 每周刷新
 
 仪表盘显示:
-  GPT-5.2 Codex: 已用 3.5h / 5h
+  GPT-5.6 Sol: 已用 3.5h / 5h
   重置剩余: 1h 30m
 ```
 
-**Gemini CLI(免费)**
+**Antigravity(免费)**
 ```
-配额类型: 请求次数 + 月度 tokens
-每日上限: 1,000 次请求
-月度上限: 180,000 次补全
+配额类型: 请求次数 + 每日/每月上限
 重置: 每日 00:00 UTC + 每月 1 日
 
 仪表盘显示:
   今日: 450 / 1,000 次请求 (45%)
-  本月: 45K / 180K 次补全 (25%)
   每日重置剩余: 18h 30m
   月度重置剩余: 26 天
 ```
@@ -209,15 +205,15 @@ Tokens:
 
 ### 免费提供商
 
-**iFlow / Qwen / Kiro**
+**Kiro / OpenCode Free / Vertex AI**
 ```
-配额类型: 无限(限速)
-上限: 无硬上限
-重置: 不适用
+配额类型: 免费 credits / 无限透传
+上限: Kiro 约 50 credits/月;OpenCode 限速;Vertex $300/90 天
+重置: Kiro 每月,Vertex 一次性试用
 
 仪表盘显示:
   今日已用: 5M tokens
-  成本: $0(永久免费)
+  成本: $0(免费层)
   状态: ✅ 可用
 ```
 
@@ -232,7 +228,7 @@ Tokens:
 
 订阅型提供商: $0
   Claude Code: 15M tokens($0,包含)
-  Gemini CLI: 3M tokens($0,免费层)
+  Antigravity: 3M tokens($0,免费层)
 
 付费提供商: $4.80
   GLM-4.7: 8M tokens($4.80)
@@ -241,7 +237,7 @@ Tokens:
     合计: $4.80
 
 免费提供商: $0
-  iFlow: 3M tokens($0)
+  Kiro: 3M tokens($0)
 
 今日合计: $4.80
 ```
@@ -324,7 +320,7 @@ Tokens:
   请求: 15,234
   Tokens: 320M
   成本: $52.00
-  Top 模型: cc/claude-opus-4-5 (45%)
+  Top 模型: cc/claude-opus-5 (45%)
 ```
 
 ### 按模型使用
@@ -333,18 +329,18 @@ Tokens:
 仪表盘 → 分析 → 模型
 
 Top 模型(本月):
-1. cc/claude-opus-4-5: 145M tokens (45%)
+1. cc/claude-opus-5: 145M tokens (45%)
 2. glm/glm-4.7: 95M tokens (30%)
-3. if/kimi-k2-thinking: 50M tokens (16%)
+3. kr/claude-sonnet-4.5: 50M tokens (16%)
 4. minimax/MiniMax-M2.1: 20M tokens (6%)
-5. gc/gemini-3-flash: 10M tokens (3%)
+5. ag/gemini-3-flash: 10M tokens (3%)
 
 成本分解:
-  cc/claude-opus: $0(订阅)
+  cc/claude-opus-5: $0(订阅)
   glm/glm-4.7: $45.00
-  if/kimi-k2-thinking: $0(免费)
+  kr/claude-sonnet-4.5: $0(免费)
   minimax/MiniMax-M2.1: $7.00
-  gc/gemini-3-flash: $0(免费)
+  ag/gemini-3-flash: $0(免费)
 ```
 
 ### 按时间使用
@@ -376,7 +372,7 @@ premium-coding:
   成本: $2.40
   
   分解:
-    cc/claude-opus: 8M tokens (67%, $0)
+    cc/claude-opus-5: 8M tokens (67%, $0)
     glm/glm-4.7: 3M tokens (25%, $1.80)
     minimax/MiniMax-M2.1: 1M tokens (8%, $0.20)
 
@@ -387,7 +383,7 @@ budget-combo:
   
   分解:
     glm/glm-4.7: 4M tokens (67%, $2.40)
-    if/kimi-k2-thinking: 2M tokens (33%, $0)
+    kr/claude-sonnet-4.5: 2M tokens (33%, $0)
 ```
 
 ---
@@ -406,7 +402,7 @@ budget-combo:
    Key sk-abc123…•789: 每日预算 $4.10 / $5.00（82%）
 
 🔴 breaker-open
-   cx/gpt-5.2-codex: 60 秒内 5 次失败 —— 跳过 60 秒
+   cx/gpt-5.6-sol: 60 秒内 5 次失败 —— 跳过 60 秒
 
 🔴 all-accounts-locked
    glm 所有账号被限流；无法服务请求
@@ -453,7 +449,7 @@ Quota 页面还有两个运维面板：
 ```
 早晨检查:
   ✅ Claude Code: 5h 可用(刚重置)
-  ✅ Gemini CLI: 1K 请求可用
+  ✅ Antigravity: 1K 请求可用
   ⚠️ GLM-4.7: 剩 2M tokens(10AM 重置)
   
 行动: 早上工作用 Claude Code
@@ -479,12 +475,12 @@ Quota 页面还有两个运维面板：
 
 **示例:**
 ```
-当前: cc/claude-opus → glm/glm-4.7
+当前: cc/claude-opus-5 → glm/glm-4.7
   80% 通过 Claude(好)
   20% 通过 GLM($12/月)
 
-优化后: gc/gemini-3-flash → cc/claude-opus → glm/glm-4.7
-  50% 通过 Gemini(免费)
+优化后: ag/gemini-3-flash → cc/claude-opus-5 → glm/glm-4.7
+  50% 通过 Antigravity(免费)
   40% 通过 Claude(订阅)
   10% 通过 GLM($6/月)
   
@@ -496,7 +492,7 @@ Quota 页面还有两个运维面板：
 ```
 仪表盘 → 配额 → 重置日程:
   Claude Code: 5h 滚动 + 每周一
-  Gemini CLI: 每日 00:00 UTC + 每月 1 日
+  Antigravity: 每日 00:00 UTC + 每月 1 日
   GLM-4.7: 每日 10:00 AM 北京时间
   MiniMax: 5h 滚动窗口
 ```
@@ -517,7 +513,7 @@ Quota 页面还有两个运维面板：
   - 10% 通过免费层($0)
   
 优化:
-  - 增加 Gemini CLI 用量(免费)
+  - 增加 Antigravity 用量(免费)
   - 减少 GLM 用量(更贵)
 ```
 
@@ -595,7 +591,7 @@ Response:
   },
   "byModel": [
     {
-      "model": "cc/claude-opus-4-5",
+      "model": "cc/claude-opus-5",
       "requests": 456,
       "tokens": 15000000,
       "cost": 0

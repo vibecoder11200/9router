@@ -54,11 +54,11 @@ https://9router.com
    - 9Router設定からモデル名を手動で入力
 
 2. 一般的なモデル名:
-   - `gpt-4`
-   - `gpt-4o`
-   - `claude-opus-4-5`
-   - `claude-sonnet-4-5`
-   - `gemini-2.0-flash`
+   - `gpt-5.4`
+   - `gpt-5.5`
+   - `claude-opus-5`
+   - `claude-sonnet-5`
+   - `gemini-3-flash`
 
 ### 6. 設定を保存
 
@@ -72,7 +72,7 @@ Cline設定は次のようになります:
 API Provider: Ollama
 Base URL: http://localhost:20128/v1
 API Key: sk-9router-xxxxxxxxxxxxx
-Model: gpt-4
+Model: gpt-5.4
 ```
 
 ## 利用可能なモデル
@@ -81,11 +81,11 @@ Model: gpt-4
 
 | モデル名 | プロバイダー | 説明 |
 |------------|----------|-------------|
-| `gpt-4` | OpenAI | GPT-4 Turbo |
-| `gpt-4o` | OpenAI | GPT-4 Optimized |
-| `claude-opus-4-5` | Anthropic | Claude Opus 4.5 |
-| `claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `gemini-2.0-flash` | Google | Gemini 2.0 Flash |
+| `gpt-5.4` | OpenAI | GPT-5.4 |
+| `gpt-5.5` | OpenAI | GPT-5.5 |
+| `claude-opus-5` | Anthropic | Claude Opus 5 |
+| `claude-sonnet-5` | Anthropic | Claude Sonnet 5 |
+| `gemini-3-flash` | Google | Gemini 3 Flash |
 
 ## 使用法
 
@@ -135,7 +135,7 @@ Model: gpt-4
 1. モデル名が9Router設定と正確に一致するか確認
 2. 9Routerダッシュボードでプロバイダー接続がアクティブか確認
 3. 接続されたプロバイダーでモデルが利用可能か確認
-4. フルモデル名を使用してみる (例: `gpt-4` の代わりに `openai/gpt-4`)
+4. フルモデル名を使用してみる (例: `gpt-5.4` の代わりに `openai/gpt-5.4`)
 
 ### Clineが応答しない
 

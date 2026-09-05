@@ -32,7 +32,7 @@ npm install -g 9router
 
 #### 方式 A:OAuth(订阅型提供商)
 
-**适用于:** Claude Code、Codex、Gemini CLI、GitHub Copilot
+**适用于:** Claude Code、Codex、Antigravity、GitHub Copilot
 
 ```
 仪表盘 → 提供商 → 连接 [提供商]
@@ -44,7 +44,7 @@ npm install -g 9router
 1. 点击 "Connect Claude Code"
 2. 用你的 Claude 账户登录
 3. 授权 9Router
-4. ✅ 完成!使用模型:`cc/claude-opus-4-5-20251101`
+4. ✅ 完成!使用模型:`cc/claude-opus-5`
 
 #### 方式 B:API Key(低价提供商)
 
@@ -65,19 +65,19 @@ npm install -g 9router
 
 #### 方式 C:免费提供商(零成本)
 
-**适用于:** iFlow、Qwen、Kiro
+**适用于:** Kiro、OpenCode Free、Vertex AI
 
 ```
 仪表盘 → 提供商 → 连接 [免费提供商]
-→ 设备码或 OAuth
-→ 无限使用
+→ OAuth (Kiro) 或无需登录 (OpenCode Free)
+→ 免费配额 / 无限透传
 ```
 
-**示例:iFlow**
-1. 点击 "Connect iFlow"
-2. 用 iFlow 账户登录
+**示例:Kiro**
+1. 点击 "Connect Kiro"
+2. 用 AWS Builder ID(或 Google/GitHub)登录
 3. 授权
-4. ✅ 完成!使用 8 个模型:`if/kimi-k2-thinking`、`if/qwen3-coder-plus` 等
+4. ✅ 完成!使用 6 个模型:`kr/claude-sonnet-4.5`、`kr/qwen3-coder-next` 等
 
 ---
 
@@ -91,7 +91,7 @@ npm install -g 9router
 Settings → Models → Advanced:
   OpenAI API Base URL: http://localhost:20128/v1
   OpenAI API Key: [从 9router 仪表盘获取]
-  Model: cc/claude-opus-4-5-20251101
+  Model: cc/claude-opus-5
 ```
 
 ### Claude Desktop
@@ -111,7 +111,7 @@ Settings → Models → Advanced:
 Provider: OpenAI Compatible
 Base URL: http://localhost:20128/v1
 API Key: [从仪表盘获取]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 ### Codex CLI
@@ -134,9 +134,9 @@ codex "your prompt"
 
 名称: premium-coding
 模型:
-  1. cc/claude-opus-4-5-20251101 (订阅主力)
+  1. cc/claude-opus-5 (订阅主力)
   2. glm/glm-4.7 (低价备用, $0.6/1M)
-  3. if/kimi-k2-thinking (免费回退)
+  3. kr/claude-sonnet-4.5 (免费回退)
 
 CLI 中使用: premium-coding
 ```
@@ -144,7 +144,7 @@ CLI 中使用: premium-coding
 **工作原理:**
 1. 先尝试 Claude Opus(你的订阅)
 2. 配额耗尽 → GLM-4.7(超低价)
-3. 预算上限 → iFlow(免费)
+3. 预算上限 → Kiro(免费)
 4. 零停机,自动切换!
 
 ---
@@ -154,21 +154,21 @@ CLI 中使用: premium-coding
 ### 订阅型模型(优先使用)
 
 **Claude Code (`cc/`)** - Pro/Max 订阅:
-- `cc/claude-opus-4-5-20251101` - Claude 4.5 Opus
-- `cc/claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet
+- `cc/claude-opus-5` - Claude Opus 5
+- `cc/claude-sonnet-5` - Claude Sonnet 5
 - `cc/claude-haiku-4-5-20251001` - Claude 4.5 Haiku
 
 **Codex (`cx/`)** - Plus/Pro 订阅:
-- `cx/gpt-5.2-codex` - GPT 5.2 Codex
-- `cx/gpt-5.1-codex-max` - GPT 5.1 Codex Max
+- `cx/gpt-5.6-sol` - GPT 5.6 Sol
+- `cx/gpt-5.5` - GPT 5.5
 
-**Gemini CLI (`gc/`)** - 每月免费 180K:
-- `gc/gemini-3-flash-preview` - Gemini 3 Flash Preview
-- `gc/gemini-2.5-pro` - Gemini 2.5 Pro
+**Antigravity (`ag/`)** - 用 Google 账户免费:
+- `ag/gemini-3-flash` - Gemini 3 Flash
+- `ag/claude-sonnet-4-6` - Claude Sonnet 4.6
 
 **GitHub Copilot (`gh/`)** - 订阅:
-- `gh/gpt-5` - GPT-5
-- `gh/claude-4.5-sonnet` - Claude 4.5 Sonnet
+- `gh/gpt-5.4` - GPT-5.4
+- `gh/claude-sonnet-4.6` - Claude Sonnet 4.6
 
 ### 低价模型(备用)
 
@@ -183,19 +183,20 @@ CLI 中使用: premium-coding
 
 ### 免费模型(应急)
 
-**iFlow (`if/`)** - 8 个免费模型:
-- `if/kimi-k2-thinking` - Kimi K2 Thinking
-- `if/qwen3-coder-plus` - Qwen3 Coder Plus
-- `if/glm-4.7` - GLM 4.7
-- `if/deepseek-r1` - DeepSeek R1
-
-**Qwen (`qw/`)** - 3 个免费模型:
-- `qw/qwen3-coder-plus` - Qwen3 Coder Plus
-- `qw/qwen3-coder-flash` - Qwen3 Coder Flash
-
-**Kiro (`kr/`)** - 2 个免费模型:
+**Kiro (`kr/`)** - 6 个免费模型(约 50 credits/月):
 - `kr/claude-sonnet-4.5` - Claude Sonnet 4.5
 - `kr/claude-haiku-4.5` - Claude Haiku 4.5
+- `kr/glm-5` - GLM 5
+- `kr/MiniMax-M2.5` - MiniMax M2.5
+- `kr/qwen3-coder-next` - Qwen3 Coder Next
+- `kr/deepseek-3.2` - DeepSeek 3.2
+
+**OpenCode Free (`oc/`)** - 无需登录:
+- `oc/<auto>` - 模型列表自动获取
+
+**Vertex AI (`vertex/`)** - $300 免费额度:
+- `vertex/gemini-3.1-pro-preview` - Gemini 3.1 Pro Preview
+- `vertex/gemini-3-flash-preview` - Gemini 3 Flash Preview
 
 ---
 
@@ -204,13 +205,13 @@ CLI 中使用: premium-coding
 ### 月度预算:$10-20/月
 
 ```
-1. 用 Gemini CLI 免费层(每月 180K)处理快速任务
+1. 用 Antigravity 免费层(Google 账户)处理快速任务
 2. 用足 Claude Code 订阅配额(你已经付费了)
 3. 配额用完后回退到 GLM(每 1M $0.6)
-4. 应急: MiniMax M2.1(每 1M $0.20)或 iFlow(免费)
+4. 应急: MiniMax M2.1(每 1M $0.20)或 Kiro(免费)
 
 真实案例(每月 100M tokens):
-  60M 通过 Gemini CLI: $0(免费层)
+  60M 通过 Antigravity: $0(免费层)
   30M 通过 Claude Code: $0(你已有的订阅)
   8M 通过 GLM: $4.80
   2M 通过 MiniMax: $0.40
@@ -222,9 +223,9 @@ CLI 中使用: premium-coding
 ```
 日常安排:
 1. 早上: 全新的 Claude Code 配额(5h 重置)
-2. 下午: 切换到 Gemini CLI(每日 1K)
+2. 下午: 切换到 Antigravity(免费每日配额)
 3. 晚上: GLM 每日配额(次日 10AM 重置)
-4. 深夜: MiniMax(5h 滚动)或 iFlow(免费)
+4. 深夜: MiniMax(5h 滚动)或 Kiro(免费)
 
 → 24/7 编码,几乎零额外成本!
 ```

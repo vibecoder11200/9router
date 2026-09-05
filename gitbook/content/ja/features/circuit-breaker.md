@@ -35,7 +35,7 @@ Dashboard → Quota → サーキットブレーカーパネル
 
 アカウント          状態       失敗   クールダウン
 cc/claude-opus-5   🔴 open     7      42秒後に再試行
-cx/gpt-5.2-codex   🟡 half-open 1      プローブ中…
+cx/gpt-5.6-sol   🟡 half-open 1      プローブ中…
 glm/glm-4.7        🟢 closed   —      —
 ```
 

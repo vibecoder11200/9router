@@ -18,7 +18,7 @@
 
 **Bắt đầu tối đa hóa giá trị:**
 - ✅ **Tối đa Subscription** - Theo dõi và dùng từng chút quota của Claude Code, Codex, Gemini
-- ✅ **MIỄN PHÍ** - Truy cập model iFlow, Qwen, Kiro qua CLI
+- ✅ **MIỄN PHÍ** - Truy cập model Kiro, OpenCode Free, Vertex AI qua CLI
 - ✅ **Backup siêu rẻ** - GLM ($0.6/1M), MiniMax M2.1 ($0.20/1M)
 - ✅ **Smart Fallback** - Subscription → Cheap → Free, chuyển đổi tự động
 
@@ -35,7 +35,7 @@ Tier 1 (SUBSCRIPTION): Claude Code → Codex → Gemini
   ↓ quota exhausted
 Tier 2 (CHEAP): GLM-4.7 → MiniMax M2.1 → Kimi
   ↓ budget limit
-Tier 3 (FREE): iFlow → Qwen → Kiro
+Tier 3 (FREE): Kiro → OpenCode Free → Vertex AI
 
 → Automatic switching, zero downtime!
 ```
@@ -63,7 +63,7 @@ Hoạt động với mọi công cụ hỗ trợ custom OpenAI endpoint:
 
 **Ví dụ thực tế (100M tokens/tháng):**
 ```
-60M qua Gemini CLI: $0 (free tier)
+60M qua Antigravity: $0 (free tier)
 30M qua Claude Code: $0 (subscription đã có)
 8M qua GLM: $4.80
 2M qua MiniMax: $0.40
@@ -81,7 +81,7 @@ Tổng: $5.20/tháng so với $2000 trên ChatGPT API!
 - Theo dõi sử dụng quota thời gian thực
 - Tự động chuyển khi quota reset (5 giờ, hàng tuần)
 - Dùng hết mọi token trước khi hết hạn
-- Gemini CLI: 180K completions/tháng **MIỄN PHÍ**
+- Antigravity: MIỄN PHÍ với tài khoản Google (thay thế Gemini CLI)
 
 ### Backup Siêu Rẻ
 
@@ -99,9 +99,9 @@ Khi quota subscription hết, trả vài xu:
 
 Backup khẩn cấp khi mọi thứ khác đều bị giới hạn quota:
 
-- **iFlow**: 8 models (Kimi K2, Qwen3 Coder Plus, GLM 4.7, MiniMax M2)
-- **Qwen**: 3 models (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro**: Claude Sonnet 4.5, Haiku 4.5 (AWS Builder ID)
+- **Kiro**: 6 models (Claude Sonnet 4.5, Haiku 4.5, GLM 5, MiniMax M2.5, Qwen3 Coder Next, DeepSeek 3.2)
+- **OpenCode Free**: không cần đăng nhập, danh sách model tự động lấy
+- **Vertex AI**: Gemini 3.1 Pro + model đối tác ($300 credit miễn phí)
 
 ---
 
@@ -124,7 +124,7 @@ npm install -g 9router
 ```
 Endpoint: http://localhost:20128/v1
 API Key: [from dashboard]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 [→ Hướng dẫn Bắt đầu đầy đủ](getting-started/quick-start.md)
@@ -136,7 +136,7 @@ Model: cc/claude-opus-4-5-20251101
 ### Cho Developer cá nhân
 
 - Tối đa hóa subscription Claude Code/Codex
-- Dùng Gemini CLI free tier (180K/tháng)
+- Dùng Antigravity free tier (tài khoản Google)
 - Fallback sang model siêu rẻ ($0.20/1M)
 - Code 24/7 không bị rate limit
 

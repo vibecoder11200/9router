@@ -659,9 +659,9 @@ Create combos with automatic fallback:
 
 ```
 Combo: "my-coding-stack"
-  1. cc/claude-opus-4-6        (your subscription)
+  1. cc/claude-opus-5          (your subscription)
   2. glm/glm-4.7               (cheap backup, $0.6/1M)
-  3. if/kimi-k2-thinking       (free fallback)
+  3. kr/claude-sonnet-4.5      (free fallback)
 
 → Auto switches when quota runs out or errors occur
 ```
@@ -781,8 +781,8 @@ Seamless translation between formats:
 | Combo | Layers (fallback top → bottom) | Monthly cost |
 | --- | --- | --- |
 | **free-forever** | `kr/claude-sonnet-4.5` → `kr/glm-5` → `oc/<auto>` (OpenCode Free) | **$0** |
-| **maximize-claude** | `cc/claude-opus-4-7` (subscription) → `glm/glm-5.1` (cheap) → `kr/claude-sonnet-4.5` (free fallback) | ~$25 |
-| **always-on** | `cc/claude-opus-4-7` → `cx/gpt-5.5` → `glm/glm-5.1` → `minimax/MiniMax-M2.7` → `kr/claude-sonnet-4.5` | $30-220 |
+| **maximize-claude** | `cc/claude-opus-5` (subscription) → `glm/glm-5.1` (cheap) → `kr/claude-sonnet-4.5` (free fallback) | ~$25 |
+| **always-on** | `cc/claude-opus-5` → `cx/gpt-5.5` → `glm/glm-5.1` → `minimax/MiniMax-M2.7` → `kr/claude-sonnet-4.5` | $30-220 |
 | **openclaw-free** | `kr/claude-sonnet-4.5` → `kr/glm-5` → `kr/MiniMax-M2.5` — free AI in WhatsApp/Telegram/Slack/Discord/iMessage/Signal | **$0** |
 
 > 💡 **Pro Tip:** RTK + Kiro + OpenCode Free = **$0 cost + 20-40% token savings**.
@@ -817,8 +817,8 @@ All providers connect from **Dashboard → Providers**. Point your CLI tool at `
 
 | Tier | Provider | How to connect | Model examples |
 | --- | --- | --- | --- |
-| 💳 **Subscription** | Claude Code | OAuth login → auto token refresh | `cc/claude-opus-4-7`, `cc/claude-sonnet-4-6` |
-| 💳 | Codex | OAuth (port 1455) | `cx/gpt-5.5`, `cx/gpt-5.3-codex` |
+| 💳 **Subscription** | Claude Code | OAuth login → auto token refresh | `cc/claude-opus-5`, `cc/claude-sonnet-5` |
+| 💳 | Codex | OAuth (port 1455) | `cx/gpt-5.6-sol`, `cx/gpt-5.5` |
 | 💳 | GitHub Copilot | OAuth via GitHub (monthly reset) | `gh/gpt-5.4`, `gh/claude-opus-4.7`, `gh/gemini-3.1-pro-preview` |
 | 💳 | Cursor IDE | OAuth login | `cu/claude-4.6-opus-max`, `cu/gpt-5.3-codex` |
 | 💰 **Cheap** | GLM | API key from [Zhipu AI](https://open.bigmodel.cn/) — Coding Plan = 3× quota at 1/7 cost, resets daily 10 AM | `glm/glm-5.1`, `glm/glm-4.7` |
@@ -1019,7 +1019,7 @@ The engine is pulled from the [`vibecoder11200/ds2api`](https://github.com/vibec
 Settings → Models → Advanced:
   OpenAI API Base URL: http://localhost:20128/v1
   OpenAI API Key: [from 9router dashboard]
-  Model: cc/claude-opus-4-7
+  Model: cc/claude-opus-5
 ```
 
 Or use combo: `premium-coding`
@@ -1089,7 +1089,7 @@ Dashboard → CLI Tools → OpenClaw → Select Model → Apply
 Provider: OpenAI Compatible
 Base URL: http://localhost:20128/v1
 API Key: [from dashboard]
-Model: cc/claude-opus-4-7
+Model: cc/claude-opus-5
 ```
 
 </details>
@@ -1226,19 +1226,19 @@ Notes:
 
 **Claude Code (`cc/`)** - Pro/Max:
 
-- `cc/claude-opus-4-7`
-- `cc/claude-opus-4-6`
-- `cc/claude-sonnet-4-6`
-- `cc/claude-sonnet-4-5-20250929`
+- `cc/claude-opus-5`
+- `cc/claude-sonnet-5`
+- `cc/claude-fable-5-1`
+- `cc/claude-fable-5`
 - `cc/claude-haiku-4-5-20251001`
 
 **Codex (`cx/`)** - Plus/Pro:
 
+- `cx/gpt-5.6-sol`
 - `cx/gpt-5.5`
 - `cx/gpt-5.4`
-- `cx/gpt-5.3-codex`
-- `cx/gpt-5.2-codex`
-- `cx/gpt-5.1-codex-max`
+- `cx/gpt-5.4-mini`
+- `cx/gpt-5.3-codex-spark`
 
 **GitHub Copilot (`gh/`)**:
 
@@ -1257,17 +1257,21 @@ Notes:
 
 **GLM (`glm/`)** - $0.6/1M:
 
+- `glm/glm-5.3`
 - `glm/glm-5.1`
 - `glm/glm-5`
 - `glm/glm-4.7`
 
 **MiniMax (`minimax/`)** - $0.2/1M:
 
+- `minimax/MiniMax-M3`
 - `minimax/MiniMax-M2.7`
 - `minimax/MiniMax-M2.5`
 
 **Kimi (`kimi/`)** - $9/mo flat:
 
+- `kimi/kimi-k3`
+- `kimi/kimi-k2.7-code`
 - `kimi/kimi-k2.5`
 - `kimi/kimi-k2.5-thinking`
 
@@ -1330,7 +1334,7 @@ Notes:
 **Rate limiting**
 
 - Subscription quota out → Fallback to GLM/MiniMax
-- Add combo: `cc/claude-opus-4-7 → glm/glm-5.1 → kr/claude-sonnet-4.5`
+- Add combo: `cc/claude-opus-5 → glm/glm-5.1 → kr/claude-sonnet-4.5`
 
 **OAuth token expired**
 
@@ -1380,7 +1384,7 @@ Authorization: Bearer your-api-key
 Content-Type: application/json
 
 {
-  "model": "cc/claude-opus-4-6",
+  "model": "cc/claude-opus-5",
   "messages": [
     {"role": "user", "content": "Write a function to..."}
   ],

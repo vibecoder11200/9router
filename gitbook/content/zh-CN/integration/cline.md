@@ -54,11 +54,11 @@ https://9router.com
    - 或手动输入 9Router 配置中的模型名
 
 2. 常见模型名:
-   - `gpt-4`
-   - `gpt-4o`
-   - `claude-opus-4-5`
-   - `claude-sonnet-4-5`
-   - `gemini-2.0-flash`
+   - `gpt-5.4`
+   - `gpt-5.5`
+   - `claude-opus-5`
+   - `claude-sonnet-5`
+   - `gemini-3-flash`
 
 ### 6. 保存配置
 
@@ -72,7 +72,7 @@ https://9router.com
 API Provider: Ollama
 Base URL: http://localhost:20128/v1
 API Key: sk-9router-xxxxxxxxxxxxx
-Model: gpt-4
+Model: gpt-5.4
 ```
 
 ## 可用模型
@@ -81,11 +81,11 @@ Model: gpt-4
 
 | 模型名 | 提供商 | 描述 |
 |------------|----------|-------------|
-| `gpt-4` | OpenAI | GPT-4 Turbo |
-| `gpt-4o` | OpenAI | GPT-4 Optimized |
-| `claude-opus-4-5` | Anthropic | Claude Opus 4.5 |
-| `claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `gemini-2.0-flash` | Google | Gemini 2.0 Flash |
+| `gpt-5.4` | OpenAI | GPT-5.4 |
+| `gpt-5.5` | OpenAI | GPT-5.5 |
+| `claude-opus-5` | Anthropic | Claude Opus 5 |
+| `claude-sonnet-5` | Anthropic | Claude Sonnet 5 |
+| `gemini-3-flash` | Google | Gemini 3 Flash |
 
 ## 使用
 
@@ -135,7 +135,7 @@ Model: gpt-4
 1. 确认模型名与 9Router 配置完全一致
 2. 检查 9Router 仪表盘中提供商连接是否激活
 3. 确认连接的提供商中包含该模型
-4. 尝试使用完整模型名(例如用 `openai/gpt-4` 代替 `gpt-4`)
+4. 尝试使用完整模型名(例如用 `openai/gpt-5.4` 代替 `gpt-5.4`)
 
 ### Cline 无响应
 

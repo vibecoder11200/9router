@@ -266,10 +266,10 @@ Settings → Models → Advanced:
 
 名称: cheap-backup
 模型:
-  1. cc/claude-opus-4-5 (订阅主力)
+  1. cc/claude-opus-5 (订阅主力)
   2. glm/glm-4.7 (低价备用, 每日重置)
   3. minimax/MiniMax-M2.1 (最便宜的回退)
-  4. if/kimi-k2-thinking (免费应急)
+  4. kr/claude-sonnet-4.5 (免费应急)
 
 CLI 中使用: cheap-backup
 ```
@@ -293,7 +293,7 @@ CLI 中使用: cheap-backup
 晚上: MiniMax(5h 重置)
 → 深夜的低价备用
 
-夜里: 免费层(iFlow)
+夜里: 免费层(Kiro)
 → 零成本应急备用
 ```
 
@@ -315,14 +315,14 @@ CLI 中使用: cheap-backup
 
 ```
 优先级:
-1. Gemini CLI(每月免费 180K)
+1. Antigravity(免费, Google 账户)
 2. Claude Code(已付费订阅)
 3. GLM-4.7(低价备用,每 1M $0.6)
 4. MiniMax M2.1(最便宜,每 1M $0.2)
-5. iFlow(免费应急)
+5. Kiro(免费应急)
 
 月成本示例(100M tokens):
-- 60M 通过 Gemini CLI: $0(免费)
+- 60M 通过 Antigravity: $0(免费)
 - 30M 通过 Claude Code: $0(订阅)
 - 8M 通过 GLM: $4.80
 - 2M 通过 MiniMax: $0.40
@@ -406,10 +406,10 @@ Coding Plan: 3× 配额(同价!)
 
 ```
 组合:
-1. gc/gemini-3-flash(免费主力)
+1. ag/gemini-3-flash(免费主力)
 2. glm/glm-4.7(低价备用)
 3. minimax/MiniMax-M2.1(最便宜)
-4. if/kimi-k2-thinking(免费应急)
+4. kr/claude-sonnet-4.5(免费应急)
 
 结果: 最小化成本,最大化在线
 ```

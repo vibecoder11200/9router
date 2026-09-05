@@ -18,7 +18,7 @@
 
 **开始最大化价值:**
 - ✅ **充分利用订阅** - 跟踪并用完 Claude Code、Codex、Gemini 的每一点配额
-- ✅ **免费可用** - 通过 CLI 访问 iFlow、Qwen、Kiro 模型
+- ✅ **免费可用** - 通过 CLI 访问 Kiro、OpenCode Free、Vertex AI 模型
 - ✅ **超低价备用** - GLM(每 1M $0.6)、MiniMax M2.1(每 1M $0.20)
 - ✅ **智能回退** - 订阅 → 低价 → 免费,自动切换
 
@@ -35,7 +35,7 @@
   ↓ 配额耗尽
 第 2 层(低价): GLM-4.7 → MiniMax M2.1 → Kimi
   ↓ 预算上限
-第 3 层(免费): iFlow → Qwen → Kiro
+第 3 层(免费): Kiro → OpenCode Free → Vertex AI
 
 → 自动切换,零停机!
 ```
@@ -63,7 +63,7 @@
 
 **真实案例(每月 100M tokens):**
 ```
-60M 通过 Gemini CLI: $0(免费层)
+60M 通过 Antigravity: $0(免费层)
 30M 通过 Claude Code: $0(你已有的订阅)
 8M 通过 GLM: $4.80
 2M 通过 MiniMax: $0.40
@@ -81,7 +81,7 @@
 - 实时跟踪配额使用
 - 配额重置时(5 小时、每周)自动切换
 - 在过期前用掉每一个 token
-- Gemini CLI:每月 180K 次补全 **免费**
+- Antigravity:用 Google 账户免费(替代 Gemini CLI)
 
 ### 超低价备用
 
@@ -99,9 +99,9 @@
 
 当其他一切都受配额限制时的应急备用:
 
-- **iFlow**:8 个模型(Kimi K2、Qwen3 Coder Plus、GLM 4.7、MiniMax M2)
-- **Qwen**:3 个模型(Qwen3 Coder Plus/Flash、Vision)
-- **Kiro**:Claude Sonnet 4.5、Haiku 4.5(AWS Builder ID)
+- **Kiro**:6 个模型(Claude Sonnet 4.5、Haiku 4.5、GLM 5、MiniMax M2.5、Qwen3 Coder Next、DeepSeek 3.2)
+- **OpenCode Free**:无需登录,模型列表自动获取
+- **Vertex AI**:Gemini 3.1 Pro + 合作伙伴模型($300 免费额度)
 
 ---
 
@@ -124,7 +124,7 @@ npm install -g 9router
 ```
 Endpoint: http://localhost:20128/v1
 API Key: [从仪表盘获取]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 [→ 完整入门指南](getting-started/quick-start.md)
@@ -136,7 +136,7 @@ Model: cc/claude-opus-4-5-20251101
 ### 个人开发者
 
 - 最大化你的 Claude Code/Codex 订阅
-- 使用 Gemini CLI 免费层(每月 180K)
+- 使用 Antigravity 免费层(Google 账户)
 - 回退到超低价模型(每 1M $0.20)
 - 24/7 编码不受速率限制
 

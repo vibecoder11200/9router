@@ -32,10 +32,9 @@ Dashboard → Home → Quota Overview
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│ Gemini CLI (gc/)                            │
+│ Antigravity (ag/)                            │
 │ ████████░░░░░░░░░░░░ 450 / 1000 (45%)      │
 │ Daily reset in: 18h 30m                     │
-│ Monthly: 45K / 180K (25%)                   │
 │ Cost: $0 (free tier)                        │
 └─────────────────────────────────────────────┘
 
@@ -54,9 +53,9 @@ Dashboard → Home → Quota Overview
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│ iFlow (if/)                                 │
-│ ████████████████████ Unlimited              │
-│ Cost: $0 (free forever)                     │
+│ Kiro (kr/)                                  │
+│ ████████████████████ Free (~50 credits/mo)  │
+│ Cost: $0 (free tier)                        │
 └─────────────────────────────────────────────┘
 ```
 
@@ -72,7 +71,7 @@ Dashboard → Home → Quota Overview
 Dashboard → Activity → Recent Requests
 
 Request #1234
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 Timestamp: 2026-02-04 04:15:32
 
 Tokens:
@@ -103,9 +102,9 @@ Current request:
 Dashboard → Analytics → Token Usage
 
 Today (Feb 4, 2026):
-  cc/claude-opus-4-5: 15M tokens ($0, subscription)
+  cc/claude-opus-5: 15M tokens ($0, subscription)
   glm/glm-4.7: 8M tokens ($4.80)
-  if/kimi-k2-thinking: 3M tokens ($0, free)
+  kr/claude-sonnet-4.5: 3M tokens ($0, free)
   
 Total: 26M tokens
 Cost: $4.80
@@ -139,20 +138,17 @@ Cost: $4.80
 リセット: 5時間ローリングウィンドウ + 週次更新
 
 ダッシュボード表示:
-  GPT-5.2 Codex: 3.5h / 5h 使用
+  GPT-5.6 Sol: 3.5h / 5h 使用
   Resets in: 1h 30m
 ```
 
-**Gemini CLI (無料)**
+**Antigravity (無料)**
 ```
-クォータタイプ: リクエスト数 + 月次トークン
-日次上限: 1,000 リクエスト
-月次上限: 180,000 コンプリーション
+クォータタイプ: リクエスト数 + 日次/月次上限
 リセット: 日次 00:00 UTC + 月次 1日
 
 ダッシュボード表示:
   Today: 450 / 1,000 requests (45%)
-  This month: 45K / 180K completions (25%)
   Daily reset in: 18h 30m
   Monthly reset in: 26 days
 ```
@@ -209,15 +205,15 @@ Cost: $4.80
 
 ### 無料プロバイダー
 
-**iFlow / Qwen / Kiro**
+**Kiro / OpenCode Free / Vertex AI**
 ```
-クォータタイプ: 無制限 (レート制限)
-上限: ハード制限なし
-リセット: なし
+クォータタイプ: 無料クレジット / 無制限パススルー
+上限: Kiroは月約50クレジット。OpenCodeはレート制限あり。Vertexは$300/90日
+リセット: Kiroは月次、Vertexは一回限りのトライアル
 
 ダッシュボード表示:
   Used today: 5M tokens
-  Cost: $0 (free forever)
+  Cost: $0 (free tier)
   Status: ✅ Available
 ```
 
@@ -232,7 +228,7 @@ Dashboard → Costs → Today
 
 Subscription providers: $0
   Claude Code: 15M tokens ($0, included)
-  Gemini CLI: 3M tokens ($0, free tier)
+  Antigravity: 3M tokens ($0, free tier)
 
 Paid providers: $4.80
   GLM-4.7: 8M tokens ($4.80)
@@ -241,7 +237,7 @@ Paid providers: $4.80
     Total: $4.80
 
 Free providers: $0
-  iFlow: 3M tokens ($0)
+  Kiro: 3M tokens ($0)
 
 Total today: $4.80
 ```
@@ -324,7 +320,7 @@ This month:
   Requests: 15,234
   Tokens: 320M
   Cost: $52.00
-  Top model: cc/claude-opus-4-5 (45%)
+  Top model: cc/claude-opus-5 (45%)
 ```
 
 ### モデル別使用量
@@ -333,18 +329,18 @@ This month:
 Dashboard → Analytics → Models
 
 Top models (this month):
-1. cc/claude-opus-4-5: 145M tokens (45%)
+1. cc/claude-opus-5: 145M tokens (45%)
 2. glm/glm-4.7: 95M tokens (30%)
-3. if/kimi-k2-thinking: 50M tokens (16%)
+3. kr/claude-sonnet-4.5: 50M tokens (16%)
 4. minimax/MiniMax-M2.1: 20M tokens (6%)
-5. gc/gemini-3-flash: 10M tokens (3%)
+5. ag/gemini-3-flash: 10M tokens (3%)
 
 Cost breakdown:
-  cc/claude-opus: $0 (subscription)
+  cc/claude-opus-5: $0 (subscription)
   glm/glm-4.7: $45.00
-  if/kimi-k2-thinking: $0 (free)
+  kr/claude-sonnet-4.5: $0 (free)
   minimax/MiniMax-M2.1: $7.00
-  gc/gemini-3-flash: $0 (free)
+  ag/gemini-3-flash: $0 (free)
 ```
 
 ### 時間別使用量
@@ -376,7 +372,7 @@ premium-coding:
   Cost: $2.40
   
   Breakdown:
-    cc/claude-opus: 8M tokens (67%, $0)
+    cc/claude-opus-5: 8M tokens (67%, $0)
     glm/glm-4.7: 3M tokens (25%, $1.80)
     minimax/MiniMax-M2.1: 1M tokens (8%, $0.20)
 
@@ -387,7 +383,7 @@ budget-combo:
   
   Breakdown:
     glm/glm-4.7: 4M tokens (67%, $2.40)
-    if/kimi-k2-thinking: 2M tokens (33%, $0)
+    kr/claude-sonnet-4.5: 2M tokens (33%, $0)
 ```
 
 ---
@@ -406,7 +402,7 @@ budget-combo:
    キー sk-abc123…•789: 日次予算 $4.10 / $5.00（82%）
 
 🔴 breaker-open
-   cx/gpt-5.2-codex: 60秒で5回失敗 — 60秒間スキップ
+   cx/gpt-5.6-sol: 60秒で5回失敗 — 60秒間スキップ
 
 🔴 all-accounts-locked
    glm の全アカウントがレート制限中。リクエスト処理不可
@@ -453,7 +449,7 @@ Quota ページには 2 つの運用パネルもあります:
 ```
 朝の確認:
   ✅ Claude Code: 5時間利用可 (新鮮なリセット)
-  ✅ Gemini CLI: 1Kリクエスト利用可
+  ✅ Antigravity: 1Kリクエスト利用可
   ⚠️ GLM-4.7: 2Mトークン残 (午前10時リセット)
   
 アクション: 朝の作業にClaude Codeを使用
@@ -479,12 +475,12 @@ Dashboard → Analytics → Combos:
 
 **例:**
 ```
-現在: cc/claude-opus → glm/glm-4.7
+現在: cc/claude-opus-5 → glm/glm-4.7
   80% Claude経由 (良好)
   20% GLM経由 ($12/月)
 
-最適化後: gc/gemini-3-flash → cc/claude-opus → glm/glm-4.7
-  50% Gemini経由 (無料)
+最適化後: ag/gemini-3-flash → cc/claude-opus-5 → glm/glm-4.7
+  50% Antigravity経由 (無料)
   40% Claude経由 (サブスクリプション)
   10% GLM経由 ($6/月)
   
@@ -496,7 +492,7 @@ Dashboard → Analytics → Combos:
 ```
 Dashboard → Quota → Reset Schedule:
   Claude Code: 5時間ローリング + 週次月曜
-  Gemini CLI: 日次 00:00 UTC + 月次 1日
+  Antigravity: 日次 00:00 UTC + 月次 1日
   GLM-4.7: 毎日午前10時 北京時間
   MiniMax: 5時間ローリングウィンドウ
 ```
@@ -517,7 +513,7 @@ Dashboard → Analytics → Monthly Report:
   - 10% 無料階層経由 ($0)
   
 最適化:
-  - Gemini CLI使用を増やす (無料)
+  - Antigravity使用を増やす (無料)
   - GLM使用を減らす (高価)
 ```
 
@@ -595,7 +591,7 @@ Response:
   },
   "byModel": [
     {
-      "model": "cc/claude-opus-4-5",
+      "model": "cc/claude-opus-5",
       "requests": 456,
       "tokens": 15000000,
       "cost": 0

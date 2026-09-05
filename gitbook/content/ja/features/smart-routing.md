@@ -23,9 +23,8 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
 **Tier 1: サブスクリプション (プライマリ)**
 - Claude Code (Pro/Max)
 - OpenAI Codex (Plus/Pro)
-- Gemini CLI (月18万無料)
 - GitHub Copilot
-- Antigravity (Google)
+- Antigravity (Google、無料)
 
 **目標**: すでに支払っているサブスクリプションから価値を最大化。
 
@@ -37,9 +36,9 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
 **目標**: サブスクリプションクォータ切れ時の超低価格バックアップ (ChatGPT APIより約90%安い)。
 
 **Tier 3: 無料 (緊急時)**
-- iFlow (8モデル)
-- Qwen (3モデル)
-- Kiro (Claude無料)
+- Kiro (6モデル、Claude無料)
+- OpenCode Free (ログイン不要)
+- Vertex AI ($300無料クレジット)
 
 **目標**: 無制限コーディング用のゼロコストフォールバック。
 
@@ -52,13 +51,13 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
 ### シナリオ1: サブスクリプションクォータ消費
 
 ```
-ユーザーリクエスト → cc/claude-opus-4-5
+ユーザーリクエスト → cc/claude-opus-5
                ↓ クォータ消費 (5時間制限到達)
                自動切替 → glm/glm-4.7
                ↓ 日次クォータ消費
                自動切替 → minimax/MiniMax-M2.1
                ↓ 5時間クォータ消費
-               自動切替 → if/kimi-k2-thinking (無料)
+               自動切替 → kr/claude-sonnet-4.5 (無料)
                ↓
                レスポンス配信 ✅
 ```
@@ -68,7 +67,7 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
 ### シナリオ2: レート制限
 
 ```
-ユーザーリクエスト → cx/gpt-5.2-codex
+ユーザーリクエスト → cx/gpt-5.6-sol
                ↓ レート制限 (リクエストが多すぎ)
                自動切替 → glm/glm-4.7
                ↓
@@ -78,7 +77,7 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
 ### シナリオ3: プロバイダー利用不可
 
 ```
-ユーザーリクエスト → cc/claude-opus-4-5
+ユーザーリクエスト → cc/claude-opus-5
                ↓ プロバイダーエラー (503)
                自動切替 → 次の利用可能なモデル
                ↓
@@ -98,11 +97,11 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
 
 ### 優先順位の例
 
-`cc/claude-opus-4-5` へのリクエストの場合:
+`cc/claude-opus-5` へのリクエストの場合:
 
 ```
 1. Claude Codeクォータを確認
-   ✅ 利用可 → cc/claude-opus-4-5を使用
+   ✅ 利用可 → cc/claude-opus-5を使用
    ❌ 消費 → ステップ2へ
 
 2. フォールバック階層を確認 (設定されている場合)
@@ -110,7 +109,7 @@ Request → 9Router → Tier 1を確認 (サブスクリプション)
    ❌ 消費 → ステップ3へ
 
 3. 無料階層を確認
-   ✅ iFlow利用可 → if/kimi-k2-thinkingを使用
+   ✅ Kiro利用可 → kr/claude-sonnet-4.5を使用
    ❌ すべて消費 → クォータエラーを返す
 ```
 
@@ -149,9 +148,9 @@ Dashboard → Settings → Fallback Priority
 
 カスタム順序の例:
 ```
-Tier 1: Gemini CLI → Claude Code → Codex
+Tier 1: Antigravity → Claude Code → Codex
 Tier 2: MiniMax → GLM → Kimi
-Tier 3: iFlow → Kiro → Qwen
+Tier 3: Kiro → OpenCode Free → Vertex AI
 ```
 
 **4. クォータリセット通知**
@@ -172,14 +171,14 @@ Dashboard → Alerts
 
 **セットアップ:**
 ```
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 Fallback: 自動 (デフォルト3階層)
 ```
 
 **動作:**
 ```
 朝 (新鮮なクォータ):
-  Request → cc/claude-opus-4-5 ✅
+  Request → cc/claude-opus-5 ✅
 
 午後 (クォータ消費):
   Request → glm/glm-4.7 ✅ (自動切替)
@@ -188,7 +187,7 @@ Fallback: 自動 (デフォルト3階層)
   Request → minimax/MiniMax-M2.1 ✅ (自動切替)
 
 深夜 (すべての有料クォータ切れ):
-  Request → if/kimi-k2-thinking ✅ (無料階層)
+  Request → kr/claude-sonnet-4.5 ✅ (無料階層)
 ```
 
 **コスト**: 月$5〜10の追加料金 (主にサブスクリプションでカバー)。
@@ -210,7 +209,7 @@ Dashboard → Settings:
   コスト: $1.50/日
 
 16日 (予算到達):
-  Requests → if/kimi-k2-thinking (無料階層)
+  Requests → kr/claude-sonnet-4.5 (無料階層)
   コスト: $0
 
 翌月 (予算リセット):
@@ -230,7 +229,7 @@ Dashboard → Settings:
 
 **動作:**
 ```
-Request → cc/claude-opus-4-5
+Request → cc/claude-opus-5
   ✅ クォータ利用可 → 成功
   ❌ クォータ消費 → エラーを返す (フォールバックなし)
 ```
@@ -241,8 +240,8 @@ Request → cc/claude-opus-4-5
 
 **セットアップ:**
 ```
-Model: if/kimi-k2-thinking
-Fallback: qw/qwen3-coder-plus → kr/claude-sonnet-4.5
+Model: kr/claude-sonnet-4.5
+Fallback: kr/qwen3-coder-next → oc/<auto>
 ```
 
 **動作:**
@@ -268,35 +267,35 @@ Fallback: qw/qwen3-coder-plus → kr/claude-sonnet-4.5
 
 **コンボ例:**
 ```
-cc/claude-opus-4-5 → glm/glm-4.7 → if/kimi-k2-thinking
+cc/claude-opus-5 → glm/glm-4.7 → kr/claude-sonnet-4.5
 ```
 
 ### 2. コストに最適化
 
 ```
 戦略:
-- Gemini CLI無料階層を最初に使用 (月18万)
+- Antigravity無料階層を最初に使用 (Googleアカウント)
 - GLM/MiniMaxへフォールバック (超低価格)
-- 緊急時: iFlow (無料)
+- 緊急時: Kiro (無料)
 ```
 
 **コンボ例:**
 ```
-gc/gemini-3-flash-preview → glm/glm-4.7 → if/kimi-k2-thinking
+ag/gemini-3-flash → glm/glm-4.7 → kr/claude-sonnet-4.5
 ```
 
 ### 3. 品質に最適化
 
 ```
 戦略:
-- 最高のモデルを使用 (Claude Opus、GPT-5.2)
+- 最高のモデルを使用 (Claude Opus 5、GPT-5.6 Sol)
 - 良質な低価格モデルへフォールバック (GLM-4.7)
 - 最後の手段: 無料階層
 ```
 
 **コンボ例:**
 ```
-cc/claude-opus-4-5 → cx/gpt-5.2-codex → glm/glm-4.7
+cc/claude-opus-5 → cx/gpt-5.6-sol → glm/glm-4.7
 ```
 
 ### 4. 24時間可用性
@@ -310,7 +309,7 @@ cc/claude-opus-4-5 → cx/gpt-5.2-codex → glm/glm-4.7
 
 **コンボ例:**
 ```
-cc/claude-opus-4-5 → glm/glm-4.7 → minimax/MiniMax-M2.1 → if/kimi-k2-thinking
+cc/claude-opus-5 → glm/glm-4.7 → minimax/MiniMax-M2.1 → kr/claude-sonnet-4.5
 ```
 
 **結果**: クォータ切れにならない、いつでもコーディング。
@@ -325,17 +324,17 @@ cc/claude-opus-4-5 → glm/glm-4.7 → minimax/MiniMax-M2.1 → if/kimi-k2-think
 |----------|-------------|----------|
 | **Claude Code** | 5時間 + 週次 | 朝、新鮮なクォータを使用 |
 | **Codex** | 5時間 + 週次 | Claudeクォータ切れ後に使用 |
-| **Gemini CLI** | 日次 (1K) + 月次 (18万) | 一日中使用 |
+| **Antigravity** | 日次 + 月次 | 一日中使用 |
 | **GLM-4.7** | 毎日午前10時 | 夕方使用、翌朝リセット |
 | **MiniMax M2.1** | 5時間ローリング | いつでも使用、ローリングウィンドウを追跡 |
-| **iFlow/Qwen/Kiro** | 制限なし | 緊急時バックアップ |
+| **Kiro/OpenCode Free/Vertex AI** | 無料クォータ | 緊急時バックアップ |
 
 **日課の例:**
 ```
 08:00 - 13:00: Claude Code (新鮮な5時間クォータ)
-13:00 - 18:00: Gemini CLI (1K/日クォータ)
+13:00 - 18:00: Antigravity (無料日次クォータ)
 18:00 - 22:00: GLM-4.7 (低価格、午前10時リセット)
-22:00 - 08:00: MiniMaxまたはiFlow (5時間ローリングまたは無料)
+22:00 - 08:00: MiniMaxまたはKiro (5時間ローリングまたは無料)
 ```
 
 ---
@@ -347,7 +346,7 @@ cc/claude-opus-4-5 → glm/glm-4.7 → minimax/MiniMax-M2.1 → if/kimi-k2-think
 ```
 Dashboard → Quota Overview:
   Claude Code: 2.5h / 5h 残 (50%)
-  Gemini CLI: 今日 450 / 1000 リクエスト
+  Antigravity: 今日 450 / 1000 リクエスト
   GLM-4.7: 5M / 10M トークン (8時間後リセット)
   MiniMax: 3M / 5M トークン (5時間ローリング)
 ```
@@ -359,7 +358,7 @@ Dashboard → Alerts (Telegram / Discord / Webhook):
 
   ⚠️ quota-near-limit: Claude Code 80%使用（1時間後にリセット）
   🔴 all-accounts-locked: glm の全アカウントがレート制限中
-  🔴 breaker-open: cx/gpt-5.2-codex が失敗 — 60秒間スキップ
+  🔴 breaker-open: cx/gpt-5.6-sol が失敗 — 60秒間スキップ
 ```
 
 チャネルとイベント別トグルは[アラート](./alerts.md)ページで設定します。
@@ -371,7 +370,7 @@ Dashboard → Analytics:
   今日: 5000万トークン
     - 3000万 Claude Code経由 (サブスクリプション)
     - 1500万 GLM-4.7経由 ($9) — 内600万はキャッシュ済み（推定 ~$3.60 節約）
-    - 500万 iFlow経由 (無料)
+    - 500万 Kiro経由 (無料)
   
   コスト: $9 (vs ChatGPT APIの$1000)
   節約: 99%

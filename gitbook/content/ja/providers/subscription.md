@@ -8,11 +8,12 @@
 
 サブスクリプション階層プロバイダーは**プライマリ**選択です - すでに支払っているので、完全な価値を引き出しましょう:
 
-- ✅ **Claude Code** (Pro/Max) - Claude 4.5 Opus/Sonnet/Haiku
-- ✅ **OpenAI Codex** (Plus/Pro) - GPT 5.2 Codex、GPT 5.1 Codex Max
-- ✅ **Gemini CLI** (無料階層!) - 月18万コンプリーション
-- ✅ **GitHub Copilot** - GPT-5、Claude 4.5、Gemini 3
-- ✅ **Antigravity** (Google) - Gemini 3 Pro、Claude Sonnet 4.5
+- ✅ **Claude Code** (Pro/Max) - Claude Opus 5 / Sonnet 5 / Haiku 4.5
+- ✅ **OpenAI Codex** (Plus/Pro) - GPT 5.6 Sol、GPT 5.5
+- ✅ **GitHub Copilot** - GPT-5.4、Claude Sonnet 4.6、Gemini 3.1
+- ✅ **Antigravity** (Google) - Gemini 3.8 Flash、Claude Sonnet 4.6
+
+> ⚠️ **Gemini CLIは2026-06-18にサービス終了しました。** 代わりにGoogleアカウントで**Antigravity**を使って無料のGeminiにアクセスしてください。
 
 **戦略:** これらを最初に使用、クォータをリアルタイムで追跡、消費時に低価格/無料へフォールバック。
 
@@ -46,8 +47,8 @@
 **ステップ3: CLIで使用**
 
 ```
-Model: cc/claude-opus-4-5-20251101
-       cc/claude-sonnet-4-5-20250929
+Model: cc/claude-opus-5
+       cc/claude-sonnet-5
        cc/claude-haiku-4-5-20251001
 ```
 
@@ -55,8 +56,8 @@ Model: cc/claude-opus-4-5-20251101
 
 | モデルID | 説明 | 最適用途 |
 |----------|-------------|----------|
-| `cc/claude-opus-4-5-20251101` | Claude 4.5 Opus | 複雑なタスク、アーキテクチャ |
-| `cc/claude-sonnet-4-5-20250929` | Claude 4.5 Sonnet | バランスのとれた速度/品質 |
+| `cc/claude-opus-5` | Claude Opus 5 | 複雑なタスク、アーキテクチャ |
+| `cc/claude-sonnet-5` | Claude Sonnet 5 | バランスのとれた速度/品質 |
 | `cc/claude-haiku-4-5-20251001` | Claude 4.5 Haiku | 高速応答 |
 
 ### プロのヒント
@@ -74,8 +75,8 @@ Model: cc/claude-opus-4-5-20251101
 
 | プラン | 月額コスト | クォータリセット | モデル |
 |------|--------------|-------------|--------|
-| Plus | $20 | 5時間 + 週次 | GPT 5.2、GPT 5.1 |
-| Pro | $200 | 5時間 + 週次 | GPT 5.2 Codex、GPT 5.1 Max |
+| Plus | $20 | 5時間 + 週次 | GPT 5.5、GPT 5.4 |
+| Pro | $200 | 5時間 + 週次 | GPT 5.6 Sol、GPT 5.5 |
 
 ### セットアップ
 
@@ -96,20 +97,20 @@ Model: cc/claude-opus-4-5-20251101
 **ステップ3: CLIで使用**
 
 ```
-Model: cx/gpt-5.2-codex
-       cx/gpt-5.1-codex-max
-       cx/gpt-5.2
-       cx/gpt-5.1-codex
+Model: cx/gpt-5.6-sol
+       cx/gpt-5.5
+       cx/gpt-5.4
+       cx/gpt-5.4-mini
 ```
 
 ### 利用可能なモデル
 
 | モデルID | 説明 | 最適用途 |
 |----------|-------------|----------|
-| `cx/gpt-5.2-codex` | GPT 5.2 Codex | 最新コーディングモデル |
-| `cx/gpt-5.1-codex-max` | GPT 5.1 Codex Max | 最大コンテキスト |
-| `cx/gpt-5.2` | GPT 5.2 | 汎用タスク |
-| `cx/gpt-5.1-codex` | GPT 5.1 Codex | 安定したコーディング |
+| `cx/gpt-5.6-sol` | GPT 5.6 Sol | 最新コーディングモデル |
+| `cx/gpt-5.5` | GPT 5.5 | 最大コンテキスト |
+| `cx/gpt-5.4` | GPT 5.4 | 汎用タスク |
+| `cx/gpt-5.4-mini` | GPT 5.4 Mini | 高速で安定したコーディング |
 
 ### プロのヒント
 
@@ -119,67 +120,14 @@ Model: cx/gpt-5.2-codex
 
 ---
 
-## Gemini CLI (月18万無料!)
-
-### 料金
-
-| プラン | 月額コスト | クォータ | リセット |
-|------|--------------|-------|-------|
-| FREE | $0 | 月18万コンプリーション + 1K/日 | 日次 + 月次 |
-
-**最高の価値:** 巨大な無料階層! 有料階層の前にこれを使用。
-
-### セットアップ
-
-**ステップ1: ダッシュボード経由で接続**
-
-```bash
-9router
-# Dashboard → Providers → Connect Gemini CLI
-```
-
-**ステップ2: Google OAuth**
-
-- 「Connect Gemini CLI」をクリック
-- ブラウザが開く → Googleアカウントにログイン
-- 権限を付与
-- 自動トークン更新有効化
-
-**ステップ3: CLIで使用**
-
-```
-Model: gc/gemini-3-flash-preview
-       gc/gemini-3-pro-preview
-       gc/gemini-2.5-pro
-       gc/gemini-2.5-flash
-```
-
-### 利用可能なモデル
-
-| モデルID | 説明 | 最適用途 |
-|----------|-------------|----------|
-| `gc/gemini-3-flash-preview` | Gemini 3 Flash Preview | 高速応答 |
-| `gc/gemini-3-pro-preview` | Gemini 3 Pro Preview | 複雑なタスク |
-| `gc/gemini-2.5-pro` | Gemini 2.5 Pro | 安定した本番 |
-| `gc/gemini-2.5-flash` | Gemini 2.5 Flash | クイックタスク |
-
-### プロのヒント
-
-- **月18万コンプリーション** - 巨大な無料階層
-- **1K/日制限** - 日次クォータは深夜にリセット
-- **最初に使用** - 無料階層、有料サブスクリプションの前に使用
-- **クレジットカード不要** - Googleアカウントで完全無料
-
----
-
 ## GitHub Copilot
 
 ### 料金
 
 | プラン | 月額コスト | クォータリセット | モデル |
 |------|--------------|-------------|--------|
-| Individual | $10 | 月次 (1日) | GPT-5、Claude 4.5、Gemini 3 |
-| Business | $19 | 月次 (1日) | GPT-5、Claude 4.5、Gemini 3 |
+| Individual | $10 | 月次 (1日) | GPT-5.4、Claude Sonnet 4.6、Gemini 3.1 |
+| Business | $19 | 月次 (1日) | GPT-5.4、Claude Sonnet 4.6、Gemini 3.1 |
 
 ### セットアップ
 
@@ -200,20 +148,20 @@ Model: gc/gemini-3-flash-preview
 **ステップ3: CLIで使用**
 
 ```
-Model: gh/gpt-5
-       gh/gpt-5.1-codex-max
-       gh/claude-4.5-sonnet
-       gh/gemini-3-pro
+Model: gh/gpt-5.4
+       gh/gpt-5.3-codex
+       gh/claude-sonnet-4.6
+       gh/gemini-3.1-pro-preview
 ```
 
 ### 利用可能なモデル
 
 | モデルID | 説明 | 最適用途 |
 |----------|-------------|----------|
-| `gh/gpt-5` | GPT-5 | 最新OpenAIモデル |
-| `gh/gpt-5.1-codex-max` | GPT-5.1 Codex Max | 最大コンテキスト |
-| `gh/claude-4.5-sonnet` | Claude 4.5 Sonnet | Anthropic品質 |
-| `gh/gemini-3-pro` | Gemini 3 Pro | Google品質 |
+| `gh/gpt-5.4` | GPT-5.4 | 最新OpenAIモデル |
+| `gh/gpt-5.3-codex` | GPT-5.3 Codex | 最大コンテキスト |
+| `gh/claude-sonnet-4.6` | Claude Sonnet 4.6 | Anthropic品質 |
+| `gh/gemini-3.1-pro-preview` | Gemini 3 Pro | Google品質 |
 
 ### プロのヒント
 
@@ -229,7 +177,7 @@ Model: gh/gpt-5
 
 | プラン | 月額コスト | クォータ | モデル |
 |------|--------------|-------|--------|
-| FREE | $0 | Gemini CLIと同様 | Gemini 3 Pro、Claude Sonnet 4.5 |
+| FREE | $0 | 日次 + 月次制限 | Gemini 3.8 Flash、Claude Sonnet 4.6 |
 
 ### セットアップ
 
@@ -250,24 +198,24 @@ Model: gh/gpt-5
 **ステップ3: CLIで使用**
 
 ```
-Model: ag/gemini-3-pro-high
-       ag/claude-sonnet-4-5
-       ag/claude-opus-4-5-thinking
+Model: ag/gemini-3.8-flash-high
+       ag/claude-sonnet-4-6
+       ag/claude-opus-4-6-thinking
 ```
 
 ### 利用可能なモデル
 
 | モデルID | 説明 | 最適用途 |
 |----------|-------------|----------|
-| `ag/gemini-3-pro-high` | Gemini 3 Pro High | 高品質応答 |
-| `ag/claude-sonnet-4-5` | Claude Sonnet 4.5 | Anthropic品質 |
-| `ag/claude-opus-4-5-thinking` | Claude Opus 4.5 Thinking | 複雑な推論 |
+| `ag/gemini-3.8-flash-high` | Gemini 3.8 Flash (high) | 高品質応答 |
+| `ag/claude-sonnet-4-6` | Claude Sonnet 4.6 | Anthropic品質 |
+| `ag/claude-opus-4-6-thinking` | Claude Opus 4.6 Thinking | 複雑な推論 |
 
 ### プロのヒント
 
 - **無料階層** - Googleアカウントでコストなし
 - **Claudeアクセス** - 無料Claude Sonnet/Opus
-- **Gemini CLIと同様のクォータ** - 日次/月次制限
+- **日次/月次制限** - 豊富な無料クォータ、自動的にリセット
 
 ---
 
@@ -279,9 +227,8 @@ Model: ag/gemini-3-pro-high
 | **Claude Code Max** | $100 | 5時間 + 週次 | ⭐⭐⭐⭐⭐ 最高クォータ |
 | **Codex Plus** | $20 | 5時間 + 週次 | ⭐⭐⭐⭐ 良い価値 |
 | **Codex Pro** | $200 | 5時間 + 週次 | ⭐⭐⭐⭐⭐ 10×クォータ |
-| **Gemini CLI** | **$0** | 日次 + 月次 | ⭐⭐⭐⭐⭐ 月18万無料! |
+| **Antigravity** | **$0** | 日次 + 月次 | ⭐⭐⭐⭐⭐ 無料Gemini + Claude! |
 | **GitHub Copilot** | $10〜19 | 月次 (1日) | ⭐⭐⭐⭐ マルチモデル |
-| **Antigravity** | **$0** | 日次 + 月次 | ⭐⭐⭐⭐ 無料Claude! |
 
 ---
 
@@ -293,7 +240,7 @@ Model: ag/gemini-3-pro-high
 Settings → Models → Advanced:
   OpenAI API Base URL: http://localhost:20128/v1
   OpenAI API Key: [9routerダッシュボードから取得]
-  Model: cc/claude-opus-4-5-20251101
+  Model: cc/claude-opus-5
 ```
 
 ### コンボを作成 (推奨)
@@ -303,9 +250,9 @@ Dashboard → Combos → Create New
 
 Name: premium-coding
 Models:
-  1. gc/gemini-3-flash-preview (無料、最初に使用)
-  2. cc/claude-opus-4-5-20251101 (サブスクリプション)
-  3. cx/gpt-5.2-codex (サブスクリプションバックアップ)
+  1. ag/gemini-3-flash (無料、最初に使用)
+  2. cc/claude-opus-5 (サブスクリプション)
+  3. cx/gpt-5.6-sol (サブスクリプションバックアップ)
 
 CLIで使用: premium-coding
 ```
@@ -341,9 +288,9 @@ Claude Code Pro
 
 ```
 優先順位:
-1. Gemini CLI (月18万無料)
-2. Antigravity (無料Claude)
-3. Claude Code/Codex (有料サブスクリプション)
+1. Antigravity (無料Gemini + Claude)
+2. Claude Code/Codex (有料サブスクリプション)
+3. Kiro/OpenCode Free (無料フォールバック)
 ```
 
 ### 2. クォータを毎日追跡
@@ -356,17 +303,17 @@ Claude Code Pro
 
 ```
 コンボ例:
-1. gc/gemini-3-flash-preview (無料プライマリ)
-2. cc/claude-opus-4-5 (複雑なタスク)
+1. ag/gemini-3-flash (無料プライマリ)
+2. cc/claude-opus-5 (複雑なタスク)
 3. glm/glm-4.7 (低価格バックアップ)
-4. if/kimi-k2-thinking (無料フォールバック)
+4. kr/claude-sonnet-4.5 (無料フォールバック)
 ```
 
 ### 4. 時間別に最適化
 
 ```
 朝: 新鮮な5時間クォータ (Claude/Codex)
-午後: Gemini CLI (1K/日)
+午後: Antigravity (無料日次クォータ)
 夕方: サブスクリプションクォータ
 夜: 低価格/無料階層
 ```
@@ -392,8 +339,8 @@ Claude Code Pro
 
 **解決策:**
 - サブスクリプションクォータ切れ
-- フォールバックを追加: `cc/claude-opus → glm/glm-4.7`
-- 無料階層を使用: `if/kimi-k2-thinking`
+- フォールバックを追加: `cc/claude-opus-5 → glm/glm-4.7`
+- 無料階層を使用: `kr/claude-sonnet-4.5`
 
 ---
 

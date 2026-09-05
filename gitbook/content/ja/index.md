@@ -18,7 +18,7 @@
 
 **価値を最大化するために:**
 - ✅ **サブスクリプションを最大限活用** - Claude Code、Codex、Geminiのクォータを余すことなく追跡・利用
-- ✅ **無料で利用可能** - CLI経由でiFlow、Qwen、Kiroモデルにアクセス
+- ✅ **無料で利用可能** - CLI経由でKiro、OpenCode Free、Vertex AIモデルにアクセス
 - ✅ **超低価格バックアップ** - GLM(100万あたり$0.6)、MiniMax M2.1(100万あたり$0.20)
 - ✅ **スマートフォールバック** - サブスクリプション → 低価格 → 無料へ自動切替
 
@@ -35,7 +35,7 @@ Tier 1 (サブスクリプション): Claude Code → Codex → Gemini
   ↓ クォータ消費
 Tier 2 (低価格): GLM-4.7 → MiniMax M2.1 → Kimi
   ↓ 予算上限
-Tier 3 (無料): iFlow → Qwen → Kiro
+Tier 3 (無料): Kiro → OpenCode Free → Vertex AI
 
 → 自動切替、ダウンタイムゼロ!
 ```
@@ -63,7 +63,7 @@ Tier 3 (無料): iFlow → Qwen → Kiro
 
 **実例(月1億トークン):**
 ```
-Gemini CLI経由で6000万: $0(無料プラン)
+Antigravity経由で6000万: $0(無料階層)
 Claude Code経由で3000万: $0(既存サブスクリプション)
 GLM経由で800万: $4.80
 MiniMax経由で200万: $0.40
@@ -81,7 +81,7 @@ MiniMax経由で200万: $0.40
 - クォータ使用量をリアルタイムで追跡
 - クォータリセット(5時間、週次)時に自動切替
 - 失効前にすべてのトークンを使い切る
-- Gemini CLI: 月18万コンプリーション**無料**
+- Antigravity: Googleアカウントで**無料**(Gemini CLIの後継)
 
 ### 超低価格バックアップ
 
@@ -99,9 +99,9 @@ MiniMax経由で200万: $0.40
 
 他がすべてクォータ制限に達した時の緊急バックアップ:
 
-- **iFlow**: 8モデル(Kimi K2、Qwen3 Coder Plus、GLM 4.7、MiniMax M2)
-- **Qwen**: 3モデル(Qwen3 Coder Plus/Flash、Vision)
-- **Kiro**: Claude Sonnet 4.5、Haiku 4.5(AWS Builder ID)
+- **Kiro**: 6モデル(Claude Sonnet 4.5、Haiku 4.5、GLM 5、MiniMax M2.5、Qwen3 Coder Next、DeepSeek 3.2)
+- **OpenCode Free**: ログイン不要、モデルリスト自動取得
+- **Vertex AI**: Gemini 3.1 Pro + パートナーモデル($300無料クレジット)
 
 ---
 
@@ -124,7 +124,7 @@ npm install -g 9router
 ```
 Endpoint: http://localhost:20128/v1
 API Key: [ダッシュボードから取得]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 [→ 完全なスタートガイド](getting-started/quick-start.md)
@@ -136,7 +136,7 @@ Model: cc/claude-opus-4-5-20251101
 ### 個人開発者向け
 
 - Claude Code/Codexサブスクリプションを最大限活用
-- Gemini CLI無料プラン(月18万)を活用
+- Antigravity無料階層(Googleアカウント)を活用
 - 超低価格モデル(100万あたり$0.20)へフォールバック
 - レート制限なしで24時間コーディング
 

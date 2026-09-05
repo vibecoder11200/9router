@@ -430,9 +430,9 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 
 ```
 组合："my-coding-stack"
-  1. cc/claude-opus-4-6        （你的订阅）
+  1. cc/claude-opus-5        （你的订阅）
   2. glm/glm-4.7               （低价备份，$0.6/1M）
-  3. if/kimi-k2-thinking       （免费备选）
+  3. kr/claude-sonnet-4.5       （免费备选）
 
 → 配额用完或出错时自动切换
 ```
@@ -583,7 +583,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 **解决方案：**
 ```
 组合："maximize-claude"
-  1. cc/claude-opus-4-7        （充分利用订阅）
+  1. cc/claude-opus-5        （充分利用订阅）
   2. glm/glm-5.1               （配额用完时的低价备份）
   3. kr/claude-sonnet-4.5      （免费紧急备选）
 
@@ -613,7 +613,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 **解决方案：**
 ```
 组合："always-on"
-  1. cc/claude-opus-4-7        （最佳质量）
+  1. cc/claude-opus-5        （最佳质量）
   2. cx/gpt-5.5                （第二个订阅）
   3. glm/glm-5.1               （低价，每日重置）
   4. minimax/MiniMax-M2.7      （最便宜，5小时重置）
@@ -752,9 +752,9 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 → 5小时 + 每周配额追踪
 
 模型：
-  cc/claude-opus-4-7
-  cc/claude-opus-4-6
-  cc/claude-sonnet-4-6
+  cc/claude-opus-5
+  cc/claude-sonnet-5
+  cc/claude-fable-5
   cc/claude-haiku-4-5-20251001
 ```
 
@@ -768,10 +768,10 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 → 5小时 + 每周重置
 
 模型：
+  cx/gpt-5.6-sol
   cx/gpt-5.5
   cx/gpt-5.4
-  cx/gpt-5.3-codex
-  cx/gpt-5.2-codex
+  cx/gpt-5.3-codex-spark
 ```
 
 ### GitHub Copilot
@@ -904,7 +904,7 @@ Vertex 合作伙伴（通过 Vertex 提供 Anthropic / DeepSeek / GLM / Qwen）�
 
 名称：premium-coding
 模型：
-  1. cc/claude-opus-4-7 (订阅主用)
+  1. cc/claude-opus-5 (订阅主用)
   2. glm/glm-5.1 (低价备份，$0.6/1M)
   3. minimax/MiniMax-M2.7 (最便宜的备选，$0.20/1M)
 
@@ -940,7 +940,7 @@ Vertex 合作伙伴（通过 Vertex 提供 Anthropic / DeepSeek / GLM / Qwen）�
 设置 → 模型 → 高级：
   OpenAI API Base URL：http://localhost:20128/v1
   OpenAI API Key：[来自 9router 控制面板]
-  Model：cc/claude-opus-4-7
+  Model：cc/claude-opus-5
 ```
 
 或使用组合：`premium-coding`
@@ -1010,7 +1010,7 @@ codex "your prompt"
 Provider：OpenAI 兼容
 Base URL：http://localhost:20128/v1
 API Key：[来自控制面板]
-Model：cc/claude-opus-4-7
+Model：cc/claude-opus-5
 ```
 
 </details>
@@ -1133,18 +1133,18 @@ docker stop 9router && docker rm 9router
 <summary><b>查看所有可用模型</b></summary>
 
 **Claude Code（`cc/`）** - Pro/Max：
-- `cc/claude-opus-4-7`
-- `cc/claude-opus-4-6`
-- `cc/claude-sonnet-4-6`
-- `cc/claude-sonnet-4-5-20250929`
+- `cc/claude-opus-5`
+- `cc/claude-sonnet-5`
+- `cc/claude-fable-5-1`
+- `cc/claude-fable-5`
 - `cc/claude-haiku-4-5-20251001`
 
 **Codex（`cx/`）** - Plus/Pro：
+- `cx/gpt-5.6-sol`
 - `cx/gpt-5.5`
 - `cx/gpt-5.4`
-- `cx/gpt-5.3-codex`
-- `cx/gpt-5.2-codex`
-- `cx/gpt-5.1-codex-max`
+- `cx/gpt-5.4-mini`
+- `cx/gpt-5.3-codex-spark`
 
 **GitHub Copilot（`gh/`）**：
 - `gh/gpt-5.4`
@@ -1160,15 +1160,19 @@ docker stop 9router && docker rm 9router
 - `cu/kimi-k2.5`
 
 **GLM（`glm/`）** - $0.6/1M：
+- `glm/glm-5.3`
 - `glm/glm-5.1`
 - `glm/glm-5`
 - `glm/glm-4.7`
 
 **MiniMax（`minimax/`）** - $0.2/1M：
+- `minimax/MiniMax-M3`
 - `minimax/MiniMax-M2.7`
 - `minimax/MiniMax-M2.5`
 
 **Kimi（`kimi/`）** - $9/月固定：
+- `kimi/kimi-k3`
+- `kimi/kimi-k2.7-code`
 - `kimi/kimi-k2.5`
 - `kimi/kimi-k2.5-thinking`
 
@@ -1202,7 +1206,7 @@ docker stop 9router && docker rm 9router
 
 **速率限制**
 - 订阅配额用完 → 切换到 GLM/MiniMax
-- 添加组合：`cc/claude-opus-4-7 → glm/glm-5.1 → kr/claude-sonnet-4.5`
+- 添加组合：`cc/claude-opus-5 → glm/glm-5.1 → kr/claude-sonnet-4.5`
 
 **OAuth token 已过期**
 - 9Router 自动刷新
@@ -1247,7 +1251,7 @@ Authorization: Bearer your-api-key
 Content-Type: application/json
 
 {
-  "model": "cc/claude-opus-4-6",
+  "model": "cc/claude-opus-5",
   "messages": [
     {"role": "user", "content": "Write a function to..."}
   ],

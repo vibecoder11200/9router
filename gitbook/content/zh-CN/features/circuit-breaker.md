@@ -35,7 +35,7 @@ Dashboard → Quota → 熔断器面板
 
 账号               状态       失败    冷却
 cc/claude-opus-5   🔴 open     7      42 秒后重试
-cx/gpt-5.2-codex   🟡 half-open 1      探活中…
+cx/gpt-5.6-sol   🟡 half-open 1      探活中…
 glm/glm-4.7        🟢 closed   —      —
 ```
 

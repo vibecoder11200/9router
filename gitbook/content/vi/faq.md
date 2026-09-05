@@ -28,9 +28,8 @@ Nó định tuyến request thông minh qua nhiều provider AI bằng hệ th�
 ### Tier 1: Subscription (Dùng đầu tiên)
 - **Claude Code** (Pro/Max): $20-100/tháng - Quota 5 giờ + hàng tuần
 - **OpenAI Codex** (Plus/Pro): $20-200/tháng - Quota 5 giờ + hàng tuần
-- **Gemini CLI**: MIỄN PHÍ - 180K completions/tháng + 1K/ngày
 - **GitHub Copilot**: $10-19/tháng - Reset hàng tháng
-- **Antigravity**: MIỄN PHÍ - Tương tự Gemini
+- **Antigravity**: MIỄN PHÍ - Gemini 3.8 Flash + Claude, quota hàng ngày/hàng tháng
 
 **Mục tiêu:** Dùng hết mọi quota trước khi reset!
 
@@ -42,9 +41,11 @@ Nó định tuyến request thông minh qua nhiều provider AI bằng hệ th�
 **Mục tiêu:** Rẻ hơn 90% so với ChatGPT API ($20/1M)!
 
 ### Tier 3: Free (Khẩn cấp)
-- **iFlow**: 8 model MIỄN PHÍ (Kimi K2, Qwen3, GLM, MiniMax...)
-- **Qwen**: 3 model MIỄN PHÍ (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro**: 2 model MIỄN PHÍ (Claude Sonnet 4.5, Haiku 4.5)
+- **Kiro**: 6 model MIỄN PHÍ (~50 credits/tháng - Claude Sonnet 4.5, Haiku 4.5, GLM 5, Qwen3 Coder Next...)
+- **OpenCode Free**: không cần đăng nhập, passthrough không giới hạn
+- **Vertex AI**: $300 credit GCP miễn phí (90 ngày)
+
+> Lưu ý: iFlow chuyển sang trả phí từ 2026 và OAuth miễn phí của Qwen Code kết thúc 2026-04-15.
 
 **Mục tiêu:** Fallback chi phí 0 khi mọi thứ khác bị giới hạn quota!
 
@@ -55,10 +56,10 @@ Nó định tuyến request thông minh qua nhiều provider AI bằng hệ th�
 **Có, 9Router hoàn toàn miễn phí và mã nguồn mở 100%.**
 
 **Provider free tier có sẵn:**
-- **Gemini CLI** - 180K completions/tháng (MIỄN PHÍ tài khoản Google)
-- **iFlow** - 8 model không giới hạn (MIỄN PHÍ OAuth)
-- **Qwen** - 3 model không giới hạn (MIỄN PHÍ OAuth)
-- **Kiro** - Claude Sonnet/Haiku (MIỄN PHÍ AWS Builder ID)
+- **Kiro** - Claude Sonnet 4.5/Haiku 4.5 + 4 model khác (~50 credits/tháng, MIỄN PHÍ AWS Builder ID)
+- **OpenCode Free** - không cần đăng nhập, danh sách model tự động lấy
+- **Vertex AI** - $300 credit miễn phí (90 ngày)
+- **Antigravity** - MIỄN PHÍ với tài khoản Google (thay thế Gemini CLI)
 
 **Bạn có thể code MIỄN PHÍ mãi mãi chỉ dùng provider free tier!**
 
@@ -71,11 +72,10 @@ Nó định tuyến request thông minh qua nhiều provider AI bằng hệ th�
 ## Provider nào được hỗ trợ?
 
 ### Subscription Providers
-- **Claude Code** (Pro/Max) - Claude 4.5 Opus/Sonnet/Haiku
-- **OpenAI Codex** (Plus/Pro) - GPT 5.2 Codex, GPT 5.1 Codex Max
-- **Gemini CLI** (MIỄN PHÍ) - Gemini 3 Flash/Pro, 2.5 Pro/Flash
-- **GitHub Copilot** - GPT-5, Claude 4.5, Gemini 3
-- **Antigravity** (Google) - Gemini 3 Pro, Claude Sonnet 4.5
+- **Claude Code** (Pro/Max) - Claude Opus 5 / Sonnet 5 / Haiku 4.5
+- **OpenAI Codex** (Plus/Pro) - GPT 5.6 Sol, GPT 5.5
+- **GitHub Copilot** - GPT-5.4, Claude Sonnet 4.6, Gemini 3.1
+- **Antigravity** (Google) - Gemini 3.8 Flash, Claude Sonnet 4.6
 
 ### Cheap Providers
 - **GLM** (Zhipu AI) - GLM 4.7, GLM 4.6V Vision
@@ -84,9 +84,9 @@ Nó định tuyến request thông minh qua nhiều provider AI bằng hệ th�
 - **OpenRouter** - Passthrough đến mọi model OpenRouter
 
 ### Free Providers
-- **iFlow** - 8 models (Kimi K2, Qwen3, GLM, MiniMax, DeepSeek...)
-- **Qwen** - 3 models (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro** - 2 models (Claude Sonnet 4.5, Haiku 4.5)
+- **Kiro** - 6 models (Claude Sonnet 4.5, Haiku 4.5, GLM 5, MiniMax M2.5, Qwen3 Coder Next, DeepSeek 3.2)
+- **OpenCode Free** - danh sách model tự động lấy, không cần đăng nhập
+- **Vertex AI** - Gemini 3.1 Pro + model đối tác ($300 credit miễn phí)
 
 **Tổng: 15+ providers, 50+ models**
 
@@ -102,9 +102,9 @@ Xem [tài liệu providers](providers/subscription.md) để biết chi tiết.
 
 ```
 Example combo: "premium-coding"
-1. cc/claude-opus-4-5 (Subscription primary)
+1. cc/claude-opus-5 (Subscription primary)
 2. glm/glm-4.7 (Cheap backup)
-3. if/kimi-k2 (Free emergency)
+3. kr/claude-sonnet-4.5 (Free emergency)
 
 → Auto-switches when quota exhausted
 → Never stops coding
@@ -140,9 +140,9 @@ Xem [tài liệu combos](features/combos.md) để biết ví dụ.
 
 **Loại quota:**
 - **5 giờ rolling** - Claude Code, Codex, MiniMax
-- **Reset hàng ngày** - Gemini CLI (1K/ngày), GLM (10AM)
+- **Reset hàng ngày** - Antigravity, GLM (10AM)
 - **Reset hàng tuần** - Claude Code, Codex (quota thêm)
-- **Reset hàng tháng** - Gemini CLI (180K), GitHub Copilot (ngày 1)
+- **Reset hàng tháng** - GitHub Copilot (ngày 1), Antigravity
 
 **Xem quota:**
 ```
@@ -166,7 +166,7 @@ Xem [tài liệu quota tracking](features/quota-tracking.md) để biết chi ti
 Cursor Settings → Models → Advanced:
   OpenAI API Base URL: https://9router.com/v1
   OpenAI API Key: [from dashboard]
-  Model: cc/claude-opus-4-5-20251101
+  Model: cc/claude-opus-5
 ```
 
 **Thay thế:** Self-host trên VPS với domain công khai:

@@ -32,10 +32,9 @@ Dashboard → Home → Quota Overview
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│ Gemini CLI (gc/)                            │
+│ Antigravity (ag/)                            │
 │ ████████░░░░░░░░░░░░ 450 / 1000 (45%)      │
 │ Daily reset in: 18h 30m                     │
-│ Monthly: 45K / 180K (25%)                   │
 │ Cost: $0 (free tier)                        │
 └─────────────────────────────────────────────┘
 
@@ -54,9 +53,9 @@ Dashboard → Home → Quota Overview
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│ iFlow (if/)                                 │
-│ ████████████████████ Unlimited              │
-│ Cost: $0 (free forever)                     │
+│ Kiro (kr/)                                 │
+│ ████████████████████ Free (~50 credits/mo)              │
+│ Cost: $0 (free tier)                     │
 └─────────────────────────────────────────────┘
 ```
 
@@ -72,7 +71,7 @@ Mỗi request hiển thị usage token chi tiết:
 Dashboard → Activity → Recent Requests
 
 Request #1234
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 Timestamp: 2026-02-04 04:15:32
 
 Tokens:
@@ -103,9 +102,9 @@ Current request:
 Dashboard → Analytics → Token Usage
 
 Today (Feb 4, 2026):
-  cc/claude-opus-4-5: 15M tokens ($0, subscription)
+  cc/claude-opus-5: 15M tokens ($0, subscription)
   glm/glm-4.7: 8M tokens ($4.80)
-  if/kimi-k2-thinking: 3M tokens ($0, free)
+  kr/claude-sonnet-4.5: 3M tokens ($0, free)
   
 Total: 26M tokens
 Cost: $4.80
@@ -139,20 +138,17 @@ Limit: 5 hours (Plus) / 10 hours (Pro)
 Reset: Rolling 5-hour window + Weekly refresh
 
 Dashboard shows:
-  GPT-5.2 Codex: 3.5h / 5h used
+  GPT-5.6 Sol: 3.5h / 5h used
   Resets in: 1h 30m
 ```
 
-**Gemini CLI (MIỄN PHÍ)**
+**Antigravity (MIỄN PHÍ)**
 ```
-Quota type: Request count + Monthly tokens
-Daily limit: 1,000 requests
-Monthly limit: 180,000 completions
+Quota type: Request count + Daily/Monthly limits
 Reset: Daily 00:00 UTC + Monthly 1st
 
 Dashboard shows:
   Today: 450 / 1,000 requests (45%)
-  This month: 45K / 180K completions (25%)
   Daily reset in: 18h 30m
   Monthly reset in: 26 days
 ```
@@ -209,15 +205,15 @@ Dashboard shows:
 
 ### Free Providers
 
-**iFlow / Qwen / Kiro**
+**Kiro / OpenCode Free / Vertex AI**
 ```
-Quota type: Unlimited (rate-limited)
-Limit: No hard limit
-Reset: N/A
+Quota type: Free credits / Unlimited passthrough
+Limit: Kiro ~50 credits/month; OpenCode rate-limited; Vertex $300/90 days
+Reset: Kiro monthly, Vertex one-time trial
 
 Dashboard shows:
   Used today: 5M tokens
-  Cost: $0 (free forever)
+  Cost: $0 (free tier)
   Status: ✅ Available
 ```
 
@@ -232,7 +228,7 @@ Dashboard → Costs → Today
 
 Subscription providers: $0
   Claude Code: 15M tokens ($0, included)
-  Gemini CLI: 3M tokens ($0, free tier)
+  Antigravity: 3M tokens ($0, free tier)
 
 Paid providers: $4.80
   GLM-4.7: 8M tokens ($4.80)
@@ -241,7 +237,7 @@ Paid providers: $4.80
     Total: $4.80
 
 Free providers: $0
-  iFlow: 3M tokens ($0)
+  Kiro: 3M tokens ($0)
 
 Total today: $4.80
 ```
@@ -324,7 +320,7 @@ This month:
   Requests: 15,234
   Tokens: 320M
   Cost: $52.00
-  Top model: cc/claude-opus-4-5 (45%)
+  Top model: cc/claude-opus-5 (45%)
 ```
 
 ### Usage theo Model
@@ -333,18 +329,18 @@ This month:
 Dashboard → Analytics → Models
 
 Top models (this month):
-1. cc/claude-opus-4-5: 145M tokens (45%)
+1. cc/claude-opus-5: 145M tokens (45%)
 2. glm/glm-4.7: 95M tokens (30%)
-3. if/kimi-k2-thinking: 50M tokens (16%)
+3. kr/claude-sonnet-4.5: 50M tokens (16%)
 4. minimax/MiniMax-M2.1: 20M tokens (6%)
-5. gc/gemini-3-flash: 10M tokens (3%)
+5. ag/gemini-3-flash: 10M tokens (3%)
 
 Cost breakdown:
-  cc/claude-opus: $0 (subscription)
+  cc/claude-opus-5: $0 (subscription)
   glm/glm-4.7: $45.00
-  if/kimi-k2-thinking: $0 (free)
+  kr/claude-sonnet-4.5: $0 (free)
   minimax/MiniMax-M2.1: $7.00
-  gc/gemini-3-flash: $0 (free)
+  ag/gemini-3-flash: $0 (free)
 ```
 
 ### Usage theo Thời gian
@@ -376,7 +372,7 @@ premium-coding:
   Cost: $2.40
   
   Breakdown:
-    cc/claude-opus: 8M tokens (67%, $0)
+    cc/claude-opus-5: 8M tokens (67%, $0)
     glm/glm-4.7: 3M tokens (25%, $1.80)
     minimax/MiniMax-M2.1: 1M tokens (8%, $0.20)
 
@@ -387,7 +383,7 @@ budget-combo:
   
   Breakdown:
     glm/glm-4.7: 4M tokens (67%, $2.40)
-    if/kimi-k2-thinking: 2M tokens (33%, $0)
+    kr/claude-sonnet-4.5: 2M tokens (33%, $0)
 ```
 
 ---
@@ -406,7 +402,7 @@ Thông báo thật chạy qua hệ thống **Cảnh báo** (Dashboard → Alerts
    Key sk-abc123…•789: $4.10 / $5.00 budget ngày (82%)
 
 🔴 breaker-open
-   cx/gpt-5.2-codex: 5 lỗi trong 60s — bỏ qua 60s
+   cx/gpt-5.6-sol: 5 lỗi trong 60s — bỏ qua 60s
 
 🔴 all-accounts-locked
    Mọi tài khoản glm đều bị rate-limit; request không thể phục vụ
@@ -453,7 +449,7 @@ Daily routine:
 ```
 Morning check:
   ✅ Claude Code: 5h available (fresh reset)
-  ✅ Gemini CLI: 1K requests available
+  ✅ Antigravity: 1K requests available
   ⚠️ GLM-4.7: 2M tokens left (resets 10AM)
   
 Action: Use Claude Code for morning work
@@ -479,12 +475,12 @@ Dashboard → Analytics → Combos:
 
 **Ví dụ:**
 ```
-Current: cc/claude-opus → glm/glm-4.7
+Current: cc/claude-opus-5 → glm/glm-4.7
   80% via Claude (good)
   20% via GLM ($12/month)
 
-Optimized: gc/gemini-3-flash → cc/claude-opus → glm/glm-4.7
-  50% via Gemini (free)
+Optimized: ag/gemini-3-flash → cc/claude-opus-5 → glm/glm-4.7
+  50% via Antigravity (free)
   40% via Claude (subscription)
   10% via GLM ($6/month)
   
@@ -496,7 +492,7 @@ Savings: $6/month
 ```
 Dashboard → Quota → Reset Schedule:
   Claude Code: 5h rolling + Weekly Monday
-  Gemini CLI: Daily 00:00 UTC + Monthly 1st
+  Antigravity: Daily 00:00 UTC + Monthly 1st
   GLM-4.7: Daily 10:00 AM Beijing Time
   MiniMax: Rolling 5h window
 ```
@@ -517,7 +513,7 @@ Insights:
   - 10% via free tier ($0)
   
 Optimization:
-  - Increase Gemini CLI usage (free)
+  - Increase Antigravity usage (free)
   - Reduce GLM usage (expensive)
 ```
 
@@ -595,7 +591,7 @@ Response:
   },
   "byModel": [
     {
-      "model": "cc/claude-opus-4-5",
+      "model": "cc/claude-opus-5",
       "requests": 456,
       "tokens": 15000000,
       "cost": 0

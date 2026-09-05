@@ -54,11 +54,11 @@ https://9router.com
    - Manually enter the model name from your 9Router configuration
 
 2. Common model names:
-   - `gpt-4`
-   - `gpt-4o`
-   - `claude-opus-4-5`
-   - `claude-sonnet-4-5`
-   - `gemini-2.0-flash`
+   - `gpt-5.4`
+   - `gpt-5.5`
+   - `claude-opus-5`
+   - `claude-sonnet-5`
+   - `gemini-3-flash`
 
 ### 6. Save Configuration
 
@@ -72,7 +72,7 @@ Your Cline settings should look like this:
 API Provider: Ollama
 Base URL: http://localhost:20128/v1
 API Key: sk-9router-xxxxxxxxxxxxx
-Model: gpt-4
+Model: gpt-5.4
 ```
 
 ## Available Models
@@ -81,11 +81,11 @@ You can use any model configured in your 9Router dashboard. Common examples:
 
 | Model Name | Provider | Description |
 |------------|----------|-------------|
-| `gpt-4` | OpenAI | GPT-4 Turbo |
-| `gpt-4o` | OpenAI | GPT-4 Optimized |
-| `claude-opus-4-5` | Anthropic | Claude Opus 4.5 |
-| `claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `gemini-2.0-flash` | Google | Gemini 2.0 Flash |
+| `gpt-5.4` | OpenAI | GPT-5.4 |
+| `gpt-5.5` | OpenAI | GPT-5.5 |
+| `claude-opus-5` | Anthropic | Claude Opus 5 |
+| `claude-sonnet-5` | Anthropic | Claude Sonnet 5 |
+| `gemini-3-flash` | Google | Gemini 3 Flash |
 
 ## Usage
 
@@ -135,7 +135,7 @@ You can use any model configured in your 9Router dashboard. Common examples:
 1. Verify the model name matches exactly with your 9Router configuration
 2. Check that the provider connection is active in 9Router dashboard
 3. Ensure the model is available in your connected providers
-4. Try using the full model name (e.g., `openai/gpt-4` instead of `gpt-4`)
+4. Try using the full model name (e.g., `openai/gpt-5.4` instead of `gpt-5.4`)
 
 ### Cline Not Responding
 

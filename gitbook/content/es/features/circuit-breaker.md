@@ -35,7 +35,7 @@ Dashboard → Quota → panel Circuit Breaker
 
 Cuenta             Estado     Fallos   Cooldown
 cc/claude-opus-5   🔴 open     7        reintentar en 42s
-cx/gpt-5.2-codex   🟡 half-open 1        sondeando…
+cx/gpt-5.6-sol   🟡 half-open 1        sondeando…
 glm/glm-4.7        🟢 closed   —        —
 ```
 

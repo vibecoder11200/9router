@@ -28,9 +28,8 @@
 ### Tier 1: サブスクリプション(最初に最大化)
 - **Claude Code** (Pro/Max): 月$20〜100 - 5時間 + 週次クォータ
 - **OpenAI Codex** (Plus/Pro): 月$20〜200 - 5時間 + 週次クォータ
-- **Gemini CLI**: 無料 - 月18万コンプリーション + 1K/日
 - **GitHub Copilot**: 月$10〜19 - 月次リセット
-- **Antigravity**: 無料 - Geminiと同様
+- **Antigravity**: 無料 - Gemini 3.8 Flash + Claude、日次/月次クォータ
 
 **目標:** リセット前にクォータを余すことなく使用!
 
@@ -42,9 +41,11 @@
 **目標:** ChatGPT API(100万あたり$20)より90%安い!
 
 ### Tier 3: 無料(緊急時)
-- **iFlow**: 8モデル無料(Kimi K2、Qwen3、GLM、MiniMax...)
-- **Qwen**: 3モデル無料(Qwen3 Coder Plus/Flash、Vision)
-- **Kiro**: 2モデル無料(Claude Sonnet 4.5、Haiku 4.5)
+- **Kiro**: 6モデル無料(月約50クレジット - Claude Sonnet 4.5、Haiku 4.5、GLM 5、Qwen3 Coder Next...)
+- **OpenCode Free**: ログイン不要、無制限パススルー
+- **Vertex AI**: $300の無料GCPクレジット(90日間)
+
+> 注意: iFlowは2026年から有料化、Qwen Codeの無料OAuthは2026-04-15に終了しました。
 
 **目標:** 他のすべてがクォータ制限に達した時のゼロコストフォールバック!
 
@@ -55,10 +56,10 @@
 **はい、9Router自体は100%無料でオープンソースです。**
 
 **利用可能な無料階層プロバイダー:**
-- **Gemini CLI** - 月18万コンプリーション(無料Googleアカウント)
-- **iFlow** - 8モデル無制限(無料OAuth)
-- **Qwen** - 3モデル無制限(無料OAuth)
-- **Kiro** - Claude Sonnet/Haiku(無料AWS Builder ID)
+- **Kiro** - Claude Sonnet 4.5/Haiku 4.5 + 4つの追加モデル(月約50クレジット、無料AWS Builder ID)
+- **OpenCode Free** - ログイン不要、モデルリスト自動取得
+- **Vertex AI** - $300無料クレジット(90日間)
+- **Antigravity** - Googleアカウントで無料(Gemini CLIの後継)
 
 **無料階層プロバイダーのみを使用して永久に無料でコーディングできます!**
 
@@ -71,11 +72,10 @@
 ## どのプロバイダーがサポートされていますか?
 
 ### サブスクリプションプロバイダー
-- **Claude Code** (Pro/Max) - Claude 4.5 Opus/Sonnet/Haiku
-- **OpenAI Codex** (Plus/Pro) - GPT 5.2 Codex、GPT 5.1 Codex Max
-- **Gemini CLI** (無料) - Gemini 3 Flash/Pro、2.5 Pro/Flash
-- **GitHub Copilot** - GPT-5、Claude 4.5、Gemini 3
-- **Antigravity** (Google) - Gemini 3 Pro、Claude Sonnet 4.5
+- **Claude Code** (Pro/Max) - Claude Opus 5 / Sonnet 5 / Haiku 4.5
+- **OpenAI Codex** (Plus/Pro) - GPT 5.6 Sol、GPT 5.5
+- **GitHub Copilot** - GPT-5.4、Claude Sonnet 4.6、Gemini 3.1
+- **Antigravity** (Google) - Gemini 3.8 Flash、Claude Sonnet 4.6
 
 ### 低価格プロバイダー
 - **GLM** (Zhipu AI) - GLM 4.7、GLM 4.6V Vision
@@ -84,9 +84,9 @@
 - **OpenRouter** - 任意のOpenRouterモデルへのパススルー
 
 ### 無料プロバイダー
-- **iFlow** - 8モデル(Kimi K2、Qwen3、GLM、MiniMax、DeepSeek...)
-- **Qwen** - 3モデル(Qwen3 Coder Plus/Flash、Vision)
-- **Kiro** - 2モデル(Claude Sonnet 4.5、Haiku 4.5)
+- **Kiro** - 6モデル(Claude Sonnet 4.5、Haiku 4.5、GLM 5、MiniMax M2.5、Qwen3 Coder Next、DeepSeek 3.2)
+- **OpenCode Free** - 自動取得モデルリスト、ログイン不要
+- **Vertex AI** - Gemini 3.1 Pro + パートナーモデル($300無料クレジット)
 
 **合計: 15以上のプロバイダー、50以上のモデル**
 
@@ -102,9 +102,9 @@
 
 ```
 コンボ例: "premium-coding"
-1. cc/claude-opus-4-5 (サブスクリプション優先)
+1. cc/claude-opus-5 (サブスクリプション優先)
 2. glm/glm-4.7 (低価格バックアップ)
-3. if/kimi-k2 (無料緊急時)
+3. kr/claude-sonnet-4.5 (無料緊急時)
 
 → クォータ消費時に自動切替
 → コーディングが止まらない
@@ -140,9 +140,9 @@ Dashboard → Combos → Create New
 
 **クォータタイプ:**
 - **5時間ローリング** - Claude Code、Codex、MiniMax
-- **日次リセット** - Gemini CLI(1K/日)、GLM(午前10時)
+- **日次リセット** - Antigravity、GLM(午前10時)
 - **週次リセット** - Claude Code、Codex(追加クォータ)
-- **月次リセット** - Gemini CLI(18万)、GitHub Copilot(1日)
+- **月次リセット** - GitHub Copilot(1日)、Antigravity
 
 **クォータを表示:**
 ```
@@ -166,7 +166,7 @@ Dashboard → Providers → Quota Tracking
 Cursor Settings → Models → Advanced:
   OpenAI API Base URL: https://9router.com/v1
   OpenAI API Key: [ダッシュボードから取得]
-  Model: cc/claude-opus-4-5-20251101
+  Model: cc/claude-opus-5
 ```
 
 **代替案:** パブリックドメインでVPSにセルフホスト:

@@ -266,10 +266,10 @@ Dashboard → Combos → Create New
 
 Name: cheap-backup
 Models:
-  1. cc/claude-opus-4-5 (Suscripción principal)
+  1. cc/claude-opus-5 (Suscripción principal)
   2. glm/glm-4.7 (Respaldo barato, reinicio diario)
   3. minimax/MiniMax-M2.1 (Fallback más barato)
-  4. if/kimi-k2-thinking (Emergencia GRATIS)
+  4. kr/claude-sonnet-4.5 (Emergencia GRATIS)
 
 Usar en CLI: cheap-backup
 ```
@@ -293,7 +293,7 @@ Tarde: Cuota de suscripción
 Noche: MiniMax (reinicio 5h)
 → Respaldo barato para trabajo nocturno
 
-Madrugada: Nivel gratis (iFlow)
+Madrugada: Nivel gratis (Kiro)
 → Respaldo de emergencia cero costo
 ```
 
@@ -315,14 +315,14 @@ Total: 45M tokens por $20
 
 ```
 Prioridad:
-1. Gemini CLI (180K/mes GRATIS)
+1. Antigravity (GRATIS, cuenta Google)
 2. Claude Code (suscripción que ya pagas)
 3. GLM-4.7 (respaldo barato, $0.6/1M)
 4. MiniMax M2.1 (más barato, $0.2/1M)
-5. iFlow (emergencia GRATIS)
+5. Kiro (emergencia GRATIS)
 
 Ejemplo de costo mensual (100M tokens):
-- 60M vía Gemini CLI: $0 (gratis)
+- 60M vía Antigravity: $0 (gratis)
 - 30M vía Claude Code: $0 (suscripción)
 - 8M vía GLM: $4.80
 - 2M vía MiniMax: $0.40
@@ -406,10 +406,10 @@ Coding Plan: 3× cuota (¡mismo precio!)
 
 ```
 Combo:
-1. gc/gemini-3-flash (GRATIS principal)
+1. ag/gemini-3-flash (GRATIS principal)
 2. glm/glm-4.7 (respaldo barato)
 3. minimax/MiniMax-M2.1 (más barato)
-4. if/kimi-k2-thinking (emergencia GRATIS)
+4. kr/claude-sonnet-4.5 (emergencia GRATIS)
 
 Resultado: Minimiza costos, maximiza uptime
 ```

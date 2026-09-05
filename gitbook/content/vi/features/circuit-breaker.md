@@ -35,7 +35,7 @@ Dashboard → Quota → panel Circuit Breaker
 
 Tài khoản          Trạng thái  Lỗi     Cooldown
 cc/claude-opus-5   🔴 open      7       thử lại sau 42s
-cx/gpt-5.2-codex   🟡 half-open 1       đang probe…
+cx/gpt-5.6-sol   🟡 half-open 1       đang probe…
 glm/glm-4.7        🟢 closed    —       —
 ```
 

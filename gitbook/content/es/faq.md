@@ -28,9 +28,8 @@ Enruta inteligentemente las solicitudes a través de múltiples proveedores de I
 ### Nivel 1: Suscripción (Maximiza primero)
 - **Claude Code** (Pro/Max): $20-100/mes - Cuota de 5 horas + semanal
 - **OpenAI Codex** (Plus/Pro): $20-200/mes - Cuota de 5 horas + semanal
-- **Gemini CLI**: GRATIS - 180K completados/mes + 1K/día
 - **GitHub Copilot**: $10-19/mes - Reinicio mensual
-- **Antigravity**: GRATIS - Similar a Gemini
+- **Antigravity**: GRATIS - Gemini 3.8 Flash + Claude, cuota diaria/mensual
 
 **Objetivo:** ¡Usa cada bit de cuota antes de que se reinicie!
 
@@ -42,9 +41,11 @@ Enruta inteligentemente las solicitudes a través de múltiples proveedores de I
 **Objetivo:** ¡90% más barato que ChatGPT API ($20/1M)!
 
 ### Nivel 3: Gratis (Emergencia)
-- **iFlow**: 8 modelos GRATIS (Kimi K2, Qwen3, GLM, MiniMax...)
-- **Qwen**: 3 modelos GRATIS (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro**: 2 modelos GRATIS (Claude Sonnet 4.5, Haiku 4.5)
+- **Kiro**: 6 modelos GRATIS (~50 créditos/mes - Claude Sonnet 4.5, Haiku 4.5, GLM 5, Qwen3 Coder Next...)
+- **OpenCode Free**: sin login, passthrough ilimitado
+- **Vertex AI**: $300 en créditos GCP gratis (90 días)
+
+> Nota: iFlow es de pago desde 2026 y el OAuth gratis de Qwen Code terminó el 2026-04-15.
 
 **Objetivo:** ¡Fallback de cero costo cuando todo lo demás está limitado por cuota!
 
@@ -55,10 +56,10 @@ Enruta inteligentemente las solicitudes a través de múltiples proveedores de I
 **Sí, 9Router en sí es 100% gratis y open source.**
 
 **Proveedores de nivel gratis disponibles:**
-- **Gemini CLI** - 180K completados/mes (cuenta Google GRATIS)
-- **iFlow** - 8 modelos ilimitados (OAuth GRATIS)
-- **Qwen** - 3 modelos ilimitados (OAuth GRATIS)
-- **Kiro** - Claude Sonnet/Haiku (AWS Builder ID GRATIS)
+- **Kiro** - Claude Sonnet 4.5/Haiku 4.5 + 4 más (~50 créditos/mes, AWS Builder ID GRATIS)
+- **OpenCode Free** - sin login, lista de modelos auto-obtenida
+- **Vertex AI** - $300 en créditos gratis (90 días)
+- **Antigravity** - GRATIS con cuenta Google (reemplaza a Gemini CLI)
 
 **¡Puedes codificar GRATIS para siempre usando solo proveedores de nivel gratis!**
 
@@ -71,11 +72,10 @@ Enruta inteligentemente las solicitudes a través de múltiples proveedores de I
 ## ¿Qué proveedores son compatibles?
 
 ### Proveedores de suscripción
-- **Claude Code** (Pro/Max) - Claude 4.5 Opus/Sonnet/Haiku
-- **OpenAI Codex** (Plus/Pro) - GPT 5.2 Codex, GPT 5.1 Codex Max
-- **Gemini CLI** (GRATIS) - Gemini 3 Flash/Pro, 2.5 Pro/Flash
-- **GitHub Copilot** - GPT-5, Claude 4.5, Gemini 3
-- **Antigravity** (Google) - Gemini 3 Pro, Claude Sonnet 4.5
+- **Claude Code** (Pro/Max) - Claude Opus 5 / Sonnet 5 / Haiku 4.5
+- **OpenAI Codex** (Plus/Pro) - GPT 5.6 Sol, GPT 5.5
+- **GitHub Copilot** - GPT-5.4, Claude Sonnet 4.6, Gemini 3.1
+- **Antigravity** (Google) - Gemini 3.8 Flash, Claude Sonnet 4.6
 
 ### Proveedores baratos
 - **GLM** (Zhipu AI) - GLM 4.7, GLM 4.6V Vision
@@ -84,9 +84,9 @@ Enruta inteligentemente las solicitudes a través de múltiples proveedores de I
 - **OpenRouter** - Passthrough a cualquier modelo de OpenRouter
 
 ### Proveedores gratis
-- **iFlow** - 8 modelos (Kimi K2, Qwen3, GLM, MiniMax, DeepSeek...)
-- **Qwen** - 3 modelos (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro** - 2 modelos (Claude Sonnet 4.5, Haiku 4.5)
+- **Kiro** - 6 modelos (Claude Sonnet 4.5, Haiku 4.5, GLM 5, MiniMax M2.5, Qwen3 Coder Next, DeepSeek 3.2)
+- **OpenCode Free** - lista de modelos auto-obtenida, sin login
+- **Vertex AI** - Gemini 3.1 Pro + modelos partner ($300 en créditos gratis)
 
 **Total: 15+ proveedores, 50+ modelos**
 
@@ -102,9 +102,9 @@ Consulta la [documentación de proveedores](providers/subscription.md) para más
 
 ```
 Ejemplo de combo: "premium-coding"
-1. cc/claude-opus-4-5 (Suscripción principal)
+1. cc/claude-opus-5 (Suscripción principal)
 2. glm/glm-4.7 (Respaldo barato)
-3. if/kimi-k2 (Emergencia gratis)
+3. kr/claude-sonnet-4.5 (Emergencia gratis)
 
 → Cambio automático cuando se agota la cuota
 → Nunca para de codificar
@@ -140,9 +140,9 @@ Consulta la [documentación de combos](features/combos.md) para ejemplos.
 
 **Tipos de cuota:**
 - **5 horas rolling** - Claude Code, Codex, MiniMax
-- **Reinicio diario** - Gemini CLI (1K/día), GLM (10AM)
+- **Reinicio diario** - Antigravity, GLM (10AM)
 - **Reinicio semanal** - Claude Code, Codex (cuota adicional)
-- **Reinicio mensual** - Gemini CLI (180K), GitHub Copilot (día 1)
+- **Reinicio mensual** - GitHub Copilot (día 1), Antigravity
 
 **Ver cuota:**
 ```
@@ -166,7 +166,7 @@ Consulta la [documentación de seguimiento de cuota](features/quota-tracking.md)
 Cursor Settings → Models → Advanced:
   OpenAI API Base URL: https://9router.com/v1
   OpenAI API Key: [desde el dashboard]
-  Model: cc/claude-opus-4-5-20251101
+  Model: cc/claude-opus-5
 ```
 
 **Alternativa:** Auto-hospéda en VPS con dominio público:

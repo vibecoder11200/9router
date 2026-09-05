@@ -18,7 +18,7 @@
 
 **Start maximizing value:**
 - ✅ **Maximize Subscriptions** - Track and use every bit of Claude Code, Codex, Gemini quota
-- ✅ **FREE Available** - Access iFlow, Qwen, Kiro models via CLI
+- ✅ **FREE Available** - Access Kiro, OpenCode Free, Vertex AI models via CLI
 - ✅ **Ultra-Cheap Backup** - GLM ($0.6/1M), MiniMax M2.1 ($0.20/1M)
 - ✅ **Smart Fallback** - Subscription → Cheap → Free, automatic switching
 
@@ -35,7 +35,7 @@ Tier 1 (SUBSCRIPTION): Claude Code → Codex → Gemini
   ↓ quota exhausted
 Tier 2 (CHEAP): GLM-4.7 → MiniMax M2.1 → Kimi
   ↓ budget limit
-Tier 3 (FREE): iFlow → Qwen → Kiro
+Tier 3 (FREE): Kiro → OpenCode Free → Vertex AI
 
 → Automatic switching, zero downtime!
 ```
@@ -63,7 +63,7 @@ Works with any tool that supports custom OpenAI endpoints:
 
 **Real example (100M tokens/month):**
 ```
-60M via Gemini CLI: $0 (free tier)
+60M via Antigravity: $0 (free tier)
 30M via Claude Code: $0 (subscription you already have)
 8M via GLM: $4.80
 2M via MiniMax: $0.40
@@ -81,7 +81,7 @@ Already paying for Claude Code ($20-100/month) or Codex ($20-200/month)? Get ful
 - Track quota usage in real-time
 - Auto-switch when quota resets (5-hour, weekly)
 - Use every token before it expires
-- Gemini CLI: 180K completions/month **FREE**
+- Antigravity: FREE with Google account (replaces Gemini CLI)
 
 ### Ultra-Cheap Backup
 
@@ -99,9 +99,9 @@ When subscription quota runs out, pay pennies:
 
 Emergency backup when everything else is quota-limited:
 
-- **iFlow**: 8 models (Kimi K2, Qwen3 Coder Plus, GLM 4.7, MiniMax M2)
-- **Qwen**: 3 models (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro**: Claude Sonnet 4.5, Haiku 4.5 (AWS Builder ID)
+- **Kiro**: 6 models (Claude Sonnet 4.5, Haiku 4.5, GLM 5, MiniMax M2.5, Qwen3 Coder Next, DeepSeek 3.2)
+- **OpenCode Free**: no login, model list auto-fetched
+- **Vertex AI**: Gemini 3.1 Pro + partner models ($300 free credits)
 
 ---
 
@@ -124,7 +124,7 @@ npm install -g 9router
 ```
 Endpoint: http://localhost:20128/v1
 API Key: [from dashboard]
-Model: cc/claude-opus-4-5-20251101
+Model: cc/claude-opus-5
 ```
 
 [→ Full Getting Started Guide](getting-started/quick-start.md)
@@ -136,7 +136,7 @@ Model: cc/claude-opus-4-5-20251101
 ### For Individual Developers
 
 - Maximize your Claude Code/Codex subscription
-- Use Gemini CLI free tier (180K/month)
+- Use Antigravity free tier (Google account)
 - Fallback to ultra-cheap models ($0.20/1M)
 - Code 24/7 without rate limits
 
