@@ -12,13 +12,20 @@ function apiKeySecret() {
 }
 
 /**
- * Generate 6-char random keyId
+ * Generate 12-char random keyId (crypto-strong, ~62.04 bits: 36^12 = 2^62.04).
+ * v0.6.45: was 6 chars from a non-crypto PRNG (~31 bits). Longer keyIds are
+ * transparent to parseApiKey/maskApiKey (split/index-based, no length
+ * assumptions); existing 6-char keys keep validating. This raises the
+ * brute-force cost of forging key STRINGS against hash lookups (~62 bits);
+ * the re-key proof's strength comes from its needsRekey-only gate + mismatch
+ * lockout (phase-03 RT-11), not from keyId length (keyId is published in the
+ * masked display, so that proof stays 16 bits / last4 regardless).
  */
 function generateKeyId() {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(crypto.randomInt(chars.length));
   }
   return result;
 }
