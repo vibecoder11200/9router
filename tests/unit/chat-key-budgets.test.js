@@ -41,6 +41,7 @@ vi.mock("@/sse/services/auth.js", () => ({
   markAccountUnavailable: vi.fn(async () => ({ shouldFallback: true })),
   clearAccountError: vi.fn(async () => { }),
   extractApiKey: vi.fn(() => "sk-machine-keyid01-abcd"),
+  isTrustedInternalRequest: vi.fn(async () => false),
   getApiKeyRow: vi.fn(async () => harness.keyRow),
 }));
 

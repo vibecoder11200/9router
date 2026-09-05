@@ -1,6 +1,7 @@
 import {
   extractApiKey, isValidApiKey,
   getProviderCredentials, markAccountUnavailable,
+  isTrustedInternalRequest,
 } from "../services/auth.js";
 import { getSettings } from "@/lib/localDb";
 import { getModelInfo, getComboModels } from "../services/model.js";
@@ -34,7 +35,7 @@ export async function handleTts(request) {
   log.request("POST", `${url.pathname} | ${modelStr} | format=${responseFormat}${language ? ` | lang=${language}` : ""}`);
 
   const settings = await getSettings();
-  if (settings.requireApiKey) {
+  if (settings.requireApiKey && !(await isTrustedInternalRequest(request))) {
     const apiKey = extractApiKey(request);
     if (!apiKey) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
     const valid = await isValidApiKey(apiKey);

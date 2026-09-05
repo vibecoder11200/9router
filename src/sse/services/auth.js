@@ -5,6 +5,8 @@ import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import { resolveProviderId, FREE_PROVIDERS } from "@/shared/constants/providers.js";
 import { getAntigravityQuotaCache } from "./antigravityQuota.js";
 import * as log from "../utils/logger.js";
+import crypto from "node:crypto";
+import { getConsistentMachineId } from "@/shared/utils/machineId";
 
 // Mutex to prevent race conditions during account selection
 let selectionMutex = Promise.resolve();
@@ -399,6 +401,35 @@ export function extractApiKey(request) {
   }
 
   return null;
+}
+
+/**
+ * True when the request provably originates from this server's own host AND
+ * carries the per-install machine token (x-9r-cli-token, constant-time
+ * compared). Lets server-internal callers (the dashboard model-test ping,
+ * the MITM sidecar) through `requireApiKey` gates: raw API keys exist only
+ * as hashes since v0.6.36, so internal callers can never present one.
+ * Loopback is proven by `x-9r-real-ip`, which the custom server derives
+ * from the TCP socket and stamps after stripping any client-supplied value
+ * — it cannot be forged from off-box. Off-host callers are unaffected:
+ * they still need a valid API key. Mirrors dashboardGuard's CLI-token
+ * check (same salt + timing-safe compare).
+ */
+export async function isTrustedInternalRequest(request) {
+  try {
+    const realIp = String(request.headers.get("x-9r-real-ip") || "").toLowerCase();
+    const ip = realIp.startsWith("::ffff:") ? realIp.slice(7) : realIp;
+    if (ip !== "127.0.0.1" && ip !== "::1") return false;
+    const token = request.headers.get("x-9r-cli-token");
+    if (!token) return false;
+    const expected = await getConsistentMachineId("9r-cli-auth");
+    const a = Buffer.from(String(token));
+    const b = Buffer.from(String(expected));
+    if (a.length !== b.length || a.length === 0) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 /**

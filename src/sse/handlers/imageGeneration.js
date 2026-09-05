@@ -3,6 +3,7 @@ import {
   markAccountUnavailable,
   clearAccountError,
   extractApiKey,
+  isTrustedInternalRequest,
   isValidApiKey,
 } from "../services/auth.js";
 import { getSettings } from "@/lib/localDb";
@@ -37,7 +38,7 @@ export async function handleImageGeneration(request) {
 
   const apiKey = extractApiKey(request);
   const settings = await getSettings();
-  if (settings.requireApiKey) {
+  if (settings.requireApiKey && !(await isTrustedInternalRequest(request))) {
     if (!apiKey) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
     const valid = await isValidApiKey(apiKey);
     if (!valid) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");

@@ -1,3 +1,23 @@
+# v0.6.43 (2026-09-06)
+
+Hotfix on v0.6.42: with **Require API Key enabled** (the fresh-install
+default), the dashboard model test returned "HTTP 401: Missing API key" on
+every model — v0.6.42 correctly stopped sending the masked API key but left
+internal callers with no way to authenticate (raw keys exist only as hashes).
+
+## Fixes
+- **Internal loopback auth for `requireApiKey` gates**: all LLM endpoint
+  gates (chat, embeddings, images, stt, tts, video, search, fetch) now accept
+  a server-internal caller that proves (a) the request originates from the
+  host itself — `x-9r-real-ip` is stamped by the custom server from the TCP
+  socket after stripping client-supplied values — and (b) it holds the
+  per-install machine token (`x-9r-cli-token`, the same constant-time-checked
+  credential the dashboard guard already trusts). The dashboard model test
+  ping authenticates this way, so model tests work again with Require API
+  Key on. Off-host callers are unaffected and still need a valid API key;
+  keyless external requests remain 401 (verified end-to-end on a production
+  build).
+
 # v0.6.42 (2026-09-06)
 
 Fix release: repairs the model-test crash on the providers page, un-breaks

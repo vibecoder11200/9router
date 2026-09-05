@@ -5,6 +5,7 @@ import {
   markAccountUnavailable,
   clearAccountError,
   extractApiKey,
+  isTrustedInternalRequest,
   getApiKeyRow,
 } from "../services/auth.js";
 import { checkKeyBudget } from "../services/keyBudgets.js";
@@ -91,7 +92,7 @@ export async function handleChat(request, clientRawRequest = null) {
 
   // Enforce API key if enabled in settings
   const settings = await getSettings();
-  if (settings.requireApiKey) {
+  if (settings.requireApiKey && !(await isTrustedInternalRequest(request))) {
     if (!apiKey) {
       log.warn("AUTH", "Missing API key (requireApiKey=true)");
       return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");

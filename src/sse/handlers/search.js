@@ -3,6 +3,7 @@ import {
   markAccountUnavailable,
   clearAccountError,
   extractApiKey,
+  isTrustedInternalRequest,
   isValidApiKey,
 } from "../services/auth.js";
 import { getSettings, getCombos } from "@/lib/localDb";
@@ -46,7 +47,7 @@ export async function handleSearch(request) {
 
   // Enforce API key if enabled in settings
   const settings = await getSettings();
-  if (settings.requireApiKey) {
+  if (settings.requireApiKey && !(await isTrustedInternalRequest(request))) {
     if (!apiKey) {
       log.warn("AUTH", "Missing API key (requireApiKey=true)");
       return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
