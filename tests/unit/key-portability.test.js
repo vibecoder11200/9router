@@ -298,7 +298,9 @@ describe("importDb adoption + needsRekey", () => {
   it("RT-05: empty/garbage payloads throw before ANY DELETE runs", async () => {
     // importDb throws synchronously on shape rejection — call in try/catch so
     // the assertion also fails loudly if it ever resolves instead.
-    for (const bad of [{ meta: {} }, { unexpected: 1 }, {}]) {
+    // Null table values count as absent: {meta:{}, settings:null} would pass
+    // a plain presence check, wipe every table, and restore nothing.
+    for (const bad of [{ meta: {} }, { unexpected: 1 }, {}, { meta: {}, settings: null }]) {
       let threw = false;
       try { await importDb(bad); } catch { threw = true; }
       expect(threw).toBe(true);

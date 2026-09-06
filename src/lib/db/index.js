@@ -209,10 +209,12 @@ export function importDb(payload, options = {}) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     throw new Error("Invalid database payload");
   }
-  // RT-05 shape guard FIRST — before any DELETE could run.
+  // RT-05 shape guard FIRST — before any DELETE could run. Null values on a
+  // known key would pass a presence check and still wipe everything while
+  // restoring nothing, so they count as absent.
   if (
     !payload.meta || typeof payload.meta !== "object" ||
-    !KNOWN_TABLE_KEYS.some((k) => k in payload && payload[k] !== undefined)
+    !KNOWN_TABLE_KEYS.some((k) => payload[k] !== undefined && payload[k] !== null)
   ) {
     throw new Error("Invalid database payload: not a 9Router backup archive");
   }

@@ -33,7 +33,17 @@ async function handleExport() {
     return true;
   }
 
-  const res = await api.exportDatabase(password);
+  let res;
+  try {
+    res = await api.exportDatabase(password);
+  } catch (err) {
+    // The API call itself can throw (non-latin1 password makes http.request
+    // reject with ERR_INVALID_CHAR; connection refused) — same no-crash rule
+    // as the guarded write below: menuHelper runs actions without try/catch.
+    showStatus(`Export failed: ${err.message}`, "error");
+    await pause();
+    return true;
+  }
   if (!res.success) {
     showStatus(`Export failed: ${res.error}`, "error");
     await pause();
@@ -96,7 +106,14 @@ async function handleImport() {
     return true;
   }
 
-  const res = await api.importDatabase(payload, password);
+  let res;
+  try {
+    res = await api.importDatabase(payload, password);
+  } catch (err) {
+    showStatus(`Import failed: ${err.message}`, "error");
+    await pause();
+    return true;
+  }
   if (!res.success) {
     showStatus(`Import failed: ${res.error}`, "error");
     await pause();

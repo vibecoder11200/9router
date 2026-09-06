@@ -46,12 +46,17 @@ export async function GET(request) {
       if (lock.locked) return lockedResponse(lock);
     }
     const pwOk = hasPw && (await verifyDashboardPasswordAgainstStoredHash(password));
+    // Auth keeps the full baseline semantics (stored bcrypt OR the local
+    // default/initial password); SEALING is gated separately on pwOk (RT-03).
+    // An install without a stored password still authenticates and exports
+    // envelope-less + warning (RT-17) instead of being locked out of export.
+    const authOk = pwOk || (hasPw && (await verifyDashboardPassword(password, request)));
     const viaCliToken = await hasValidCliToken(request);
-    if (!viaCliToken && !pwOk) {
+    if (!viaCliToken && !authOk) {
       return hasPw ? failWithLimiter(ip).response
         : NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
-    if (hasPw && !pwOk) {
+    if (hasPw && !authOk) {
       // token + wrong password = reject, don't downgrade to envelope-less.
       return failWithLimiter(ip).response;
     }
