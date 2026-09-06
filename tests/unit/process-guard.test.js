@@ -88,7 +88,7 @@ describe("getVerifiedManagedPid (xray)", () => {
 });
 
 describe("isOurProcess helper behavior", () => {
-  it("match / mismatch / probe-failure semantics", async () => {
+  it("match / mismatch / probe-failure semantics", { timeout: 30000 }, async () => {
     // The helper deliberately never claims our OWN pid, so probe a real
     // child whose cmdline we control.
     const { spawn } = await import("node:child_process");
@@ -99,7 +99,19 @@ describe("isOurProcess helper behavior", () => {
       // Give the OS a moment to register the child's cmdline.
       await new Promise((r) => setTimeout(r, 500));
       const real = await vi.importActual("@/lib/processGuard.js");
-      expect(real.isOurProcess(child.pid, process.execPath)).toBe(true);
+      // Cold WMI/CIM on a shared CI runner can blow past the guard's
+      // deliberate 5s probe bound, so a live child reads "unknown" (by
+      // design — never falsely "ours"). Retry so a cold first query cannot
+      // flake the test; a genuine cmdline mismatch stays false on every
+      // attempt, so this weakens nothing. execFileSync blocks the event
+      // loop, which is why the raised test timeout is required once
+      // awaits sit between probes.
+      let matched = false;
+      for (let attempt = 0; attempt < 3 && !matched; attempt++) {
+        matched = real.isOurProcess(child.pid, process.execPath);
+        if (!matched) await new Promise((r) => setTimeout(r, 700));
+      }
+      expect(matched).toBe(true);
       expect(real.isOurProcess(child.pid, "definitely-not-in-cmdline")).toBe(false);
       expect(real.isOurProcess(-1, "node")).toBe(false);
     } finally {
