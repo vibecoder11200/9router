@@ -134,6 +134,28 @@ const getPageInfo = (pathname) => {
       icon: "lan",
       breadcrumbs: [],
     };
+  if (pathname.includes("/xray"))
+    return {
+      title: "V2Ray Proxy",
+      description: "Managed local proxy powered by v2go configs + Xray-core",
+      icon: "vpn_lock",
+      breadcrumbs: [],
+    };
+  if (pathname.includes("/alerts"))
+    return {
+      title: "Alerts",
+      description:
+        "Get notified on Telegram, Discord, or a webhook when things break",
+      icon: "notifications",
+      breadcrumbs: [],
+    };
+  if (pathname.includes("/pxpipe"))
+    return {
+      title: "PXPIPE",
+      description: "Image optimization pipeline status and controls",
+      icon: "image",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/skills"))
     return {
       title: "Agent Skills",

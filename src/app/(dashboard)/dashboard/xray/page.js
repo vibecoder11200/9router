@@ -576,8 +576,7 @@ export default function XrayProxyPage() {
 
   if (loading || !status) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold">V2Ray Proxy</h1>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-1 sm:gap-6 sm:px-0">
         <CardSkeleton />
         <CardSkeleton />
       </div>
@@ -605,45 +604,39 @@ export default function XrayProxyPage() {
   );
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">V2Ray Proxy</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Managed local proxy powered by v2go configs + Xray-core
-          </p>
-        </div>
-        <Badge variant={statusVariant(status.status)}>{status.status}</Badge>
-      </div>
-
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-1 sm:gap-6 sm:px-0">
       {/* Quick-start guide */}
       {!status.binaryInstalled || status.status !== "running" ? (
-        <Card className="p-4 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20">
+        <Card className="border-blue-500/20 bg-blue-500/5">
           <div className="text-sm space-y-1.5">
-            <div className="font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+            <div className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-base">lightbulb</span>
               How to use this proxy
             </div>
-            <ol className="list-decimal list-inside space-y-1 text-zinc-600 dark:text-zinc-300 ml-1">
+            <ol className="list-decimal list-inside space-y-1 text-text-muted ml-1">
               {!status.binaryInstalled && (
                 <li><strong>Install</strong> the Xray binary (one-time, ~20MB download)</li>
               )}
               <li><strong>Sync</strong> configs from v2go (auto-runs {formatInterval(settings.xraySyncIntervalMin ?? 60)} after first sync — configure below)</li>
-              <li><strong>Start</strong> the proxy — a SOCKS5 proxy opens on <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1 rounded">127.0.0.1:10808</code></li>
-              <li>Go to <Link href="/dashboard/providers" className="text-blue-600 hover:underline font-medium">Providers</Link>, pick a connection, and assign the <strong>“V2Ray Proxy (v2go)”</strong> pool — requests to that provider now route through the proxy</li>
+              <li><strong>Start</strong> the proxy — a SOCKS5 proxy opens on <code className="text-xs bg-surface-2 px-1 rounded">127.0.0.1:10808</code></li>
+              <li>Go to <Link href="/dashboard/providers" className="text-primary hover:underline font-medium">Providers</Link>, pick a connection, and assign the <strong>“V2Ray Proxy (v2go)”</strong> pool — requests to that provider now route through the proxy</li>
             </ol>
-            <div className="text-xs text-zinc-500 mt-2">
-              The proxy auto-creates a pool in <Link href="/dashboard/proxy-pools" className="text-blue-600 hover:underline">Proxy Pools</Link> when running. Switch servers any time; auto-rotate if enabled.
+            <div className="text-xs text-text-muted mt-2">
+              The proxy auto-creates a pool in <Link href="/dashboard/proxy-pools" className="text-primary hover:underline">Proxy Pools</Link> when running. Switch servers any time; auto-rotate if enabled.
             </div>
           </div>
         </Card>
       ) : null}
 
       {/* Status card */}
-      <Card className="p-5 space-y-4">
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Proxy Status</h2>
+          <Badge variant={statusVariant(status.status)} dot>{status.status}</Badge>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">Binary</div>
+            <div className="text-text-muted mb-1">Binary</div>
             {status.binaryInstalled ? (
               <Badge variant="success">Installed v{status.installedVersion}</Badge>
             ) : (
@@ -651,31 +644,31 @@ export default function XrayProxyPage() {
             )}
           </div>
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">SOCKS Port</div>
+            <div className="text-text-muted mb-1">SOCKS Port</div>
             <div className="font-mono">{status.socksPort ? `127.0.0.1:${status.socksPort}` : "—"}</div>
           </div>
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">PID</div>
+            <div className="text-text-muted mb-1">PID</div>
             <div className="font-mono">{status.pid || "—"}</div>
           </div>
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">Latency</div>
+            <div className="text-text-muted mb-1">Latency</div>
             {status.lastHealth ? (
               <Badge variant={latencyVariant(status.lastHealth.latencyMs)}>
                 {latencyText(status.lastHealth.latencyMs)}
               </Badge>
             ) : (
-              <span className="text-zinc-400">—</span>
+              <span className="text-text-muted">—</span>
             )}
           </div>
         </div>
 
         {activeConfig && (
-          <div className="text-sm bg-zinc-50 dark:bg-zinc-900 rounded-lg p-3">
-            <span className="text-zinc-500 dark:text-zinc-400">Active server: </span>
+          <div className="text-sm bg-surface-2 rounded-lg p-3">
+            <span className="text-text-muted">Active server: </span>
             <span className="font-medium">{activeConfig.name}</span>
             {status.lastHealth?.exitIp && (
-              <span className="text-zinc-500 ml-2">· exit {status.lastHealth.exitIp}</span>
+              <span className="text-text-muted ml-2">· exit {status.lastHealth.exitIp}</span>
             )}
           </div>
         )}
@@ -701,38 +694,38 @@ export default function XrayProxyPage() {
           <Button variant="ghost" onClick={() => setShowLogs((v) => !v)}>
             {showLogs ? "Hide Logs" : "View Logs"}
           </Button>
-          <a href="/dashboard/proxy-pools" className="text-sm text-blue-600 hover:underline self-center ml-auto">
+          <Link href="/dashboard/proxy-pools" className="text-sm text-primary hover:underline self-center ml-auto">
             Manage in Proxy Pools →
-          </a>
+          </Link>
         </div>
       </Card>
 
       {/* Log viewer */}
       {showLogs && (
-        <Card className="p-4">
-          <pre className="text-xs font-mono whitespace-pre-wrap max-h-64 overflow-auto text-zinc-600 dark:text-zinc-300">
+        <Card>
+          <pre className="text-xs font-mono whitespace-pre-wrap max-h-64 overflow-auto text-text-muted">
             {logs.runtime || "(no logs yet)"}
           </pre>
         </Card>
       )}
 
       {/* Sync card */}
-      <Card className="p-5 space-y-3">
+      <Card className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Subscription Sync</h2>
           <Badge>auto-update {formatInterval(settings.xraySyncIntervalMin ?? 60)}</Badge>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">Last sync</div>
+            <div className="text-text-muted mb-1">Last sync</div>
             <div>{formatDateTime(status.sync?.lastSyncAt)}</div>
           </div>
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">Configs</div>
+            <div className="text-text-muted mb-1">Configs</div>
             <div>{status.sync?.lastSyncCount ?? 0}</div>
           </div>
           <div>
-            <div className="text-zinc-500 dark:text-zinc-400 mb-1">Total syncs</div>
+            <div className="text-text-muted mb-1">Total syncs</div>
             <div>{status.sync?.totalSyncRuns ?? 0}</div>
           </div>
         </div>
@@ -743,7 +736,7 @@ export default function XrayProxyPage() {
         )}
         <div className="flex gap-2 items-end">
           <div className="flex-1">
-            <label className="text-xs text-zinc-500 block mb-1">Subscription URL</label>
+            <label className="text-xs text-text-muted block mb-1">Subscription URL</label>
             <Input
               value={settings.xraySubscriptionUrl || ""}
               onChange={(e) => setSettings((s) => ({ ...s, xraySubscriptionUrl: e.target.value }))}
@@ -757,9 +750,9 @@ export default function XrayProxyPage() {
         </div>
         <div className="grid sm:grid-cols-[220px_1fr] gap-3 items-end text-sm">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Keep inactive servers</label>
+            <label className="text-xs text-text-muted block mb-1">Keep inactive servers</label>
             <select
-              className="w-full text-sm border rounded px-2 py-2 bg-transparent"
+              className="w-full text-sm border border-border rounded px-2 py-2 bg-transparent"
               value={String(settings.xrayStaleRetentionDays ?? 7)}
               onChange={(e) => {
                 const value = Number(e.target.value);
@@ -773,15 +766,15 @@ export default function XrayProxyPage() {
               <option value="-1">Forever</option>
             </select>
           </div>
-          <div className="text-xs text-zinc-500 pb-2">
+          <div className="text-xs text-text-muted pb-2">
             Sync marks missing servers inactive first, then this setting decides when inactive rows are deleted.
           </div>
         </div>
         <div className="grid sm:grid-cols-[220px_1fr] gap-3 items-end text-sm">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Auto-sync interval</label>
+            <label className="text-xs text-text-muted block mb-1">Auto-sync interval</label>
             <select
-              className="w-full text-sm border rounded px-2 py-2 bg-transparent"
+              className="w-full text-sm border border-border rounded px-2 py-2 bg-transparent"
               value={(() => {
                 if (customMode) return "custom";
                 const preset = intervalToPresetValue(settings.xraySyncIntervalMin ?? 60);
@@ -808,14 +801,14 @@ export default function XrayProxyPage() {
               </option>
             </select>
           </div>
-          <div className="text-xs text-zinc-500 pb-2">
+          <div className="text-xs text-text-muted pb-2">
             How often the subscription is re-fetched automatically. Choose “Never” for manual-only syncs.
           </div>
         </div>
         {(customMode || intervalToPresetValue(settings.xraySyncIntervalMin ?? 60) === "custom") && (
           <div className="flex gap-2 items-end flex-wrap">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Custom interval</label>
+              <label className="text-xs text-text-muted block mb-1">Custom interval</label>
               <Input
                 type="number"
                 min={1}
@@ -825,9 +818,9 @@ export default function XrayProxyPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Unit</label>
+              <label className="text-xs text-text-muted block mb-1">Unit</label>
               <select
-                className="text-sm border rounded px-2 py-2 bg-transparent"
+                className="text-sm border border-border rounded px-2 py-2 bg-transparent"
                 value={customInterval.unit}
                 onChange={(e) => setCustomInterval((c) => ({ ...c, unit: e.target.value }))}
               >
@@ -843,7 +836,7 @@ export default function XrayProxyPage() {
             >
               Save
             </Button>
-            <div className="text-xs text-zinc-500 pb-2">
+            <div className="text-xs text-text-muted pb-2">
               Minimum 5 minutes. Equivalent to {formatInterval(customPartsToMinutes(customInterval.value, customInterval.unit))}.
             </div>
           </div>
@@ -851,7 +844,7 @@ export default function XrayProxyPage() {
       </Card>
 
       {/* Settings card */}
-      <Card className="p-5 space-y-3">
+      <Card className="space-y-3">
         <h2 className="font-semibold">Settings</h2>
         <div className="space-y-3 text-sm">
           <label className="flex items-center justify-between">
@@ -872,11 +865,11 @@ export default function XrayProxyPage() {
       </Card>
 
       {/* Model-aware filtering */}
-      <Card className="p-5 space-y-4">
+      <Card className="space-y-4">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h2 className="font-semibold">Model Proxy Filter</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-sm text-text-muted mt-1">
               Test Xray IPs against a real routed model request, then optionally delete failing configs.
             </p>
           </div>
@@ -896,17 +889,17 @@ export default function XrayProxyPage() {
           const modelKey = modelFilter.model.trim();
           const modelCount = modelKey ? (cache.byModel?.[modelKey] || 0) : 0;
           return (
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 -mt-1">
+            <div className="text-xs text-text-muted -mt-1">
               Cache: {total} result{total === 1 ? "" : "s"}
               {modelCount ? ` · ${modelCount} for current model (skipped until sync)` : ""}
             </div>
           );
         })()}
 
-        <div className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 text-sm">
+        <div className="flex items-center justify-between rounded-lg border border-border p-3 text-sm">
           <div>
             <div className="font-medium">Auto-filter after subscription sync</div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="text-xs text-text-muted">
               Off by default. When enabled, each successful v2go sync runs this filter with the saved settings.
             </div>
           </div>
@@ -918,7 +911,7 @@ export default function XrayProxyPage() {
 
         <div className="grid md:grid-cols-[1fr_120px_120px_auto] gap-2 items-end">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Model</label>
+            <label className="text-xs text-text-muted block mb-1">Model</label>
             <Input
               value={modelFilter.model}
               onChange={(e) => setModelFilter((s) => ({ ...s, model: e.target.value }))}
@@ -926,7 +919,7 @@ export default function XrayProxyPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Limit</label>
+            <label className="text-xs text-text-muted block mb-1">Limit</label>
             <Input
               type="number"
               min="1"
@@ -937,7 +930,7 @@ export default function XrayProxyPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Threads</label>
+            <label className="text-xs text-text-muted block mb-1">Threads</label>
             <Input
               type="number"
               min="1"
@@ -976,7 +969,7 @@ export default function XrayProxyPage() {
             />
             Pause while live traffic is active
           </label>
-          <span className="text-xs text-zinc-500 self-center">
+          <span className="text-xs text-text-muted self-center">
             Recommended threads: 2. Turn pause off only when you want filtering to run continuously.
           </span>
         </div>
@@ -984,7 +977,7 @@ export default function XrayProxyPage() {
         {modelFilter.pauseOnTraffic && (
           <div className="grid md:grid-cols-[160px_1fr] gap-2 items-end text-sm">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Quiet window (ms)</label>
+              <label className="text-xs text-text-muted block mb-1">Quiet window (ms)</label>
               <Input
                 type="number"
                 min="3000"
@@ -993,7 +986,7 @@ export default function XrayProxyPage() {
                 onChange={(e) => setModelFilter((s) => ({ ...s, quietMs: e.target.value }))}
               />
             </div>
-            <div className="text-xs text-zinc-500 pb-2">
+            <div className="text-xs text-text-muted pb-2">
               Filtering resumes after live model traffic has been quiet for this long.
             </div>
           </div>
@@ -1048,7 +1041,7 @@ export default function XrayProxyPage() {
         {modelFilterResult?.results?.length > 0 && (
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-xs">
-              <thead className="text-left text-zinc-500 dark:text-zinc-400 border-b">
+              <thead className="text-left text-text-muted border-b">
                 <tr>
                   <th className="py-2 px-3">Server</th>
                   <th className="py-2 px-3">Country</th>
@@ -1072,7 +1065,7 @@ export default function XrayProxyPage() {
               </tbody>
             </table>
             {modelFilterResult.results.length > 25 && (
-              <div className="text-center py-2 text-xs text-zinc-500">
+              <div className="text-center py-2 text-xs text-text-muted">
                 Showing first 25 of {modelFilterResult.results.length} results.
               </div>
             )}
@@ -1081,18 +1074,18 @@ export default function XrayProxyPage() {
       </Card>
 
       {/* Server list */}
-      <Card className="p-5 space-y-3">
+      <Card className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="font-semibold">Servers ({configs.length})</h2>
-            <div className="text-xs text-zinc-500 mt-1">
+            <div className="text-xs text-text-muted mt-1">
               Active {configCounts.active || 0} · Inactive {configCounts.inactive || 0} · Total {configCounts.total || 0}
               {configs.length > 0 ? ` · Showing ${serverPageStart + 1}-${serverPageEnd}` : ""}
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <select
-              className="text-sm border rounded px-2 py-1 bg-transparent"
+              className="text-sm border border-border rounded px-2 py-1 bg-transparent"
               value={filter.status}
               onChange={(e) => {
                 setServerPage(1);
@@ -1104,7 +1097,7 @@ export default function XrayProxyPage() {
               <option value="all">All</option>
             </select>
             <select
-              className="text-sm border rounded px-2 py-1 bg-transparent"
+              className="text-sm border border-border rounded px-2 py-1 bg-transparent"
               value={filter.protocol}
               onChange={(e) => {
                 setServerPage(1);
@@ -1115,7 +1108,7 @@ export default function XrayProxyPage() {
               {facets.protocols.map((p) => <option key={p} value={p}>{p.toUpperCase()}</option>)}
             </select>
             <select
-              className="text-sm border rounded px-2 py-1 bg-transparent"
+              className="text-sm border border-border rounded px-2 py-1 bg-transparent"
               value={filter.country}
               onChange={(e) => {
                 setServerPage(1);
@@ -1141,7 +1134,7 @@ export default function XrayProxyPage() {
 
         {configs.length > SERVER_PAGE_SIZE && (
           <div className="flex items-center justify-between gap-2 text-sm">
-            <div className="text-xs text-zinc-500">
+            <div className="text-xs text-text-muted">
               Page {safeServerPage} of {serverTotalPages} · {SERVER_PAGE_SIZE} servers per page
             </div>
             <div className="flex gap-2">
@@ -1190,7 +1183,7 @@ export default function XrayProxyPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-zinc-500 dark:text-zinc-400 border-b">
+            <thead className="text-left text-text-muted border-b">
               <tr>
                 <th className="py-2 pr-3">Server</th>
                 <th className="py-2 px-3">Protocol</th>
@@ -1202,7 +1195,7 @@ export default function XrayProxyPage() {
             </thead>
             <tbody>
               {pagedConfigs.map((c) => (
-                <tr key={c.id} className={`border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 ${c.isActive === false ? "opacity-60" : ""}`}>
+                <tr key={c.id} className={`border-b last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${c.isActive === false ? "opacity-60" : ""}`}>
                   <td className="py-2 pr-3">
                     <div className="flex items-center gap-2">
                       {c.isSelected && <span className="w-2 h-2 rounded-full bg-green-500" title="active" />}
@@ -1245,12 +1238,12 @@ export default function XrayProxyPage() {
             </tbody>
           </table>
           {configs.length === 0 && (
-            <div className="text-center py-8 text-zinc-500">
+            <div className="text-center py-8 text-text-muted">
               No {filter.status === "all" ? "" : `${filter.status} `}configs found. Click <strong>Sync Now</strong> to fetch from v2go.
             </div>
           )}
           {configs.length > 200 && (
-            <div className="flex items-center justify-center gap-3 py-3 text-xs text-zinc-500">
+            <div className="flex items-center justify-center gap-3 py-3 text-xs text-text-muted">
               <Button
                 size="sm"
                 variant="ghost"

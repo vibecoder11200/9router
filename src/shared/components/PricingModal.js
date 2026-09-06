@@ -95,13 +95,13 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-bg-base border border-border rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-surface border border-border rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="text-xl font-semibold">Pricing Configuration</h2>
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text text-2xl leading-none"
+            className="text-text-muted hover:text-text-main text-2xl leading-none"
           >
             ×
           </button>
@@ -114,7 +114,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
           ) : (
             <div className="space-y-6">
               {/* Instructions */}
-              <div className="bg-bg-subtle border border-border rounded-lg p-3 text-sm">
+              <div className="bg-surface-2 border border-border rounded-lg p-3 text-sm">
                 <p className="font-medium mb-1">Pricing Rates Format</p>
                 <p className="text-text-muted">
                   All rates are in <strong>dollars per million tokens</strong> ($/1M tokens).
@@ -127,12 +127,12 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
                 const models = Object.keys(pricingData[provider]).sort();
                 return (
                   <div key={provider} className="border border-border rounded-lg overflow-hidden">
-                    <div className="bg-bg-subtle px-4 py-2 font-semibold text-sm">
+                    <div className="bg-surface-2 px-4 py-2 font-semibold text-sm">
                       {provider.toUpperCase()}
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-bg-hover text-text-muted uppercase text-xs">
+                        <thead className="bg-surface-2/50 text-text-muted uppercase text-xs">
                           <tr>
                             <th className="px-3 py-2 text-left">Model</th>
                             <th className="px-3 py-2 text-right">Input</th>
@@ -144,7 +144,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
                         </thead>
                         <tbody className="divide-y divide-border">
                           {models.map(model => (
-                            <tr key={model} className="hover:bg-bg-subtle/50">
+                            <tr key={model} className="hover:bg-surface-2/50">
                               <td className="px-3 py-2 font-medium">{model}</td>
                               {pricingFields.map(field => (
                                 <td key={field} className="px-3 py-2">
@@ -154,7 +154,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
                                     min="0"
                                     value={pricingData[provider][model][field] || 0}
                                     onChange={(e) => handlePricingChange(provider, model, field, e.target.value)}
-                                    className="w-20 px-2 py-1 text-right bg-bg-base border border-border rounded focus:outline-none focus:border-primary"
+                                    className="w-20 px-2 py-1 text-right bg-surface border border-border rounded focus:outline-none focus:border-primary"
                                   />
                                 </td>
                               ))}
@@ -188,7 +188,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-text-muted hover:text-text border border-border rounded transition-colors"
+              className="px-4 py-2 text-sm text-text-muted hover:text-text-main border border-border rounded transition-colors"
               disabled={saving}
             >
               Cancel

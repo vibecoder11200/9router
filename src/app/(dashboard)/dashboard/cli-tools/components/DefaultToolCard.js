@@ -158,7 +158,7 @@ export default function DefaultToolCard({ toolId, tool, isExpanded, onToggle, ba
               {item.step}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-text">{item.title}</p>
+              <p className="font-medium text-text-main">{item.title}</p>
               {item.desc && <p className="text-sm text-text-muted mt-0.5">{item.desc}</p>}
               {item.type === "apiKeySelector" && renderApiKeySelector()}
               {item.type === "modelSelector" && renderModelSelector()}

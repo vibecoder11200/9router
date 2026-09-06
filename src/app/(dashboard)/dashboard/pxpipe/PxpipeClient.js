@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   AreaChart,
   Area,
@@ -50,7 +51,7 @@ const REASON_LABELS = {
 
 function SummaryCard({ label, value, sub, tone }) {
   return (
-    <Card className="p-4">
+    <Card padding="sm">
       <p className="text-xs text-text-muted uppercase tracking-wide">{label}</p>
       <p className={`text-xl font-semibold mt-1 ${tone || ""}`}>{value}</p>
       {sub && <p className="text-xs text-text-muted mt-0.5">{sub}</p>}
@@ -102,20 +103,14 @@ export default function PxpipeClient() {
           : "Stopped";
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">image</span>
-          PXPIPE Dashboard
-        </h2>
-        <div className="flex items-center gap-2">
-          <a href="/dashboard/token-saver" className="text-xs text-primary underline hover:opacity-80">
-            Token Saver settings
-          </a>
-          <Button size="sm" variant="ghost" onClick={refresh} disabled={loading}>
-            {loading ? "Refreshing…" : "Refresh"}
-          </Button>
-        </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-1 sm:gap-6 sm:px-0">
+      <div className="flex items-center justify-end flex-wrap gap-2">
+        <Link href="/dashboard/token-saver" className="text-xs text-primary underline hover:opacity-80">
+          Token Saver settings
+        </Link>
+        <Button size="sm" variant="ghost" onClick={refresh} disabled={loading}>
+          {loading ? "Refreshing…" : "Refresh"}
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -132,18 +127,18 @@ export default function PxpipeClient() {
         <SummaryCard label="Bypassed" value={w ? w.bypassed.toLocaleString() : "—"} />
       </div>
 
-      <Card className="p-4">
+      <Card>
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <h3 className="font-medium">Token savings (estimated)</h3>
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-bg-subtle p-1">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-surface-2 p-1">
             {WINDOW_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setWindowId(tab.id)}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   windowId === tab.id
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-text-muted hover:text-text hover:bg-bg-hover"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
               >
                 {tab.label}
@@ -177,7 +172,7 @@ export default function PxpipeClient() {
         </p>
       </Card>
 
-      <Card className="p-4">
+      <Card>
         <h3 className="font-medium mb-3">Tokens saved — last 30 days</h3>
         {stats?.timeline?.some((d) => d.tokensSavedEst > 0) ? (
           <ResponsiveContainer width="100%" height={220}>
@@ -202,7 +197,7 @@ export default function PxpipeClient() {
         )}
       </Card>
 
-      <Card className="p-4">
+      <Card>
         <h3 className="font-medium mb-3">History</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -268,7 +263,7 @@ export default function PxpipeClient() {
         </div>
       </Card>
 
-      <Card className="p-4" id="logs">
+      <Card id="logs">
         <h3 className="font-medium mb-3">PXPIPE Logs</h3>
         {logs?.installLog ? (
           <pre className="rounded bg-black/5 dark:bg-white/5 p-3 text-xs font-mono overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap">

@@ -70,7 +70,7 @@ export default function PricingSettingsPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
+        <Card padding="sm">
           <div className="text-text-muted text-sm uppercase font-semibold">
             Total Models
           </div>
@@ -78,7 +78,7 @@ export default function PricingSettingsPage() {
             {loading ? "..." : getModelCount()}
           </div>
         </Card>
-        <Card className="p-4">
+        <Card padding="sm">
           <div className="text-text-muted text-sm uppercase font-semibold">
             Providers
           </div>
@@ -86,7 +86,7 @@ export default function PricingSettingsPage() {
             {loading ? "..." : getProviders().length}
           </div>
         </Card>
-        <Card className="p-4">
+        <Card padding="sm">
           <div className="text-text-muted text-sm uppercase font-semibold">
             Status
           </div>
@@ -97,7 +97,7 @@ export default function PricingSettingsPage() {
       </div>
 
       {/* Info Section */}
-      <Card className="p-6">
+      <Card>
         <h2 className="text-xl font-semibold mb-4">How Pricing Works</h2>
         <div className="space-y-3 text-sm text-text-muted">
           <p>
@@ -126,7 +126,7 @@ export default function PricingSettingsPage() {
       </Card>
 
       {/* Current Pricing Preview */}
-      <Card className="p-6">
+      <Card>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Current Pricing Overview</h2>
           <button
