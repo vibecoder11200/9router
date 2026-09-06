@@ -6,13 +6,13 @@
 
 **muse-spark-1.2/1.3-contributor-free KHÔNG hỏng trên 9router hiện tại.** Trên server nullbox đang chạy v0.6.47, muse-spark-1.3 thành công **348/348 request** trong 48h qua (client oh-my-pi). Toàn bộ pipeline 9router (chat→responses lẫn claude→openai→responses, có/không tools, có/không reasoning_effort) được reproduce lại local và đều HTTP 200 từ zen. Lỗi "luôn failed" mà bạn gặp là của **phiên bản cũ trước các fix 2026-09-03** (`560fa77d` route responses models via registry + `4e9ca601` auto-sync zen routing từ api.json) — hoặc đến từ các nguyên nhân khác bên dưới.
 
-Nguyên nhân thật sự khiến **goclaw/openclaw qua Combo luôn lỗi** trong khi oh-my-pi xài thẳng `oc/muse-spark-1.3` mượt: combo **FoodThapCamLite** chứa các member bệnh:
-1. `nemotron-3-ultra-free` — **HTTP 200 + ~10 giây chỉ phát `: keep-alive`** rồi kết thúc bằng `data: {"error":{"type":"server_error"...}}` *bên trong* SSE. Combo thấy HTTP 200 là coi là success ngay (`result.ok`) → client nhận stream treo rồi lỗi. Đây chính là triệu chứng "cái thì timeout, cái thì lỗi".
-2. `ling-3.0-flash-fin-free` — non-stream trả 503 upstream; streaming trả 200 nhưng SSE framing bị hỏng (`data: {...data: {...` dính liền) + event rác cuối `data: {"choices":[],"cost":"0"}` + delta dùng field `reasoning`/`reasoning_details` không chuẩn → client parse lỗi.
+Nguyên nhân thật sự khiến **goclaw/openclaw qua Combo hay gặp lỗi** trong khi oh-my-pi xài thẳng `oc/muse-spark-1.3` mượt: combo **FoodThapCamLite** chứa các member bệnh:
+1. `nemotron-3-ultra-free` — **dùng được nhưng chậm thất thường** (probe 43.6s cho prompt trivial; đợt xấu thì ~10s chỉ phát `: keep-alive` rồi error-in-SSE). Combo thấy HTTP 200 là coi là success ngay (`result.ok`) → những lần chờ quá lâu, client dễ hiểu là treo/timeout.
+2. `ling-3.0-flash-fin-free` — dùng được nhưng upstream gián đoạn theo đợt: lúc 503 (non-stream), lúc SSE framing hỏng (`data: {...data: {...` dính liền + event rác cuối), lúc lại 200 stream tốt 1.7s.
 3. `mimo-v2.5-free` — rate-limit thật (HTTP 429 `FreeUsageLimitError`) khiến combo rơi xuống member kế tiếp.
 4. Trên server: **202 lỗi strictProxy** (`Proxy required but failed (strictProxy=true): fetch failed`) — proxy xray của server lag, làm fail mọi model trong lúc proxy down (không liên quan model).
 
-oh-my-pi xài **tên model trực tiếp** chỉ chạm đúng member khoẻ (muse-spark) nên không bao giờ thấy các bẫy trên.
+Các model trên đều KHÔNG cần bỏ khỏi combo — đây là flaky gián đoạn, combo fallback đã là cơ chế xử lý đúng. Lỗi "luôn gặp lỗi" của goclaw/openclaw tương quan với việc dính các đợt xấu này (đặc biệt qua combo đi qua nhiều member), còn oh-my-pi xài **tên model trực tiếp** chỉ chạm muse-spark (ổn định nhất) nên hầu như không thấy.
 
 **Hardcode trong `opencode.js` đã bỏ:** UA `opencode/1.18.22 ...` fix cứng nay lấy **version động từ npm registry** (`registry.npmjs.org/opencode-ai/latest`), refresh cùng chu kỳ 6h với catalog api.json, fallback về pin 1.18.27. Khi verify đã tự resolve được **1.18.29** (mới hơn cả capture) — minh hoạ rõ version pin stale chỉ sau vài ngày.
 
@@ -40,15 +40,17 @@ Kết luận: **không có delta nào khiến zen từ chối.** Mọi biến th
 
 **Khoẻ (5):** `muse-spark-1.3-contributor-free` (RESP, ~2.5s), `muse-spark-1.2-contributor-free` (RESP), `mimo-v2.5-free` (CHAT, ~1.2s), `nemotron-3.5-lightning-free` (CHAT, ~3.6s), `big-pickle` (CHAT, ~5.1s).
 
-**Bẫy (2 — liệt kê "live" nhưng hỏng):**
-- `nemotron-3-ultra-free`: 200 + ~10s keep-alive im lặng + error-in-SSE (stream); 200 + body error (non-stream)
-- `ling-3.0-flash-fin-free`: 503 (non-stream) / 200 + SSE framing hỏng + event rác (stream)
+**Flaky nhưng DÙNG ĐƯỢC (2 — đã xác nhận lại lần 2, 15:20 cùng ngày, đều 200 có nội dung):**
+- `nemotron-3-ultra-free`: dùng được, nhưng chậm thất thường — probe đầu ~10s im lặng rồi lỗi; probe lại 200 nhưng mất 43.6s cho prompt trivial. Khoảng thời gian chờ dài này dễ bị client hiểu là timeout.
+- `ling-3.0-flash-fin-free`: probe đầu 503 (non-stream) / SSE framing hỏng (stream); probe lại 1.7s stream tốt. Upstream gián đoạn theo đợt, không chết.
+
+→ 2 model này **không nên bỏ khỏi combo** (chỉ điểm flaky gián đoạn; combo fallback tự xử lý các lúc xấu). Khi goclaw/openclaw gặp lỗi/timeouts qua combo, khả năng cao là dính đúng một "đợt xấu" của member này chứ không phải model hỏng hẳn.
 
 **Chết (~33, `status:"deprecated"` + `ModelError: Model not supported`):** glm-5-free, glm-4.7-free, kimi-k2.5-free, kimi-k2, kimi-k2-thinking, minimax-m2.1/m2.5/m3-free, ling-2.6-flash-free, ling-3.0-flash-free, ling-3.0-tiny-free, mimo-v2-flash/omni/pro-free, nemotron-3-super-free, qwen3-coder, qwen3.6-plus-free, x-preview-f-free, hy3-free, hy3-preview-free, longcat-2.0-free, laguna-s-2.1-free, north-mini-code-free, trinity-large-preview-free, gemini-3-pro, claude-3-5-haiku, claude-opus-4-1, grok-code, deepseek-v4-flash-free (400), glm-4.6, minimax-m2.1...
 
 **Trả phí (401 `Missing API key` — không phải free tier):** mọi claude-*/gpt-*/gemini-*/grok-*/kimi-k2.6+/kimi-k3/glm-5.x/minimax-m2.5+...
 
-→ Danh sách model free thực dụng hiện nay chỉ nên gồm 5 model khoẻ + theo dõi 2 model bẫy.
+→ Danh sách model free thực dụng hiện nay: 5 model ổn định + 2 model flaky-gian-đoạn-nhưng-dùng-được (nemotron-3-ultra-free, ling-3.0-flash-fin-free) — tổng 7, trùng đúng combo FoodThapCamLite.
 
 ### 3. Tại sao "opencode direct mượt mà 9router hay fail" (quá khứ)
 
@@ -59,8 +61,8 @@ Kết luận: **không có delta nào khiến zen từ chối.** Mọi biến th
 ### 4. Combo + goclaw/openclaw
 
 - Combo resolve trước format-handling nên client Anthropic-format vẫn dùng được combo (đã test claude→muse-spark 200 OK).
-- Lỗ hổng: `handleComboChat` chỉ tin HTTP status (`result.ok`). zen đôi khi trả **200 kèm error** (nemotron-ultra) → combo trả "success" chứa rác/treo cho client. Với goclaw/openclaw bắn vào combo, xác suất dính member bệnh cao (đặc biệt nếu strategy round-robin) → "luôn gặp lỗi".
-- Khuyến nghị: (a) bỏ `oc/nemotron-3-ultra-free` và `oc/ling-3.0-flash-fin-free` khỏi combo ngay; (b) trung hạn: detect error-object trong SSE stream đầu tiên của response 200 từ zen để combo có thể fallback tiếp (hiện đang là gap thiết kế).
+- **Không cần thay đổi thành phần combo** — tất cả 7 member đều dùng được; 2 member flaky (nemotron-ultra, ling-fin) chỉ lỗi gián đoạn và combo fallback đã là cơ chế xử lý đúng.
+- Ghi nhận kỹ thuật (gap thiết kế, tùy chọn xử lý sau): `handleComboChat` chỉ tin HTTP status (`result.ok`). zen thỉnh thoảng trả **200 kèm error bên trong SSE** (quan sát ở nemotron-ultra trong đợt xấu) → combo trả "success" chứa error cho client thay vì fallback tiếp. Nếu muốn cứng hơn, có thể detect error-object trong data-event đầu tiên của stream để combo fallback — không bắt buộc.
 
 ### 5. Hardcode đã xử lý
 
