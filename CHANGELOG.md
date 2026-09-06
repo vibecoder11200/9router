@@ -1,3 +1,31 @@
+# v0.6.46 (2026-09-06)
+
+Backups can now be encrypted end-to-end with a passphrase.
+
+## Features
+- **Encrypted backups (opt-in)**: exporting can seal the ENTIRE backup —
+  provider tokens, settings, API-key hashes, install secrets — everything
+  except session login tokens, which are redacted in all exports by
+  design — into one scrypt (N=2^16) + AES-256-GCM archive
+  (`9router-encrypted-archive`). Two passphrase modes: your own (min 10
+  chars) or a generated 100-bit Crockford-Base32 passphrase shown ONCE
+  (copy/download + mandatory retype). I and L are treated as 1, O as 0;
+  spaces and hyphens are ignored. If the passphrase is lost the backup
+  cannot be recovered and nothing is stored server-side. Intended for
+  archives up to ~100MB (one-shot encryption; no chunking).
+- **Cross-install key-CRC adoption**: password exports now also embed the
+  key-CRC secret (wrapped, alongside the v0.6.45 key-hash secret) and
+  imports adopt both — pasted keys from the exporting install pass
+  key-format CRC validation again. When the API_KEY_SECRET env override
+  is active the file secret is neither exported nor adopted (env wins; a
+  warning says so).
+- **commandcode payment-required rotation**: provider-scoped error rules;
+  commandcode billing-402 errors rotate to the next account while
+  GitHub's bare "Payment required" 402 still fails fast (C4 preserved).
+- CLI: encrypted export/import with masked passphrase prompts and
+  show-once generated passphrase; dashboard: encrypt step in the export
+  flow and passphrase prompt on import.
+
 # v0.6.45 (2026-09-06)
 
 API keys become portable in backups. Exporting with the dashboard
