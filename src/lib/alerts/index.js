@@ -76,6 +76,7 @@ function getChannels() {
     const telegramSender = createTelegramSender({
       getBotToken: async () => (await getCachedSettings()).alertsTelegramBotToken || "",
       getChatId: async () => (await getCachedSettings()).alertsTelegramChatId || "",
+      getTopicId: async () => (await getCachedSettings()).alertsTelegramTopicId || "",
     });
     const discordSender = createDiscordSender({
       getWebhookUrl: async () => (await getCachedSettings()).alertsDiscordWebhookUrl || "",
@@ -213,6 +214,7 @@ export async function sendTestAlert(channel) {
       sender = createTelegramSender({
         getBotToken: async () => settings.alertsTelegramBotToken || "",
         getChatId: async () => settings.alertsTelegramChatId || "",
+        getTopicId: async () => settings.alertsTelegramTopicId || "",
       });
     } else if (channel === "discord") {
       sender = createDiscordSender({

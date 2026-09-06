@@ -29,6 +29,7 @@ export default function AlertsClient() {
   const [events, setEvents] = useState({});
   const [tgToken, setTgToken] = useState("");
   const [tgChatId, setTgChatId] = useState("");
+  const [tgTopicId, setTgTopicId] = useState("");
   const [discordUrl, setDiscordUrl] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [configured, setConfigured] = useState({ telegram: false, discord: false, webhook: false });
@@ -46,6 +47,7 @@ export default function AlertsClient() {
         setQuotaThresholdPct(data.alertsQuotaThresholdPct ?? 20);
         setEvents({ ...(data.alertsEvents || {}) });
         setTgChatId(data.alertsTelegramChatId || "");
+        setTgTopicId(data.alertsTelegramTopicId || "");
         setConfigured({
           telegram: Boolean(data.alertsTelegramConfigured),
           discord: Boolean(data.alertsDiscordConfigured),
@@ -75,6 +77,9 @@ export default function AlertsClient() {
       // Blank credential inputs keep the stored values (server convention).
       if (tgToken.trim()) body.alertsTelegramBotToken = tgToken.trim();
       if (tgChatId.trim()) body.alertsTelegramChatId = tgChatId.trim();
+      // Topic is NOT a credential: always sent so blank CLEARS it (back to the
+      // group's main chat).
+      body.alertsTelegramTopicId = tgTopicId.trim();
       if (discordUrl.trim()) body.alertsDiscordWebhookUrl = discordUrl.trim();
       if (webhookUrl.trim()) body.alertsWebhookUrl = webhookUrl.trim();
 
@@ -168,6 +173,12 @@ export default function AlertsClient() {
           </div>
           <Input type="password" placeholder={configured.telegram ? "Bot token (saved — leave blank to keep)" : "Bot token"} value={tgToken} onChange={(e) => setTgToken(e.target.value)} />
           <Input type="text" placeholder="Chat ID" value={tgChatId} onChange={(e) => setTgChatId(e.target.value)} />
+          <div>
+            <Input type="text" inputMode="numeric" placeholder="Topic ID (optional)" value={tgTopicId} onChange={(e) => setTgTopicId(e.target.value)} />
+            <p className="text-xs text-muted-foreground mt-1">
+              For forum groups only — alerts post into that topic. Copy a message link inside the topic (looks like …/TOPIC/123) to find the number. Blank posts to the group&apos;s main chat.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-3">

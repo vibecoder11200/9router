@@ -13,11 +13,14 @@ function escapeHtml(value) {
 }
 
 /**
- * @param {{ getBotToken: () => Promise<string>, getChatId: () => Promise<string> }} deps
+ * @param {{ getBotToken: () => Promise<string>, getChatId: () => Promise<string>, getTopicId?: () => Promise<string> }} deps
  *   Async getters — settings may not be loaded yet at construction time.
+ *   getTopicId is optional; a positive-integer value targets a forum topic
+ *   inside the group chat (message_thread_id), anything else posts to the
+ *   group's main chat as before.
  * @returns {(message: { eventType: string, severity: string, title: string, body: string, host: string, timestamp: string }) => Promise<void>}
  */
-export function createTelegramSender({ getBotToken, getChatId }) {
+export function createTelegramSender({ getBotToken, getChatId, getTopicId }) {
   return async function telegramSend(message) {
     const botToken = await getBotToken();
     const chatId = await getChatId();
@@ -32,6 +35,9 @@ export function createTelegramSender({ getBotToken, getChatId }) {
       `<code>${escapeHtml(message.eventType)}</code>\n` +
       escapeHtml(message.body);
 
+    const rawTopic = getTopicId ? String((await getTopicId()) || "").trim() : "";
+    const topicId = /^\d+$/.test(rawTopic) ? Number(rawTopic) : 0;
+
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -40,6 +46,7 @@ export function createTelegramSender({ getBotToken, getChatId }) {
         text,
         parse_mode: "HTML",
         disable_web_page_preview: true,
+        ...(topicId > 0 ? { message_thread_id: topicId } : {}),
       }),
     });
 

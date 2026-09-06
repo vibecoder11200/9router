@@ -91,6 +91,8 @@ const DEFAULT_SETTINGS = {
   alertsEnabled: false,
   alertsTelegramBotToken: "",
   alertsTelegramChatId: "",
+  // Optional forum-topic id inside a group chat (Bot API message_thread_id).
+  alertsTelegramTopicId: "",
   alertsDiscordWebhookUrl: "",
   alertsWebhookUrl: "",
   alertsDedupMin: 10,

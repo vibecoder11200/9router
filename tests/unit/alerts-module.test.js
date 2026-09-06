@@ -469,3 +469,65 @@ describe("alerts module", () => {
     expect(String(global.fetch.mock.calls.at(-1)[0])).toContain("api.telegram.org/botT/sendMessage");
   });
 });
+
+describe("telegram topic targeting (message_thread_id)", () => {
+  // 14. Configured topic → message_thread_id rides the sendMessage body.
+  it("sends message_thread_id when a valid topic is configured", async () => {
+    setSettings({
+      alertsTelegramBotToken: "T",
+      alertsTelegramChatId: "C",
+      alertsTelegramTopicId: "42",
+    });
+    global.fetch.mockResolvedValue(okResponse());
+
+    emitAlert(EVENT_TYPES.QUOTA_NEAR_LIMIT, { remainingPct: 5 });
+    await flush();
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const sent = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(sent.chat_id).toBe("C");
+    expect(sent.message_thread_id).toBe(42);
+  });
+
+  // 15. No topic (absent/blank) → key omitted entirely, main chat.
+  it("omits message_thread_id when no topic is set", async () => {
+    setSettings({ alertsTelegramBotToken: "T", alertsTelegramChatId: "C", alertsTelegramTopicId: "" });
+    global.fetch.mockResolvedValue(okResponse());
+
+    emitAlert(EVENT_TYPES.QUOTA_NEAR_LIMIT, { remainingPct: 5 });
+    await flush();
+
+    const sent = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(Object.prototype.hasOwnProperty.call(sent, "message_thread_id")).toBe(false);
+  });
+
+  // 16. Garbage topic values are dropped, not sent (Bot API would 400).
+  it("omits message_thread_id for non-numeric topic values", async () => {
+    const sender = createTelegramSender({
+      getBotToken: async () => "T",
+      getChatId: async () => "C",
+      getTopicId: async () => "not-a-number",
+    });
+    global.fetch.mockResolvedValue(okResponse());
+    await sender(testMessage());
+    let sent = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(Object.prototype.hasOwnProperty.call(sent, "message_thread_id")).toBe(false);
+
+    // Legacy callers constructing the sender without getTopicId still work.
+    const legacy = createTelegramSender({ getBotToken: async () => "T", getChatId: async () => "C" });
+    await legacy(testMessage());
+    sent = JSON.parse(global.fetch.mock.calls[1][1].body);
+    expect(Object.prototype.hasOwnProperty.call(sent, "message_thread_id")).toBe(false);
+  });
+
+  // 17. The channel gate ignores topic — token+chatId alone enable Telegram.
+  it("still sends without a topic and the test path honors the topic too", async () => {
+    setSettings({ alertsTelegramBotToken: "T", alertsTelegramChatId: "C", alertsTelegramTopicId: "7" });
+    __resetAlertsForTests();
+    global.fetch.mockResolvedValueOnce(okResponse());
+    const result = await sendTestAlert("telegram");
+    expect(result.ok).toBe(true);
+    const sent = JSON.parse(global.fetch.mock.calls.at(-1)[1].body);
+    expect(sent.message_thread_id).toBe(7);
+  });
+});

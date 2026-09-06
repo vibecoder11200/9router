@@ -135,6 +135,13 @@ export async function PATCH(request) {
       if (!trimmed) delete body[field];
       else body[field] = trimmed;
     }
+    // Forum-topic targeting (message_thread_id). Unlike the credential fields
+    // above, an explicit EMPTY value is STORED — blank clears the topic (post
+    // to the group's main chat again); non-numeric garbage also clears.
+    if (Object.prototype.hasOwnProperty.call(body, "alertsTelegramTopicId")) {
+      const trimmed = typeof body.alertsTelegramTopicId === "string" ? body.alertsTelegramTopicId.trim() : "";
+      body.alertsTelegramTopicId = /^\d+$/.test(trimmed) ? trimmed : "";
+    }
     for (const field of ["alertsDiscordWebhookUrl", "alertsWebhookUrl"]) {
       if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
       const trimmed = typeof body[field] === "string" ? body[field].trim() : "";
