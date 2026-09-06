@@ -17,11 +17,25 @@ const CATALOG_URL = "https://models.opencode.ai/api.json";
 const CATALOG_REFRESH_MS = 6 * 60 * 60 * 1000;
 const CATALOG_TIMEOUT_MS = 10_000;
 
-// null = never loaded → all lookups fall through to the static registry.
+// The zen free tier fingerprints the official CLI via User-Agent. The CLI
+// version drifts constantly (multiple releases per week), so it is resolved
+// live from the npm registry — the same feed the CLI's own update check hits.
+// The runtime suffix has no registry source and changes rarely; it stays
+// pinned. FALLBACK covers the window before the first version resolves.
+const CLI_VERSION_URL = "https://registry.npmjs.org/opencode-ai/latest";
+export const OPENCODE_UA_SUFFIX = "ai-sdk/provider-utils/4.0.38 runtime/bun/1.3.14";
+export const OPENCODE_UA_FALLBACK = `opencode/1.18.27 ${OPENCODE_UA_SUFFIX}`;
+
+// null = never resolved → getOpencodeCliUserAgent() returns the pinned fallback.
 let responsesIds = null;
 let deprecatedIds = null;
+let cliVersion = null;
 let refreshTimer = null;
 let inFlight = null;
+
+export function getOpencodeCliUserAgent() {
+  return cliVersion ? `opencode/${cliVersion} ${OPENCODE_UA_SUFFIX}` : OPENCODE_UA_FALLBACK;
+}
 
 export function isResponsesServed(modelId) {
   return responsesIds?.has(modelId) === true;
@@ -72,6 +86,25 @@ async function fetchCatalog() {
   }
 }
 
+// Best-effort CLI version lookup for the zen User-Agent. Runs alongside the
+// api.json refresh but never blocks it: a slow/failing npm fetch keeps the
+// last known version (or the pinned fallback).
+async function fetchCliVersion() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), CATALOG_TIMEOUT_MS);
+  try {
+    const res = await fetch(CLI_VERSION_URL, { signal: ctrl.signal, headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(`npm latest HTTP ${res.status}`);
+    const version = (await res.json())?.version;
+    if (typeof version === "string" && /^\d+\.\d+\.\d+/.test(version)) {
+      cliVersion = version;
+      dbg("OPENCODE", `cli UA version synced: opencode/${version}`);
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function refreshCatalog() {
   // Fire-and-forget: a failed refresh keeps the last good cache (or the
   // initial null = registry-only fallback) and never surfaces as an
@@ -79,6 +112,7 @@ function refreshCatalog() {
   inFlight = fetchCatalog().catch((e) => {
     dbg("OPENCODE", `catalog refresh failed (${e?.message || e}); keeping previous state`);
   });
+  fetchCliVersion().catch(() => { /* keep last known version / fallback UA */ });
   return inFlight;
 }
 
@@ -103,6 +137,7 @@ export function __resetOpencodeCatalogForTests() {
   inFlight = null;
   responsesIds = null;
   deprecatedIds = null;
+  cliVersion = null;
 }
 
 // Test hook: force one refresh cycle without waiting for the interval.

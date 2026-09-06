@@ -4,6 +4,8 @@ import {
   isResponsesServed,
   isDeprecatedModel,
   getOpencodeCatalogSnapshot,
+  getOpencodeCliUserAgent,
+  OPENCODE_UA_FALLBACK,
   __resetOpencodeCatalogForTests,
   __refreshOpencodeCatalogForTests,
 } from "../../open-sse/providers/opencodeCatalog.js";
@@ -132,5 +134,29 @@ describe("opencode api.json catalog", () => {
     ];
     const suggested = FILTERS["opencode-free"](models).map((m) => m.id);
     expect(suggested).toEqual(["muse-spark-2.0-free", "mimo-v3-free"]);
+  });
+
+  it("resolves the zen User-Agent version from npm and falls back when unavailable", async () => {
+    // Before any sync: pinned fallback, never a stale hardcoded release.
+    expect(getOpencodeCliUserAgent()).toBe(OPENCODE_UA_FALLBACK);
+
+    // Refresh resolves api.json and the npm version in parallel.
+    let npmPayload = { version: "9.9.9" };
+    globalThis.fetch = vi.fn((url) => {
+      const target = String(url);
+      if (target.includes("registry.npmjs.org")) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(npmPayload) });
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(API_JSON) });
+    });
+    await ensureOpencodeCatalog();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(getOpencodeCliUserAgent()).toBe("opencode/9.9.9 ai-sdk/provider-utils/4.0.38 runtime/bun/1.3.14");
+
+    // A malformed npm payload keeps the last known version.
+    npmPayload = { nope: true };
+    await __refreshOpencodeCatalogForTests();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(getOpencodeCliUserAgent()).toBe("opencode/9.9.9 ai-sdk/provider-utils/4.0.38 runtime/bun/1.3.14");
   });
 });

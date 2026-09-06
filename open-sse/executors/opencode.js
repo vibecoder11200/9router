@@ -7,9 +7,7 @@ import { resolveSessionId } from "../utils/sessionManager.js";
 import { isMuseSparkModel } from "../providers/models/helpers.js";
 
 import { getModelTargetFormat, PROVIDER_ID_TO_ALIAS } from "../config/providerModels.js";
-import { ensureOpencodeCatalog, isResponsesServed } from "../providers/opencodeCatalog.js";
-
-const OPENCODE_UA = "opencode/1.18.22 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14";
+import { ensureOpencodeCatalog, getOpencodeCliUserAgent, isResponsesServed } from "../providers/opencodeCatalog.js";
 
 function generateRequestId() {
   return `msg_${crypto.randomUUID().replace(/-/g, "")}`;
@@ -119,7 +117,10 @@ export class OpenCodeExecutor extends BaseExecutor {
     return {
       "Content-Type": "application/json",
       "Authorization": "Bearer public",
-      "User-Agent": isOpencodeDownstream ? downstreamUa : OPENCODE_UA,
+      // zen fingerprints the official CLI via UA: downstream opencode clients
+      // pass theirs through; everyone else is cloaked with the live CLI UA
+      // (version resolved from npm in opencodeCatalog, no stale hardcode).
+      "User-Agent": isOpencodeDownstream ? downstreamUa : getOpencodeCliUserAgent(),
       "x-opencode-client": lower["x-opencode-client"] || "cli",
       "x-opencode-session": lower["x-opencode-session"] || this._currentSessionId || generateSessionId(),
       "x-opencode-request": lower["x-opencode-request"] || generateRequestId(),
