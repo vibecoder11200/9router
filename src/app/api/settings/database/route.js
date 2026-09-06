@@ -7,8 +7,26 @@ import {
 } from "@/lib/auth/dashboardSession";
 import { hasValidCliToken } from "@/dashboardGuard";
 import { checkLock, recordFail, recordSuccess, getClientIp } from "@/lib/auth/loginLimiter";
+import {
+  sealArchive,
+  openArchive,
+  ArchiveError,
+  validateArchivePassphrase,
+} from "@/lib/db/archive.js";
 
 const PASSWORD_HEADER = "x-9r-password";
+const ARCHIVE_PASSPHRASE_HEADER = "x-9r-archive-passphrase";
+
+// RT46-A3: printable-ASCII-only passphrases. Browser fetch truncates chars
+// U+0100–U+01FF (`codepoint & 0xFF`) — a header-sealed archive would live
+// under a TRANSFORMED passphrase and be unopenable from every surface. This
+// server-side gate is the backstop covering every client at once.
+const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
+
+// RT46-A4: constant error for wrong passphrase / tamper / non-JSON decrypted
+// payload. JSON.parse SyntaxError messages embed a snippet of the DECRYPTED
+// payload — never log or return those, only this constant.
+const WRONG_ARCHIVE = "Wrong archive passphrase or corrupted archive";
 
 function lockedResponse(lock) {
   return NextResponse.json(
@@ -62,6 +80,38 @@ export async function GET(request) {
     }
     if (hasPw) recordSuccess(ip);
 
+    // v0.6.46 Option F: passphrase-sealed whole-archive export. The release
+    // gate for the PLAIN install secrets is pwOk || viaCliToken (RT46-A1) —
+    // the authOk default/initial-password branch can NEVER reach plainSecrets,
+    // same as it can never reach the .45 envelope (the seal key being a fresh
+    // passphrase changes nothing about the RELEASE gate).
+    const archivePassphrase = request.headers.get(ARCHIVE_PASSPHRASE_HEADER);
+    if (typeof archivePassphrase === "string" && archivePassphrase.length > 0) {
+      if (!PRINTABLE_ASCII.test(archivePassphrase)) {
+        return NextResponse.json(
+          { error: "passphrase must be printable ASCII; spaces and hyphens are ignored by normalization" },
+          { status: 400 }
+        );
+      }
+      if (!validateArchivePassphrase(archivePassphrase)) {
+        return NextResponse.json(
+          { error: "Passphrase too short (minimum 10 characters after removing spaces and hyphens)" },
+          { status: 400 }
+        );
+      }
+      if (!pwOk && !viaCliToken) {
+        return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+      }
+      // NEVER {password} + plainSecrets together — F suppresses the .45
+      // envelope; the secrets ride plain inside the passphrase-sealed payload.
+      const payload = await exportDb({ plainSecrets: true });
+      // N12: sealed full-secret artifact — never cacheable by intermediaries.
+      return NextResponse.json(
+        await sealArchive(JSON.stringify(payload), archivePassphrase),
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     const payload = await exportDb(pwOk ? { password } : {});
     if (!pwOk) {
       // Envelope-less export (CLI-token path or no password offered): honest
@@ -81,7 +131,8 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { password, ...payload } = await request.json();
+    const body = await request.json();
+    const { password, ...payload } = body;
     const ip = getClientIp(request);
     const lock = checkLock(ip);
     if (lock.locked) return lockedResponse(lock);
@@ -89,10 +140,50 @@ export async function POST(request) {
     const viaCliToken = await hasValidCliToken(request);
     if (!viaCliToken && !pwOk) return failWithLimiter(ip).response;
     if (pwOk) recordSuccess(ip);
+
+    let innerPayload = payload;
+    if (body.archive && typeof body.archive === "object") {
+      // v0.6.46 Option F: the route unwraps server-side (browsers lack
+      // scrypt) BEFORE importDb — a wrong passphrase hard-fails before the
+      // mutex, the shape guard, or any DELETE. No partial import possible.
+      const archivePassphrase = typeof body.archivePassphrase === "string" ? body.archivePassphrase : "";
+      if (archivePassphrase.length > 0 && !PRINTABLE_ASCII.test(archivePassphrase)) {
+        return NextResponse.json(
+          { error: "passphrase must be printable ASCII; spaces and hyphens are ignored by normalization" },
+          { status: 400 }
+        );
+      }
+      let inner;
+      try {
+        inner = JSON.parse(await openArchive(body.archive, archivePassphrase));
+      } catch (err) {
+        // RT46-A4: ArchiveError AND JSON.parse SyntaxErrors (whose messages
+        // embed decrypted plaintext) collapse into one constant — log and
+        // return the constant only, never the error object or its message.
+        if (err instanceof ArchiveError || err instanceof SyntaxError) {
+          console.log("Archive open failed:", err instanceof ArchiveError ? err.message : WRONG_ARCHIVE);
+          return NextResponse.json({ error: WRONG_ARCHIVE }, { status: 400 });
+        }
+        throw err;
+      }
+      if (!inner || typeof inner !== "object" || Array.isArray(inner)) {
+        return NextResponse.json({ error: WRONG_ARCHIVE }, { status: 400 });
+      }
+      innerPayload = inner;
+    } else if (payload?.format === "9router-encrypted-archive") {
+      // An F wrapper file accidentally posted as the payload (format key, no
+      // archive key) — give the operator the actionable message instead of a
+      // generic shape-guard 400.
+      return NextResponse.json(
+        { error: "This backup file is encrypted — re-import it and provide its passphrase" },
+        { status: 400 }
+      );
+    }
+
     // The CURRENT dashboard password authenticates; if it differs from the
     // export-time password the unwrap inside importDb simply fails and keys
     // are flagged needsRekey (warning carries the count, never plaintext).
-    const restored = await importDb(payload, { password: typeof password === "string" ? password : "" });
+    const restored = await importDb(innerPayload, { password: typeof password === "string" ? password : "" });
 
     // Ensure proxy settings take effect immediately after a DB import.
     try {
