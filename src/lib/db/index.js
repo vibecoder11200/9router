@@ -176,11 +176,37 @@ export async function exportDb(options = {}) {
   for (const r of db.all(`SELECT key, value FROM kv WHERE scope = 'mitmAlias'`)) out.mitmAlias[r.key] = parseJson(r.value);
   for (const r of db.all(`SELECT key, value FROM kv WHERE scope = 'pricing'`)) out.pricing[r.key] = parseJson(r.value);
 
-  if (typeof options.password === "string" && options.password) {
+  // v0.6.46 Option F: plainSecrets embeds the install secrets PLAIN inside
+  // the (route-side passphrase-sealed) archive — the outer encryption provides
+  // the confidentiality the .45 envelope used to, so the inner envelope is
+  // suppressed and no export-time dashboard password is needed. Only the F
+  // route ever passes this; exportDb({}) / exportDb({password}) never emit it.
+  if (options.plainSecrets) {
+    const { getOrCreateInstallSecret } = await import("@/lib/auth/installSecret.js");
+    out.plainSecrets = { "api-keys-hmac": getOrCreateInstallSecret("api-keys-hmac") };
+    // CRC scope: the API_KEY_SECRET env override wins by design and its value
+    // must never leak into any export — omit the plain secret when it is set.
+    if (!process.env.API_KEY_SECRET) {
+      out.plainSecrets["api-key-secret"] = getOrCreateInstallSecret("api-key-secret");
+    }
+    out.meta.secretsPlain = true;
+  } else if (typeof options.password === "string" && options.password) {
     const { sealBackupSecret } = await import("@/lib/auth/backupEnvelope.js");
     const { getOrCreateInstallSecret } = await import("@/lib/auth/installSecret.js");
     out.authSecretEnvelope = await sealBackupSecret(getOrCreateInstallSecret("api-keys-hmac"), options.password);
     out.meta.authSecretWrapped = Boolean(out.authSecretEnvelope);
+    // Decision B: password exports additionally wrap the CRC-scope secret so
+    // re-keyed keys parse on the importing install. Same envelope domain as
+    // the hmac secret (both are dashboard-password-wrapped install secrets);
+    // F-archives carry no envelopes at all. Env override: never embed the
+    // env value, and import will skip adopting + warn.
+    if (!process.env.API_KEY_SECRET) {
+      out.crcSecretEnvelope = await sealBackupSecret(
+        getOrCreateInstallSecret("api-key-secret"),
+        options.password
+      );
+    }
+    out.meta.crcSecretWrapped = Boolean(out.crcSecretEnvelope);
   }
 
   return out;
@@ -250,11 +276,22 @@ async function doImportDb(payload, options = {}) {
     }
   } catch { /* warning is best-effort */ }
 
+  // v0.6.46 Option F: plain secrets ride inside the passphrase-sealed archive
+  // (payload.plainSecrets) — no scrypt for either scope. The passphrase IS the
+  // trust anchor (knowledge = full file-author trust including secret
+  // replacement — RT46-A2). Track their origin separately from envelope
+  // recovery so the replacement warning only fires for plain/crc adoption.
+  const plainHmacSecret = typeof payload.plainSecrets?.["api-keys-hmac"] === "string"
+    && payload.plainSecrets["api-keys-hmac"] ? payload.plainSecrets["api-keys-hmac"] : null;
+  const plainCrcSecret = typeof payload.plainSecrets?.["api-key-secret"] === "string"
+    && payload.plainSecrets["api-key-secret"] ? payload.plainSecrets["api-key-secret"] : null;
+
   // Unwrap BEFORE the transaction (async scrypt cannot run inside the sync
   // transaction callback). RT-06: skip entirely without a password — an
   // envelope-bearing archive imported password-less goes straight to inert
   // instead of burning a full scrypt to inevitably fail.
-  let newSecret = null;
+  let newSecret = plainHmacSecret;
+  let newCrcSecret = plainCrcSecret;
   let unwrapFailed = false;
   if (password && isBackupEnvelope(envelope)) {
     try {
@@ -262,6 +299,35 @@ async function doImportDb(payload, options = {}) {
     } catch {
       unwrapFailed = true; // wrong password or tamper — NEVER hard-fail the import
     }
+  }
+  // Decision B: the CRC-scope envelope from a .45+ password export. Failure
+  // is a silent skip — CRC adoption is warning-only and must never affect
+  // needsRekey (which stays driven by the hmac recovery above).
+  if (password && isBackupEnvelope(payload.crcSecretEnvelope)) {
+    try {
+      newCrcSecret = await openBackupSecret(payload.crcSecretEnvelope, password);
+    } catch { /* silent skip — CRC failure never affects needsRekey */ }
+  }
+
+  // RT46-A2(a): non-suppressible warning when a plainSecrets adoption
+  // REPLACES an existing DIFFERENT secret (state that survives the DB wipe).
+  // Envelope-sourced recovery (.45 authSecretEnvelope / crcSecretEnvelope
+  // under the bcrypt-verified dashboard password) is exempt — that flow IS
+  // the documented, already-shipped portability path; the new trust
+  // re-binding concern is the passphrase-knowledge/plain path.
+  let replacedExistingSecret = false;
+  if (plainHmacSecret || plainCrcSecret) {
+    try {
+      const { readInstallSecret } = await import("@/lib/auth/installSecret.js");
+      if (plainHmacSecret) {
+        const current = readInstallSecret("api-keys-hmac");
+        if (current && current !== plainHmacSecret) replacedExistingSecret = true;
+      }
+      if (plainCrcSecret && !process.env.API_KEY_SECRET) {
+        const current = readInstallSecret("api-key-secret");
+        if (current && current !== plainCrcSecret) replacedExistingSecret = true;
+      }
+    } catch { /* best-effort — the warning is advisory */ }
   }
 
   let redactedLoginTokens = 0;
@@ -373,6 +439,27 @@ async function doImportDb(payload, options = {}) {
   // payload). If adoption fails post-commit, imported rows are stranded
   // inert-but-unflagged: best-effort flag every keyHash row needsRekey and
   // surface the re-key warning (import still succeeds).
+  // CRC-scope adoption (decision B / RT46-A2): failure NEVER touches
+  // needsRekey — it only means keys re-keyed on this install may not parse
+  // elsewhere; new locally-generated keys are unaffected. Runs BEFORE the
+  // hmac adoption so "api-keys-hmac" is the last (dominant) secret written —
+  // the hmac scope is the one keyHash validation depends on.
+  let crcAdoptSkippedByEnv = false;
+  let crcAdoptFailed = false;
+  if (newCrcSecret) {
+    if (process.env.API_KEY_SECRET) {
+      crcAdoptSkippedByEnv = true; // env takes precedence — never fight it silently
+    } else {
+      try {
+        const { adoptInstallSecret } = await import("@/lib/auth/installSecret.js");
+        adoptInstallSecret("api-key-secret", newCrcSecret);
+      } catch (err) {
+        crcAdoptFailed = true;
+        console.warn("[DB][import] key-CRC secret adoption failed after commit:", err?.message);
+      }
+    }
+  }
+
   let adopted = false;
   let adoptFailed = false;
   if (newSecret) {
@@ -406,6 +493,19 @@ async function doImportDb(payload, options = {}) {
     warnings.push(
       "This archive was exported on a different 9Router install and its API-key secret was not restored, so the imported keys cannot authenticate here (raw keys are never stored) — re-key them (Endpoint page → Re-key, or CLI) and update your tools."
     );
+  }
+  if (crcAdoptSkippedByEnv) {
+    warnings.push(
+      "API_KEY_SECRET env override is active — the backup's key-CRC secret was not adopted (the env value takes precedence)."
+    );
+  }
+  if (crcAdoptFailed) {
+    warnings.push(
+      "The backup's key-CRC secret could not be activated on this install (best-effort only) — re-keyed keys may not parse on other installs."
+    );
+  }
+  if (replacedExistingSecret) {
+    warnings.push("This archive replaced this install's key-derivation secrets");
   }
   if (redactedLoginTokens > 0) {
     warnings.push(

@@ -3,12 +3,14 @@ import { getOrCreateInstallSecret } from "@/lib/auth/installSecret.js";
 
 // S9: no committed fallback constant. When the env var is unset the HMAC
 // secret is the per-install secret file (0o600, DATA_DIR/auth) — an attacker
-// who knows the source can no longer forge key CRCs.
-let cachedSecret = null;
+// who knows the source can no longer forge key CRCs. v0.6.46: no local
+// process cache — installSecret's own Map cache is the single cache, so a
+// backup import adopting a new CRC secret takes effect in-process without
+// a restart (the old cachedSecret here would have kept signing with the OLD
+// secret after adoption).
 function apiKeySecret() {
   if (process.env.API_KEY_SECRET) return process.env.API_KEY_SECRET;
-  if (!cachedSecret) cachedSecret = getOrCreateInstallSecret("api-key-secret");
-  return cachedSecret;
+  return getOrCreateInstallSecret("api-key-secret");
 }
 
 /**
