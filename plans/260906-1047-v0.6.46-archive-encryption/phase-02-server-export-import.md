@@ -20,7 +20,7 @@
   (browsers lack scrypt) before importDb; wrong passphrase = hard 400, never a
   partial import. Plus the passphrase generator endpoint for "Generate for me".
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -200,15 +200,15 @@ IMPORT (POST /api/settings/database)
 
 ## Todo list
 
-- [ ] impact() run on exportDb/importDb/apiKeySecret
-- [ ] Route tests written FIRST (red), pinning all 8 contracts above
-- [ ] exportDb: plainSecrets + crcSecretEnvelope + meta flags
-- [ ] doImportDb: plain-secret + crcSecretEnvelope adoption, env guard, warnings
-- [ ] apiKey.js redundant cache removed
-- [ ] GET F path + POST archive branch + wrapper-as-payload guard
-- [ ] archive-passphrase endpoint (auth + no-store + never logged)
-- [ ] db-level F lifecycle test (incl. env-override case)
-- [ ] detect_changes() + one green commit
+- [x] impact() run on exportDb/importDb/apiKeySecret
+- [x] Route tests written FIRST (red), pinning all 8 contracts above
+- [x] exportDb: plainSecrets + crcSecretEnvelope + meta flags
+- [x] doImportDb: plain-secret + crcSecretEnvelope adoption, env guard, warnings
+- [x] apiKey.js redundant cache removed
+- [x] GET F path + POST archive branch + wrapper-as-payload guard
+- [x] archive-passphrase endpoint (auth + no-store + never logged)
+- [x] db-level F lifecycle test (incl. env-override case)
+- [x] detect_changes() + one green commit
 
 ## Success Criteria
 

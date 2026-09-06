@@ -17,7 +17,7 @@
   files and prompts for the archive passphrase alongside the current password.
   All copy follows the honest-copy variants mandated by plan.md.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -129,13 +129,13 @@ Import Backup
 
 ## Todo list
 
-- [ ] Encrypt-archive? step (3 options) wired into export flow
-- [ ] Own-passphrase path: double secret entry + match + min-length hint
-- [ ] Generate path: endpoint call, show-once panel (copy/download/retype)
-- [ ] F-on status copy + `-encrypted` filename suffix
-- [ ] Import detection + passphrase field + F copy + 400 surfacing
-- [ ] Copy-matrix grep pass + manual E2E checklist
-- [ ] detect_changes() + one green commit
+- [x] Encrypt-archive? step (3 options) wired into export flow
+- [x] Own-passphrase path: double secret entry + match + min-length hint
+- [x] Generate path: endpoint call, show-once panel (copy/download/retype)
+- [x] F-on status copy + `-encrypted` filename suffix
+- [x] Import detection + passphrase field + F copy + 400 surfacing
+- [x] Copy-matrix grep pass + manual E2E checklist
+- [x] detect_changes() + one green commit
 
 ## Success Criteria
 

@@ -1,7 +1,7 @@
 ---
 title: "v0.6.46 — Whole-archive encryption (Option F), dual-scope secret wrapping, provider-scoped payment-required rules"
 description: "Opt-in passphrase-encrypted backups (scrypt+GCM whole-archive, show-once generated passphrases), wrap+adopt the api-key-secret (CRC) scope alongside api-keys-hmac, and provider-scoped 'payment required' fallback rules for commandcode."
-status: pending
+status: done
 priority: P1
 effort: 17.5h
 branch: master
@@ -76,11 +76,59 @@ Confirmed decisions:
 
 Action items (all encoded in phase files; checklist of record):
 
-- [ ] Phase 01: raw+normalized length floor; ASCII-bounded passphrase docs (RT46-A7).
-- [ ] Phase 02: release gate + route test; adoption replacement warning + corrected threat model; server charset 400; constant error for ArchiveError/parse errors; per-fileName Map harness; route-harness structural extension (RT46-A1/A2/A3/A4/O1/O4).
-- [ ] Phase 03: charset pre-checks on own/confirm/retype before any request; hint discloses normalization; import parse moved to selection time (RT46-A3/A7/O7).
-- [ ] Phase 04: empty-password-cancels correction (token-only via API only); CJS premise reworded (RT46-A5/O2/O10).
-- [ ] Phase 05: cmc in rule + resolveProviderId + test (RT46-A6).
-- [ ] Phase 06: reworked dual-scope harness; "except session login tokens" honest copy; normalization disclosure; baseline 1ff29d9b; effort 17.5h (RT46-O1/A7/A8/O8/O11).
+- [x] Phase 01: raw+normalized length floor; ASCII-bounded passphrase docs (RT46-A7).
+- [x] Phase 02: release gate + route test; adoption replacement warning + corrected threat model; server charset 400; constant error for ArchiveError/parse errors; per-fileName Map harness; route-harness structural extension (RT46-A1/A2/A3/A4/O1/O4).
+- [x] Phase 03: charset pre-checks on own/confirm/retype before any request; hint discloses normalization; import parse moved to selection time (RT46-A3/A7/O7).
+- [x] Phase 04: empty-password-cancels correction (token-only via API only); CJS premise reworded (RT46-A5/O2/O10).
+- [x] Phase 05: cmc in rule + resolveProviderId + test (RT46-A6).
+- [x] Phase 06: reworked dual-scope harness; "except session login tokens" honest copy; normalization disclosure; baseline 1ff29d9b; effort 17.5h (RT46-O1/A7/A8/O8/O11).
 
-Status: plan validated — awaiting owner go-ahead to implement. frontmatter `status` stays `pending` until implementation starts.
+Status: implemented, released, and review-approved 2026-09-06 — see Completion Record.
+
+# Completion Record (2026-09-06)
+
+Implemented via ak:cook --auto --parallel: 4 waves (01∥05 → 02 → 03∥04 → 06), one
+green commit per phase, detect_changes before every commit.
+
+Commits (post-rebase SHAs on master; tag note below):
+- 2feefe9c phase 01 — archive crypto module (62 tests green incl. unedited .45 envelope set)
+- 738f8914 phase 05 — provider-scoped rules (37 green; github pin UNEDITED, empty-diff proof)
+- f502d4de process-guard flake fix (landed upstream first; content-identical local copy dropped in rebase)
+- ed75e58c phase 02 — server F path + dual-scope wrapping/adoption (100 green across 7 files)
+- 42d099ae phase 03 — dashboard UX (ESLint clean; route layer 28 green)
+- 19e10480 phase 04 — CLI (node --check clean; no CLI test script exists)
+- 9a930ca0 phase 06 — archive-lifecycle.test.js (4/4 promise matrix)
+- 27af5679 release — CHANGELOG (A7/A8 honest copy) + dual bump 0.6.46
+
+Verification:
+- Failing-set diff vs 1ff29d9b baseline: 107/107 IDENTICAL failing sets, ZERO new
+  failures; 2918→2984 tests (+66, all green). Verdict: plans/reports/260906-v0646-failset-verdict.md
+- Real-server boot smoke (next dev + temp DATA_DIR): F-on wrapper {format,v,envelope}
+  with production scrypt N=65536 + AAD "9router-archive-v1", no plaintext leaks,
+  F-off both envelopes, wrong-passphrase 400 constant (no decrypted-snippet leak in
+  logs), archive-passphrase endpoint regex+no-store, both imports 200, limiter counting.
+- Code review: APPROVE — 0 blockers, 0 majors; all 8 verdict-critical security
+  invariants verified in code; 141/141 on the .46 set.
+
+Release: tag v0.6.46 @ 772a9442 (pushed with the first, partially-rejected push —
+master was behind, tag was not). Tree of 772a9442 is BYTE-IDENTICAL to master's
+27af5679 (same tree SHA 5e2e65e1; the rebase only replaced the duplicate
+process-guard commit with its upstream twin). Build and Release CLI + Docker
+workflows auto-triggered from the tag; CI green on master push.
+
+Deviations (both documented in phase-02's implementation, accepted by review):
+1. CRC adoption runs BEFORE hmac adoption (semantically neutral; .45 test pins
+   last-adopted = api-keys-hmac).
+2. RT46-A2 replacement warning fires only for plainSecrets-sourced adoption
+   (envelope adoption already requires the dashboard password — reviewer flagged
+   and endorsed as conformant).
+
+Follow-ups (non-blocking, from code review):
+- Default-password installs dead-end at dashboard F-export with a misleading
+  "Invalid password" (RT46-A1-correct); clearer hint copy wanted.
+- Three hardcoded "9router-encrypted-archive" literals could import
+  ARCHIVE_FORMAT/isEncryptedArchive (drift risk only).
+- Route-test comment overstates a log-spy assertion that doesn't exist; combo.js
+  `?? prefix` is dead code (resolveProviderId already falls through) — both cosmetic.
+- Unresolved #2 (capture a real commandcode billing-402) still open by design —
+  rule revert is one config line if capture says request-level.

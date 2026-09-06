@@ -18,7 +18,7 @@
   length-floor validator, and whole-archive seal/open/detect helpers built on
   the parameterized envelope.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -126,11 +126,11 @@ backupEnvelope.js (parameterized AAD, frozen tuple reused)
 
 ## Todo list
 
-- [ ] impact() on the 3 envelope symbols run + blast radius recorded
-- [ ] backupEnvelope.js AAD-parameterized; existing tests green unedited
-- [ ] archive.js: generator / normalizer / validator / seal / open / detect / ArchiveError
-- [ ] archive-encryption.test.js green (matrix below)
-- [ ] detect_changes() + one green commit
+- [x] impact() on the 3 envelope symbols run + blast radius recorded
+- [x] backupEnvelope.js AAD-parameterized; existing tests green unedited
+- [x] archive.js: generator / normalizer / validator / seal / open / detect / ArchiveError
+- [x] archive-encryption.test.js green (matrix below)
+- [x] detect_changes() + one green commit
 
 ## Success Criteria
 

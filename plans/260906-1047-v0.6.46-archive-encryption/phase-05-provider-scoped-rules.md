@@ -18,7 +18,7 @@
   fast (C4 contract pinned by github-monthly-usage-lock.test.js:66-72,
   untouched).
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -133,12 +133,12 @@ call sites: auth.js:309 (provider param, in scope) · combo.js:335 (modelStr pre
 
 ## Todo list
 
-- [ ] impact() on checkFallbackError recorded
-- [ ] Scoped rule + doc; NOTE removed
-- [ ] checkFallbackError provider param + fail-closed skip
-- [ ] auth.js:309 + combo.js:335 plumbed
-- [ ] New test describe green; github pin green UNEDITED
-- [ ] detect_changes() + one green commit
+- [x] impact() on checkFallbackError recorded
+- [x] Scoped rule + doc; NOTE removed
+- [x] checkFallbackError provider param + fail-closed skip
+- [x] auth.js:309 + combo.js:335 plumbed
+- [x] New test describe green; github pin green UNEDITED
+- [x] detect_changes() + one green commit
 
 ## Success Criteria
 

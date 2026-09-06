@@ -13,7 +13,7 @@
   module boundaries, full-suite failing-set diff vs clean HEAD, honest
   CHANGELOG entry, dual version bump to 0.6.46, release commit + tag.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -122,13 +122,13 @@ lifecycle (fake adapter + stateful installSecret mock, .45 harness):
 
 ## Todo list
 
-- [ ] archive-lifecycle.test.js green (F happy/wrong-pass/F-off matrix)
-- [ ] Full-suite failing-set diff vs clean a916ec20 → zero new failures
-- [ ] Boot + round-trip smoke on copied .45 data dir
-- [ ] CHANGELOG.md v0.6.46 entry (honest copy incl. ceiling + env-override)
-- [ ] Dual version bump 0.6.46 (package.json + cli/package.json, same commit)
-- [ ] detect_changes() scope check in commit body
-- [ ] Release commit + tag v0.6.46
+- [x] archive-lifecycle.test.js green (F happy/wrong-pass/F-off matrix)
+- [x] Full-suite failing-set diff vs clean a916ec20 → zero new failures
+- [x] Boot + round-trip smoke on copied .45 data dir
+- [x] CHANGELOG.md v0.6.46 entry (honest copy incl. ceiling + env-override)
+- [x] Dual version bump 0.6.46 (package.json + cli/package.json, same commit)
+- [x] detect_changes() scope check in commit body
+- [x] Release commit + tag v0.6.46
 
 ## Success Criteria
 

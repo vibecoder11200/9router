@@ -17,7 +17,7 @@
   import. api/client.js gains the archivePassphrase header, the generate
   endpoint call, and the archive POST body.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -139,13 +139,13 @@ handleImport
 
 ## Todo list
 
-- [ ] client.js: archivePassphrase plumbing + getArchivePassphrase
-- [ ] Export: encrypt prompt, own/generate sub-flows, show-once block, retype gate
-- [ ] Export: -encrypted filename + F-on security note (F-off note untouched)
-- [ ] Import: wrapper detection + masked passphrase prompt + retry-once
-- [ ] Menu header copy line
-- [ ] Manual E2E checklist green
-- [ ] detect_changes() + one green commit
+- [x] client.js: archivePassphrase plumbing + getArchivePassphrase
+- [x] Export: encrypt prompt, own/generate sub-flows, show-once block, retype gate
+- [x] Export: -encrypted filename + F-on security note (F-off note untouched)
+- [x] Import: wrapper detection + masked passphrase prompt + retry-once
+- [x] Menu header copy line
+- [x] Manual E2E checklist green
+- [x] detect_changes() + one green commit
 
 ## Success Criteria
 

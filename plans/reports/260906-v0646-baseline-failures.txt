@@ -1,0 +1,107 @@
+AUDIT-001: Synchronous restart guard mitmIsRestarting should be reset on max-restarts early return
+AUDIT-001: Synchronous restart guard mitmIsRestarting should be set before first await expression
+AUDIT-002: API key masking byApiKey object keys should use masked key, not raw key
+AUDIT-002: API key masking getUsageHistory should use apiKeyMasked instead of apiKey
+AUDIT-002: API key masking getUsageStats should use apiKeyMasked in byApiKey entries
+AUDIT-002: API key masking source should contain maskApiKey function
+AUDIT-003: Proxy URL validation source should contain validateProxyUrl function
+AUDIT-004: Atomic lock file for MITM startup manager.js should define LOCK_FILE constant
+AUDIT-004: Atomic lock file for MITM startup should clean up lock file on all exit paths
+AUDIT-004: Atomic lock file for MITM startup should use O_EXCL flag (wx) for atomic creation
+AUDIT-018: XSS escaping in OAuth callback should escape ampersand, angle brackets, and quotes
+AUDIT-018: XSS escaping in OAuth callback should use safeMessage in rendered HTML, not raw message
+AUDIT-018: XSS escaping in OAuth callback source should contain escapeHtml function
+CodexExecutor image handling execute() prefetches images before sending to upstream
+CodexExecutor image handling fetches 1MB remote image and inlines it as base64 data URI
+Cursor AgentService codec (cursorProtobuf.js) McpArgs decode decodes name, toolName, toolCallId, and typed args map
+Cursor AgentService codec (cursorProtobuf.js) McpArgs decode handles empty args map
+Cursor AgentService codec (cursorProtobuf.js) McpResult error / toolNotFound builds error result (field 2)
+Cursor AgentService codec (cursorProtobuf.js) McpResult error / toolNotFound builds toolNotFound result (field 5)
+Cursor AgentService codec (cursorProtobuf.js) McpResult image content builds image item with raw bytes + mime type
+Cursor AgentService codec (cursorProtobuf.js) McpResult image content builds mixed text + image content
+Cursor AgentService codec (cursorProtobuf.js) McpResult success builds success with multiple text items
+Cursor AgentService codec (cursorProtobuf.js) McpResult success builds success with single text content
+Cursor AgentService codec (cursorProtobuf.js) McpResult success marks is_error=true
+Cursor AgentService codec (cursorProtobuf.js) McpToolDefinition accepts flat tool shape (no .function wrapper)
+Cursor AgentService codec (cursorProtobuf.js) McpToolDefinition encodes name, description, input_schema (Value), provider, tool_name
+Cursor AgentService codec (cursorProtobuf.js) McpToolDefinition preserves nested JSON-schema types
+Cursor AgentService codec (cursorProtobuf.js) encodeMcpTools produces empty bytes for no tools
+Cursor AgentService codec (cursorProtobuf.js) encodeMcpTools wraps multiple tool defs as repeated field 1
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes array of mixed
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes bool false
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes bool true
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes deeply nested
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes empty object
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes flat object
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes float
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes integer
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes nested object
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes null
+Cursor AgentService codec (cursorProtobuf.js) google.protobuf.Value round-trip encodes/decodes string
+Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame encodes a text-only run request with system + model
+Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame encodes conversation_history from prior turns including tool calls/results
+Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame encodes mcp_tools (field 4) when tools are provided
+Cursor AgentService executor helpers (cursor.js) buildAgentRunFrame omits mcp_tools when no tools provided
+Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts array text content
+Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts history with assistant tool_calls + tool results
+Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts plain text content
+Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest accepts request with tools declared
+Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest rejects missing messages
+Cursor AgentService executor helpers (cursor.js) isAgentCapableRequest rejects non-text (image) content
+Cursor live model catalog fetches the account-specific catalog and caches it
+DB Concurrency — atomic safety 100 parallel saveRequestUsage → no count loss
+DB Concurrency — atomic safety daily summary aggregates correctly under parallel writes
+DB Concurrency — atomic safety mixed concurrent: usage + details + connections + aliases
+DB SQLite layer — public API parity proxyPools: CRUD with sort by updatedAt desc
+GET /api/oauth/cursor/auto-import extracts tokens using exact keys
+GET /api/oauth/cursor/auto-import falls back to fuzzy key matching on macOS when exact keys are missing
+GET /api/oauth/cursor/auto-import linux uses single hardcoded path and original error message
+GET /api/oauth/cursor/auto-import returns descriptive error if macOS db file exists but cannot be opened
+GET /api/oauth/cursor/auto-import returns login-prompt error when tokens are missing even after fallback
+GET /api/oauth/cursor/auto-import returns not-found when no macOS cursor db paths are accessible
+GET /api/oauth/cursor/auto-import unsupported platform returns 400
+GET /api/oauth/cursor/auto-import unwraps JSON-encoded string values
+GOLDEN buildHeaders (default executor providers) cline → headers (apiKey / oauth)
+GOLDEN buildHeaders (default executor providers) clinepass → headers (apiKey / oauth)
+GOLDEN buildHeaders (default executor providers) kimi → headers (apiKey / oauth)
+Kiro terminal integrity recovery bounds the retry HTTP error body
+Kiro terminal integrity recovery surfaces retry HTTP failures as SSE after heartbeat commits headers
+MiMo Free anti-abuse gate (live) chat WITH Chrome User-Agent → 200
+OpenAI → Claude context mapping assistant reasoning_content becomes a thinking block
+WindsurfExecutor class PROVIDERS.windsurf baseUrl is the chat endpoint (registry in sync)
+WindsurfExecutor class buildUrl returns the GetChatMessage endpoint
+WindsurfExecutor class constructor wires config from PROVIDERS.windsurf
+antigravity retry (intentional change: 429=6, 503=3) 429 attempts = 6
+buildBatchExecutePayload builds URL-encoded form body
+buildBatchExecutePayload encodes special characters
+buildGeneratePayload converts OpenAI messages to Gemini Web format
+buildGeneratePayload extracts text from content arrays
+buildGeneratePayload handles empty messages gracefully
+buildGenerateRequestBody builds complete URL-encoded request body
+buildRpcBody defaults to boq_assistant-bard-web-ui
+compatible provider connections API creates one API-key connection for an OpenAI-compatible node
+detectRequiredCapabilities web_search tool -> search
+extractGeneratedText extracts the longest string from nested arrays
+extractGeneratedText skips URLs and token-like strings
+extractModelList finds model identifiers in nested data
+fetchImageAsBase64 hardening accepts valid PNG from public host
+gemini-web provider registration has deprecationNotice with risk warning
+getDistinctProviders — providers route (no full-row parse) returns unique provider list without parsing data blobs
+headroom detect prefers the interpreter that actually has headroom-ai installed
+injectReasoningContent — MiniMax thinking round-trip DefaultExecutor transformRequest runs the injector for minimax
+model routing keeps built-in provider aliases ahead of compatible node prefixes
+openaiToClaudeResponse omits empty Read pages tool argument before emitting Claude input deltas
+parseBatchExecuteResponse handles missing prefix gracefully
+parseBatchExecuteResponse parses a single frame
+parseBatchExecuteResponse parses multiple frames
+parseBatchExecuteResponse returns empty array for null/empty input
+parseBatchExecuteResponse skips malformed frames
+parseResponseFrames yields frames from generator
+proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
+reorderByCapabilities keeps order when no model matches
+request details — tab crash-risk cases oversized field → stored truncated + reparseable (no circular)
+request normalization claudeToOpenAIRequest flattens text-only content arrays into string
+request normalization filterToOpenAIFormat flattens text-only arrays to string
+request normalization parseSSELine supports provider raw NDJSON stream lines
+request normalization translateRequest keeps /v1/messages Claude->OpenAI text payloads string-safe
+rotateGeminiWebCookies — validation throws on invalid input

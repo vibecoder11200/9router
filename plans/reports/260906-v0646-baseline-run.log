@@ -1,0 +1,106 @@
+▶ kimchi registry entry
+  ✖ is an oauth provider auto-listed via byCategory (7.9271ms)
+  ✔ points at the OpenAI-compatible gateway with an authenticated UA (0.8027ms)
+  ✔ uses Bearer auth (2.1194ms)
+  ✔ exposes the upstream static models (0.7386ms)
+  ✔ passes through models not in the static list (11.0713ms)
+✖ kimchi registry entry (51.8488ms)
+▶ kimchi oauth
+  ✔ builds the cli-auth URL with encoded callback + state (0.934ms)
+  ✔ rejects a callback whose state does not match (1.2445ms)
+  ✔ accepts a callback with matching state and returns the token (0.5394ms)
+✔ kimchi oauth (3.657ms)
+▶ kimchiModels
+  ✔ maps Kimchi metadata entries to 9router model shape (0.5936ms)
+  ✔ falls back to slug as name when display_name is empty (0.7955ms)
+  ✔ returns empty array for non-array input (0.4645ms)
+✔ kimchiModels (2.8006ms)
+▶ kimchi validateToken
+  ✔ 200 → valid (0.5183ms)
+  ✔ 401 → invalid, expired message (0.7033ms)
+  ✔ 403 → invalid, scope message (0.3182ms)
+  ✔ unknown / network error → fail-open valid (0.3722ms)
+✔ kimchi validateToken (2.7246ms)
+▶ kimchi OAuth dedup
+  ✔ different email never matches (0.7289ms)
+  ✔ same email + same username = dedup (re-login same IdP) (0.2734ms)
+  ✔ same email + different username = NO match (cross-IdP, the bug) (0.1578ms)
+  ✔ legacy row without username matches incoming without username (backward compat) (0.1278ms)
+  ✔ incoming without username does not match legacy row with username (0.2084ms)
+  ✔ workspaces still dedupe on workspace ID when both sides have one (0.2358ms)
+✔ kimchi OAuth dedup (2.4954ms)
+ℹ tests 21
+ℹ suites 5
+ℹ pass 20
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 88.7337
+
+✖ failing tests:
+
+test at unit\kimchi.test.js:16:31
+✖ is an oauth provider auto-listed via byCategory (7.9271ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'freeTier'
+  - 'oauth'
+  
+      at TestContext.<anonymous> (D:/9router-mod/9router-baseline-46/tests/unit/kimchi.test.js:16:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Promise.all (index 0)
+      at Suite.run (node:internal/test_runner/test:1794:7)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'freeTier',
+    expected: 'oauth',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+(node:34656) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/9router-mod/9router-baseline-46/open-sse/executors/base.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\9router-mod\9router-baseline-46\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ kimchi stripReasoningContent
+  ✔ removes long reasoning_content from assistant messages but keeps content (6.5925ms)
+  ✔ preserves the 1-char placeholder that injectReasoningContent sets (0.674ms)
+  ✔ preserves short custom reasoning under the threshold (0.3914ms)
+  ✔ leaves non-assistant messages untouched (0.2766ms)
+  ✔ returns early on missing/empty messages array (0.5068ms)
+  ✔ ignores assistant messages that have no reasoning_content (1.4499ms)
+  ✔ handles multi-turn: strips old turns, keeps recent one (0.3344ms)
+✔ kimchi stripReasoningContent (12.9494ms)
+▶ kimchi executor wiring
+  ✔ KimchiExecutor extends DefaultExecutor via prototype chain (0.5685ms)
+  ✔ default export is KimchiExecutor class (0.2614ms)
+✔ kimchi executor wiring (1.1984ms)
+ℹ tests 9
+ℹ suites 2
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67.5948
+(node:29340) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/9router-mod/9router-baseline-46/src/sse/services/backgroundTokenRefresh.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\9router-mod\9router-baseline-46\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ formatX509Certificate normalizes Base64 strings into PEM blocks (2.7411ms)
+✔ isSamlConfigured checks required fields (4.2023ms)
+✔ generateSamlMetadata produces valid SP XML (8ms)
+✔ Claims Extraction pickSamlEmail & pickSamlDisplayName (0.7824ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33.2267
+JSON report written to D:/9router-mod/9router/plans/reports/260906-v0646-baseline-vitest.json

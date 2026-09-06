@@ -1,0 +1,106 @@
+(node:40880) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/9router-mod/9router/open-sse/executors/base.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\9router-mod\9router\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ kimchi registry entry
+  ✖ is an oauth provider auto-listed via byCategory (7.8359ms)
+  ✔ points at the OpenAI-compatible gateway with an authenticated UA (0.6412ms)
+  ✔ uses Bearer auth (5.4522ms)
+  ✔ exposes the upstream static models (1.3631ms)
+  ✔ passes through models not in the static list (0.4215ms)
+✖ kimchi registry entry (37.2095ms)
+▶ kimchi oauth
+  ✔ builds the cli-auth URL with encoded callback + state (1.6105ms)
+  ✔ rejects a callback whose state does not match (1.429ms)
+  ✔ accepts a callback with matching state and returns the token (0.4954ms)
+✔ kimchi oauth (4.8799ms)
+▶ kimchiModels
+  ✔ maps Kimchi metadata entries to 9router model shape (0.8531ms)
+  ✔ falls back to slug as name when display_name is empty (0.3762ms)
+  ✔ returns empty array for non-array input (12.9639ms)
+✔ kimchiModels (27.1022ms)
+▶ kimchi validateToken
+  ✔ 200 → valid (1.2427ms)
+  ✔ 401 → invalid, expired message (4.1826ms)
+  ✔ 403 → invalid, scope message (1.053ms)
+  ✔ unknown / network error → fail-open valid (0.5192ms)
+✔ kimchi validateToken (12.3676ms)
+▶ kimchi OAuth dedup
+  ✔ different email never matches (1.2888ms)
+  ✔ same email + same username = dedup (re-login same IdP) (0.9988ms)
+  ✔ same email + different username = NO match (cross-IdP, the bug) (0.346ms)
+  ✔ legacy row without username matches incoming without username (backward compat) (0.2251ms)
+  ✔ incoming without username does not match legacy row with username (0.2144ms)
+  ✔ workspaces still dedupe on workspace ID when both sides have one (0.3784ms)
+✔ kimchi OAuth dedup (10.0872ms)
+ℹ tests 21
+ℹ suites 5
+ℹ pass 20
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.1121
+
+✖ failing tests:
+
+test at unit\kimchi.test.js:16:31
+✖ is an oauth provider auto-listed via byCategory (7.8359ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'freeTier'
+  - 'oauth'
+  
+      at TestContext.<anonymous> (D:/9router-mod/9router/tests/unit/kimchi.test.js:16:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Promise.all (index 0)
+      at Suite.run (node:internal/test_runner/test:1794:7)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'freeTier',
+    expected: 'oauth',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+✔ formatX509Certificate normalizes Base64 strings into PEM blocks (2.5811ms)
+✔ isSamlConfigured checks required fields (4.364ms)
+✔ generateSamlMetadata produces valid SP XML (9.3895ms)
+✔ Claims Extraction pickSamlEmail & pickSamlDisplayName (1.4084ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37.4707
+▶ kimchi stripReasoningContent
+  ✔ removes long reasoning_content from assistant messages but keeps content (8.191ms)
+  ✔ preserves the 1-char placeholder that injectReasoningContent sets (0.5202ms)
+  ✔ preserves short custom reasoning under the threshold (0.2332ms)
+  ✔ leaves non-assistant messages untouched (0.2088ms)
+  ✔ returns early on missing/empty messages array (0.5886ms)
+  ✔ ignores assistant messages that have no reasoning_content (1.6475ms)
+  ✔ handles multi-turn: strips old turns, keeps recent one (0.5288ms)
+✔ kimchi stripReasoningContent (14.7948ms)
+▶ kimchi executor wiring
+  ✔ KimchiExecutor extends DefaultExecutor via prototype chain (0.6556ms)
+  ✔ default export is KimchiExecutor class (0.3399ms)
+✔ kimchi executor wiring (1.4312ms)
+ℹ tests 9
+ℹ suites 2
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 56.1247
+(node:41364) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/9router-mod/9router/src/sse/services/backgroundTokenRefresh.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\D:\9router-mod\9router\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+JSON report written to D:/9router-mod/9router/plans/reports/260906-v0646-feature-vitest.json
