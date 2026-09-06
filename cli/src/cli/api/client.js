@@ -332,8 +332,32 @@ async function rekeyApiKey(id, rawKey) {
  * @param {string} password - Dashboard password (sent once, never stored)
  * @returns {Promise<Object>} { success, data: backup payload with warnings }
  */
-async function exportDatabase(password) {
-  return makeRequest("GET", "/api/settings/database", null, { "x-9r-password": password });
+async function exportDatabase(password, { archivePassphrase } = {}) {
+  // v0.6.46 Option F: whole-archive encryption. The passphrase rides a
+  // header (never a URL); when present the server returns the sealed
+  // wrapper JSON and suppresses the .45 envelope.
+  const headers = { "x-9r-password": password };
+  if (archivePassphrase) {
+    headers["x-9r-archive-passphrase"] = archivePassphrase;
+  }
+  return makeRequest("GET", "/api/settings/database", null, headers);
+}
+
+/**
+ * Generate an archive passphrase server-side (RT46-O10: ONE generator
+ * implementation, DRY). The CLI never generates locally.
+ * @param {string} password - Dashboard password (optional; the CLI token
+ *   header is always sent by makeRequest and is sufficient on its own)
+ * @returns {Promise<Object>} { success, data: { passphrase } }
+ */
+async function getArchivePassphrase(password) {
+  // Mirrors exportDatabase's header idiom: send x-9r-password only when a
+  // password was actually entered (empty string would be a useless header).
+  const headers = {};
+  if (password) {
+    headers["x-9r-password"] = password;
+  }
+  return makeRequest("GET", "/api/settings/database/archive-passphrase", null, headers);
 }
 
 /**
@@ -342,7 +366,17 @@ async function exportDatabase(password) {
  * @param {string} password - Password used when the backup was exported
  * @returns {Promise<Object>} { success, data: { success, warnings, needsRekeyCount } }
  */
-async function importDatabase(payload, password) {
+async function importDatabase(payload, password, { archivePassphrase } = {}) {
+  // v0.6.46 Option F: an encrypted wrapper is posted as { archive, archivePassphrase,
+  // password } — the server unwraps it before importDb (wrong passphrase
+  // hard-fails before any DELETE). Otherwise the .45 spread body is unchanged.
+  if (archivePassphrase) {
+    return makeRequest("POST", "/api/settings/database", {
+      archive: payload,
+      archivePassphrase,
+      password
+    });
+  }
   return makeRequest("POST", "/api/settings/database", { ...payload, password });
 }
 
@@ -562,6 +596,7 @@ module.exports = {
 
   // Database Backup
   exportDatabase,
+  getArchivePassphrase,
   importDatabase,
   
   // Combos
