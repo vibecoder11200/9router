@@ -72,3 +72,41 @@ describe("account-specific fabricated 401/402 texts (C4 follow-up)", () => {
     expect(checkFallbackError(402, "Payment required").shouldFallback).toBe(false);
   });
 });
+
+// Phase 05 (v0.6.46): provider-scoped rules. The "payment required" rule is
+// scoped to commandcode (+ "cmc" alias) — there the text is account-specific
+// billing evidence; for every other provider (and undefined) it stays fail-fast.
+describe("provider-scoped rules", () => {
+  it("commandcode bare payment-required 402 rotates with long cooldown", () => {
+    const { shouldFallback, cooldownMs } = checkFallbackError(402, "Payment required", 0, "commandcode");
+    expect(shouldFallback).toBe(true);
+    expect(cooldownMs).toBe(2 * 60 * 1000);
+  });
+
+  it("commandcode wrapped real-world billing text rotates", () => {
+    expect(checkFallbackError(402, "[CommandCode error: payment required]", 0, "commandcode").shouldFallback).toBe(true);
+  });
+
+  it("the cmc alias also matches the scoped rule (RT46-A6c)", () => {
+    expect(checkFallbackError(402, "[CommandCode error: payment required]", 0, "cmc").shouldFallback).toBe(true);
+  });
+
+  it("github bare payment-required 402 still fails fast", () => {
+    expect(checkFallbackError(402, "Payment required", 0, "github").shouldFallback).toBe(false);
+  });
+
+  it("undefined provider skips scoped rules (fail-closed)", () => {
+    expect(checkFallbackError(402, "Payment required").shouldFallback).toBe(false);
+  });
+
+  it("unscoped rules ignore the provider entirely", () => {
+    expect(checkFallbackError(402, "quota exceeded", 0, "github").shouldFallback).toBe(true);
+  });
+
+  it.each(["github", "codex", "qoder", undefined])(
+    "bare \"Payment required\" stays fail-fast for provider %p",
+    (provider) => {
+      expect(checkFallbackError(402, "Payment required", 0, provider).shouldFallback).toBe(false);
+    }
+  );
+});

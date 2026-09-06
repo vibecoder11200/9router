@@ -50,11 +50,14 @@ const COOLDOWN = {
 /**
  * Unified error classification rules.
  * Checked top-to-bottom: text rules first (by order), then status rules.
- * Each rule: { text?, status?, cooldownMs?, backoff? }
+ * Each rule: { text?, status?, cooldownMs?, backoff?, providers? }
  *   - text: substring match (case-insensitive) on error message
  *   - status: HTTP status code match
  *   - cooldownMs: fixed cooldown duration
  *   - backoff: true = use exponential backoff (rate limit)
+ *   - providers: optional array; when present the rule matches only if the
+ *     caller-supplied provider equals one of the entries (fail-closed: an
+ *     undefined/unknown provider skips the rule entirely)
  */
 export const ERROR_RULES = [
   // --- Text-based rules (checked first, order = priority) ---
@@ -84,10 +87,12 @@ export const ERROR_RULES = [
   { text: "insufficient credits",     cooldownMs: COOLDOWN.long },  // openrouter 402
   { text: "credit balance is too low", cooldownMs: COOLDOWN.long }, // anthropic 400
   { text: "billing",                  cooldownMs: COOLDOWN.long },  // commandcode/qoder billing
-  // NOTE: deliberately NO "payment required" rule — it is a bare restatement
-  // of the 402 status (no account-specific evidence), and the C4 contract
-  // test (github-monthly-usage-lock) pins bare-"Payment required" 402s to
-  // fail fast. Provider-scoped rules are the eventual fix.
+  // Scoped to commandcode (incl. the "cmc" alias): its billing 402 carries
+  // "payment required" (commandcode.js), which IS account-specific evidence
+  // there. For everyone else — github above all — bare "Payment required"
+  // restates the 402 status and stays fail-fast (C4 contract pinned by
+  // github-monthly-usage-lock).
+  { text: "payment required", providers: ["commandcode", "cmc"], cooldownMs: COOLDOWN.long },
 
   // --- Status-based rules (fallback when text doesn't match) ---
   { status: 401, cooldownMs: COOLDOWN.long },
