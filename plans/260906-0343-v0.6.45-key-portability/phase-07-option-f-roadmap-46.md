@@ -56,9 +56,9 @@ v0.6.46 export (F on)                      v0.6.46 import
 
 ## Todo list
 
-- [ ] (v0.6.46 planning only) Resolve open questions below
-- [ ] (v0.6.46) Decide wrapper shape: bare envelope vs `{format, envelope}` envelope-with-header
-- [ ] (v0.6.46) Decide inner-secret suppression rule (F on ⇒ omit `authSecretEnvelope`)
+- [x] (v0.6.46 planning only) Resolve open questions below
+- [x] (v0.6.46) Decide wrapper shape: bare envelope vs `{format, envelope}` envelope-with-header
+- [x] (v0.6.46) Decide inner-secret suppression rule (F on ⇒ omit `authSecretEnvelope`)
 
 ## Success Criteria
 

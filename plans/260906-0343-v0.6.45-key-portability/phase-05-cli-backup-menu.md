@@ -10,7 +10,7 @@
 - Date: 2026-09-06
 - Description: New CLI menu `Backup & Restore`: Export prompts the dashboard password, GETs `/api/settings/database` with `x-9r-password`, writes `9router-backup-<stamp>.json` to cwd; Import prompts file path + password, POSTs, prints warnings incl. needsRekey count. Client gains `exportDatabase(password)` / `importDatabase(payload, password)`; `makeRequest` gains an optional headers param.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -91,12 +91,12 @@ Main menu (terminalUI.js)
 
 ## Todo list
 
-- [ ] `makeRequest` 4th param `extraHeaders` (merged after token header)
-- [ ] `exportDatabase` / `importDatabase` client methods + exports
-- [ ] `cli/src/cli/menus/backup.js` (Export / Import handlers + menu)
-- [ ] terminalUI.js wiring ("Backup & Restore" item after Settings)
-- [ ] Manual smoke: export→file, import right/wrong password, re-key path
-- [ ] gitnexus `impact` on `makeRequest` BEFORE editing; `detect_changes()` before commit
+- [x] `makeRequest` 4th param `extraHeaders` (merged after token header)
+- [x] `exportDatabase` / `importDatabase` client methods + exports
+- [x] `cli/src/cli/menus/backup.js` (Export / Import handlers + menu)
+- [x] terminalUI.js wiring ("Backup & Restore" item after Settings)
+- [x] Manual smoke: export→file, import right/wrong password, re-key path
+- [x] gitnexus `impact` on `makeRequest` BEFORE editing; `detect_changes()` before commit
 
 ## Success Criteria
 

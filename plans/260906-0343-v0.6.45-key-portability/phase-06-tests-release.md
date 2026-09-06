@@ -11,7 +11,7 @@
 - Date: 2026-09-06
 - Description: Cross-phase integration test pass (portability lifecycle), full-suite run with failing-set diff vs clean HEAD, CHANGELOG entry, dual version bump, release commit + tag.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -83,13 +83,13 @@ lifecycle test flow (one describe, mocked adapter + installSecret state):
 
 ## Todo list
 
-- [ ] key-portability-lifecycle.test.js green (A→B adopt; B→C wrong-password → re-key)
-- [ ] Full-suite failing-set diff vs clean HEAD → zero new failures
-- [ ] Boot-migration spot check on copied v0.6.44 data dir (needsRekey column auto-add)
-- [ ] CHANGELOG.md v0.6.45 entry
-- [ ] Dual version bump 0.6.45 (package.json + cli/package.json)
-- [ ] detect_changes() scope check
-- [ ] Release commit + tag v0.6.45
+- [x] key-portability-lifecycle.test.js green (A→B adopt; B→C wrong-password → re-key)
+- [x] Full-suite failing-set diff vs clean HEAD → zero new failures
+- [x] Boot-migration spot check on copied v0.6.44 data dir (needsRekey column auto-add)
+- [x] CHANGELOG.md v0.6.45 entry
+- [x] Dual version bump 0.6.45 (package.json + cli/package.json)
+- [x] detect_changes() scope check
+- [x] Release commit + tag v0.6.45
 
 ## Success Criteria
 

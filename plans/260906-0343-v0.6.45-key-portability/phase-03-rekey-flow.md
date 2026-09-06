@@ -10,7 +10,7 @@
 - Date: 2026-09-06
 - Description: `POST /api/keys/[id]/rekey {rawKey}` re-hashes an inert imported key against THIS install's secret after an ownership proof that needs no old secret: full masked-string compare. Dashboard Endpoint page gets a per-row Re-key button + modal; CLI key actions get a "Re-key" item. `GET /api/keys` derives a global needsRekey flag.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -120,14 +120,14 @@ CLI: showKeyActions → prompt raw key → api.rekeyApiKey → show masked resul
 
 ## Todo list
 
-- [ ] `rekeyApiKey` in apiKeysRepo.js + re-exports (db/index.js, localDb.js)
-- [ ] `src/app/api/keys/[id]/rekey/route.js` (POST, same guard class as PUT, masked-only response)
-- [ ] `GET /api/keys` global needsRekey flag
-- [ ] `RekeyModal.js` component
-- [ ] EndpointPageClient: banner + row badge + action button + modal wiring
-- [ ] CLI `rekeyApiKey` client method + showKeyActions menu item
-- [ ] tests/unit/rekey-flow.test.js green (`npx vitest run unit/rekey-flow` from tests/)
-- [ ] gitnexus `impact` on `rowToKey`/`getApiKeys` BEFORE editing; `detect_changes()` before commit
+- [x] `rekeyApiKey` in apiKeysRepo.js + re-exports (db/index.js, localDb.js)
+- [x] `src/app/api/keys/[id]/rekey/route.js` (POST, same guard class as PUT, masked-only response)
+- [x] `GET /api/keys` global needsRekey flag
+- [x] `RekeyModal.js` component
+- [x] EndpointPageClient: banner + row badge + action button + modal wiring
+- [x] CLI `rekeyApiKey` client method + showKeyActions menu item
+- [x] tests/unit/rekey-flow.test.js green (`npx vitest run unit/rekey-flow` from tests/)
+- [x] gitnexus `impact` on `rowToKey`/`getApiKeys` BEFORE editing; `detect_changes()` before commit
 
 ## Success Criteria
 

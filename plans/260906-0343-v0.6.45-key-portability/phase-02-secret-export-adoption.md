@@ -12,7 +12,7 @@
 - Date: 2026-09-06
 - Description: Thread the dashboard password from the database settings route into exportDb/importDb. Export embeds a password-wrapped `api-keys-hmac` secret envelope. Import unwraps BEFORE the transaction, adopts the secret before key inserts (with rollback restore), or marks carried-keyHash rows `needsRekey=1` and warns. Profile page copy clarifies which password is expected.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -129,15 +129,15 @@ exportDb({password})                          importDb(payload, {password})
 
 ## Todo list
 
-- [ ] schema.js needsRekey column (no SCHEMA_VERSION bump)
-- [ ] installSecret.js: adoptInstallSecret + readInstallSecret
-- [ ] rowToKey exposes needsRekey
-- [ ] exportDb({password}) embeds envelope + meta note + carries needsRekey
-- [ ] importDb(payload, {password}): unwrap before transaction, adopt before inserts, rollback restore, inert flagging, warnings, needsRekeyCount
-- [ ] Route: mode-aware GET (CLI token → no envelope), POST threads password, response + needsRekeyCount
-- [ ] Profile page modal copy (export-password vs import-password clarification) + needsRekeyCount in warning message
-- [ ] tests/unit/key-portability.test.js all cases green (`npx vitest run unit/key-portability` from tests/)
-- [ ] Run gitnexus `impact` on exportDb/importDb BEFORE editing (AGENTS.md rule) and record blast radius in the PR body; `detect_changes()` before commit
+- [x] schema.js needsRekey column (no SCHEMA_VERSION bump)
+- [x] installSecret.js: adoptInstallSecret + readInstallSecret
+- [x] rowToKey exposes needsRekey
+- [x] exportDb({password}) embeds envelope + meta note + carries needsRekey
+- [x] importDb(payload, {password}): unwrap before transaction, adopt before inserts, rollback restore, inert flagging, warnings, needsRekeyCount
+- [x] Route: mode-aware GET (CLI token → no envelope), POST threads password, response + needsRekeyCount
+- [x] Profile page modal copy (export-password vs import-password clarification) + needsRekeyCount in warning message
+- [x] tests/unit/key-portability.test.js all cases green (`npx vitest run unit/key-portability` from tests/)
+- [x] Run gitnexus `impact` on exportDb/importDb BEFORE editing (AGENTS.md rule) and record blast radius in the PR body; `detect_changes()` before commit
 
 ## Success Criteria
 

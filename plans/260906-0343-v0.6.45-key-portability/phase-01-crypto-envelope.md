@@ -11,7 +11,7 @@
 - Date: 2026-09-06
 - Description: New leaf module `src/lib/auth/backupEnvelope.js` — seal/open a secret with a password using scrypt + AES-256-GCM. Pure: no DB, no fs, no imports beyond `node:crypto`. Fully unit-testable.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -75,12 +75,12 @@ openBackupSecret(envelope, password)             // inverse; setAuthTag BEFORE f
 
 ## Todo list
 
-- [ ] Create `src/lib/auth/backupEnvelope.js` (seal/open/isBackupEnvelope/BackupEnvelopeError)
-- [ ] Async scrypt with explicit maxmem=128MiB, N=2^16/r=8/p=1/keylen=32
-- [ ] Param ceilings on open (DoS guard)
-- [ ] Create `tests/unit/backup-envelope.test.js` (round-trip, wrong password, tamper ×3, shape, randomness, maxmem guard)
-- [ ] Run `npx vitest run unit/backup-envelope` from `tests/` — all green
-- [ ] `node .gitnexus/run.cjs analyze` not needed (new file); skip impact (no existing symbol edited)
+- [x] Create `src/lib/auth/backupEnvelope.js` (seal/open/isBackupEnvelope/BackupEnvelopeError)
+- [x] Async scrypt with explicit maxmem=128MiB, N=2^16/r=8/p=1/keylen=32
+- [x] Param ceilings on open (DoS guard)
+- [x] Create `tests/unit/backup-envelope.test.js` (round-trip, wrong password, tamper ×3, shape, randomness, maxmem guard)
+- [x] Run `npx vitest run unit/backup-envelope` from `tests/` — all green
+- [x] `node .gitnexus/run.cjs analyze` not needed (new file); skip impact (no existing symbol edited)
 
 ## Success Criteria
 

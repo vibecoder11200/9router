@@ -10,7 +10,7 @@
 - Date: 2026-09-06
 - Description: Replace the 6-char `Math.random` keyId with a 12-char `crypto.randomInt` draw over the same 36-char alphabet (~62.0 bits: 36^12 = 2^62.04). Only `generateKeyId` changes; parse/mask/CRC are untouched and verified compatible.
 - Priority: P1
-- Status: pending
+- Status: done
 
 ## Key Insights
 
@@ -76,11 +76,11 @@ maskApiKey(key) = `sk-${parts[len-2]}-••••${last4}`   // length-agnostic
 
 ## Todo list
 
-- [ ] Swap `Math.random` loop → `crypto.randomInt` × 12 in generateKeyId
-- [ ] Comment updated (62-bit rationale + backward compat note)
-- [ ] tests/unit/apikey-keyid-upgrade.test.js green
-- [ ] apikeys-hash-migration.test.js still green (no edits)
-- [ ] gitnexus `impact` on `generateApiKeyWithMachine` BEFORE editing; `detect_changes()` before commit
+- [x] Swap `Math.random` loop → `crypto.randomInt` × 12 in generateKeyId
+- [x] Comment updated (62-bit rationale + backward compat note)
+- [x] tests/unit/apikey-keyid-upgrade.test.js green
+- [x] apikeys-hash-migration.test.js still green (no edits)
+- [x] gitnexus `impact` on `generateApiKeyWithMachine` BEFORE editing; `detect_changes()` before commit
 
 ## Success Criteria
 

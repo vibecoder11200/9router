@@ -1,7 +1,7 @@
 ---
 title: "v0.6.45 — Key Portability: wrapped HMAC-secret export, re-key fallback, keyId upgrade, CLI backup menu"
 description: "Ship portable API keys in backups: password-wrapped install-secret envelope + adoption on import, per-key re-key fallback, 62-bit keyId, CLI Backup & Restore menu; v0.6.46 Option F roadmap entry."
-status: pending
+status: done
 priority: P1
 effort: 14.5h
 branch: master
@@ -45,13 +45,13 @@ a v0.6.46 roadmap sketch only.
 
 | Phase | File | Status | Deps | Effort |
 |---|---|---|---|---|
-| 01 crypto envelope module (pure) | [phase-01-crypto-envelope.md](phase-01-crypto-envelope.md) | pending | — | 2h |
-| 02 secret export + adoption + needsRekey column | [phase-02-secret-export-adoption.md](phase-02-secret-export-adoption.md) | pending | 01 | 4h |
-| 03 re-key flow (endpoint + dashboard UI + CLI) | [phase-03-rekey-flow.md](phase-03-rekey-flow.md) | pending | 02 | 3h |
-| 04 keyId upgrade (12 chars, 62 bits) | [phase-04-keyid-upgrade.md](phase-04-keyid-upgrade.md) | pending | — | 1h |
-| 05 CLI Backup & Restore menu | [phase-05-cli-backup-menu.md](phase-05-cli-backup-menu.md) | pending | 02, 03 | 2.5h |
-| 06 end-to-end test sweep + CHANGELOG + release | [phase-06-tests-release.md](phase-06-tests-release.md) | pending | 01–05 | 1.5h |
-| 07 Option F roadmap (v0.6.46, design only) | [phase-07-option-f-roadmap-46.md](phase-07-option-f-roadmap-46.md) | pending | — | 0.5h |
+| 01 crypto envelope module (pure) | [phase-01-crypto-envelope.md](phase-01-crypto-envelope.md) | done | — | 2h |
+| 02 secret export + adoption + needsRekey column | [phase-02-secret-export-adoption.md](phase-02-secret-export-adoption.md) | done | 01 | 4h |
+| 03 re-key flow (endpoint + dashboard UI + CLI) | [phase-03-rekey-flow.md](phase-03-rekey-flow.md) | done | 02 | 3h |
+| 04 keyId upgrade (12 chars, 62 bits) | [phase-04-keyid-upgrade.md](phase-04-keyid-upgrade.md) | done | — | 1h |
+| 05 CLI Backup & Restore menu | [phase-05-cli-backup-menu.md](phase-05-cli-backup-menu.md) | done | 02, 03 | 2.5h |
+| 06 end-to-end test sweep + CHANGELOG + release | [phase-06-tests-release.md](phase-06-tests-release.md) | done | 01–05 | 1.5h |
+| 07 Option F roadmap (v0.6.46, design only) | [phase-07-option-f-roadmap-46.md](phase-07-option-f-roadmap-46.md) | done | — | 0.5h |
 
 Phase 04 is independent and may run parallel with 02. Phases 02→03→05 are
 strictly sequential (03 needs the needsRekey column; 05 needs routes + rekey
@@ -101,11 +101,21 @@ Confirmed decisions:
 
 Action items for implementation (all already encoded in phase files; listed here as the checklist of record):
 
-- [ ] Phase 01: exact-tuple param whitelist + Number.isInteger + whole-body try + `N9R_TEST_ENVELOPE_N` test override (RT-01/02).
-- [ ] Phase 02: `verifyDashboardPasswordAgainstStoredHash` (bcrypt-only) in dashboardSession.js; route wrap-password derivation from `x-9r-password` on BOTH auth paths; adopt-AFTER-commit + best-effort needsRekey UPDATE; shape-guard before DELETEs; no-password unwrap skip; import mutex; loginLimiter; mock exports `readInstallSecret`; honest single-field modal copy (RT-03..RT-10).
-- [ ] Phase 03: needsRekey-only gate + mismatch lockout (loginLimiter pattern); honest 16-bit risk row; `promptSecret` for raw key; flag-gated button/menu visibility (RT-11/12).
-- [ ] Phase 04: corrected security claim (62-bit = key-string forgery defense, not the re-key proof) (RT-13).
-- [ ] Phase 05: `promptSecret` helper; writeFileSync `{mode: 0o600}` + try/catch + absolute path; honest "rest stays unencrypted" copy; corrected fresh-install insight (RT-14..RT-18).
-- [ ] Phase 06: negative empty-JSON tests; suite-runtime delta; honest CHANGELOG bullet incl. "re-key offered only for flagged keys"; one-green-commit-per-phase rule (RT-19..RT-22).
+- [x] Phase 01: exact-tuple param whitelist + Number.isInteger + whole-body try + `N9R_TEST_ENVELOPE_N` test override (RT-01/02).
+- [x] Phase 02: `verifyDashboardPasswordAgainstStoredHash` (bcrypt-only) in dashboardSession.js; route wrap-password derivation from `x-9r-password` on BOTH auth paths; adopt-AFTER-commit + best-effort needsRekey UPDATE; shape-guard before DELETEs; no-password unwrap skip; import mutex; loginLimiter; mock exports `readInstallSecret`; honest single-field modal copy (RT-03..RT-10).
+- [x] Phase 03: needsRekey-only gate + mismatch lockout (loginLimiter pattern); honest 16-bit risk row; `promptSecret` for raw key; flag-gated button/menu visibility (RT-11/12).
+- [x] Phase 04: corrected security claim (62-bit = key-string forgery defense, not the re-key proof) (RT-13).
+- [x] Phase 05: `promptSecret` helper; writeFileSync `{mode: 0o600}` + try/catch + absolute path; honest "rest stays unencrypted" copy; corrected fresh-install insight (RT-14..RT-18).
+- [x] Phase 06: negative empty-JSON tests; suite-runtime delta; honest CHANGELOG bullet incl. "re-key offered only for flagged keys"; one-green-commit-per-phase rule (RT-19..RT-22).
 
 Status: plan validated — awaiting owner go-ahead to implement (e.g. via the cook flow). frontmatter `status` stays `pending` until implementation starts.
+
+# Completion Record (2026-09-06)
+
+Shipped as **v0.6.45** (tag pushed; Build-and-Release/Docker/CI workflows auto-triggered).
+
+- Commits: 7770cb9d (plan) → cb2198dd (01) → 4e164ece (04) → 592b445e (02) → 7b12423f (03) → c052a237 (05) → 8a19bbfc (release prep) → a916ec20 (review-gate fixes). One green commit per phase (RT-22).
+- Verification: 65/65 green across the 8 new/extended test files; full-suite failing-set diff vs 7770cb9d (serial runs, correct node_modules) = ZERO new failures (single delta unit/process-guard passes standalone in both trees — load flake). Reports: plans/reports/260906-v0645-*.
+- Code-review gate: REQUEST CHANGES with 1 blocker (fresh-install export 401 — auth and sealing shared one bcrypt-only check, contradicting RT-03/RT-17) + null-hole in the RT-05 guard + unguarded CLI API calls. All fixed in a916ec20 with new route-level tests (tests/unit/database-route.test.js) — the route layer previously had zero tests.
+- Incidents during execution: (1) subagent's exportDb restructure dropped the `settings` key — caught by the failing-set diff (db-sqlite-vs-lowdb roundtrip), fixed 462f2a84; (2) an interrupted baseline worktree ran without node_modules (bogus 54-"new-failures" diff) — root-caused and re-run properly; (3) `git worktree remove --force` followed the node_modules junction and wiped the main repo's node_modules — restored via npm ci from lockfiles (both root + tests/), no source damage (all work was committed).
+- Deferred to .46 (unchanged): Option F whole-archive encryption (phase-07 sketch), provider-scoped payment-required rules, api-key-secret (CRC) scope wrapping decision.
