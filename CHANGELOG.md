@@ -1,3 +1,36 @@
+# v0.6.47 (2026-09-06)
+
+Every dashboard page now speaks the same visual language: shared page
+headers, real design tokens, and centered layouts.
+
+## Features
+- **Shared page headers for V2Ray Proxy (/dashboard/xray), Alerts
+  (/dashboard/alerts), and PXPIPE (/dashboard/pxpipe)**: the three pages
+  render the standard icon + title + description header bar (same as
+  Proxy Pools) instead of hand-rolled headings or an empty top bar.
+
+## Fixes
+- **PricingModal no longer renders with a transparent panel**: the modal
+  panel and its number inputs used `bg-bg-base`, a token that never
+  existed in the design system, so they drew with no background at all.
+  Now painted with `bg-surface`.
+- **Dead design tokens purged dashboard-wide**: `bg-bg-subtle`,
+  `bg-bg-hover`, `bg-bg-base`, `text-muted-foreground`, and bare
+  `text-text` never resolved to any CSS, silently degrading segmented
+  controls, table headers, sort hovers, and toggle states in Usage
+  (table / chart / topology), PricingModal, RequestLogger, UsageStats,
+  and the CLI-tools guide card. All replaced with real tokens
+  (`bg-surface-2`, `text-text-main`, `text-text-muted`); active segment
+  buttons now use `text-primary-foreground` on the brand orange.
+- **Dead Card padding overrides**: `Card className="p-4/p-6"` could never
+  beat the built-in default `p-6` because the `cn()` helper concatenates
+  classes instead of merging them — the override was a silent no-op.
+  settings/pricing now uses the `padding` prop.
+- **Layout alignment**: xray / alerts / pxpipe / token-saver use the
+  standard centered `max-w-*` container without double page padding; the
+  xray status badge moved into the Proxy Status card; alerts' inline
+  success/error text is replaced by toast notifications.
+
 # v0.6.46 (2026-09-06)
 
 Backups can now be encrypted end-to-end with a passphrase.
