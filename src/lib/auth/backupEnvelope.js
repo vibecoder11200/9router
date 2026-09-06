@@ -6,9 +6,18 @@
 // module — only node:crypto — so phase 02's exportDb/importDb and any
 // test context can use it cheaply. Never logs password/secret/plaintext;
 // all error messages are generic constants.
+//
+// AAD domain separation (v0.6.46): the AAD is an allowlisted parameter so
+// the .46 whole-archive envelope can reuse this exact code — scrypt tuple,
+// whitelist, error normalization — with a different domain tag. Exactly two
+// constants exist; seal/open/is reject anything else, which prevents an
+// accidental third domain. Existing callers pass nothing and get
+// AAD_BACKUP_V1, byte-identical to the old private const.
 import crypto from "node:crypto";
 
-const AAD = "9router-backup-v1";
+export const AAD_BACKUP_V1 = "9router-backup-v1";
+export const AAD_ARCHIVE_V1 = "9router-archive-v1";
+const AAD_ALLOWED = Object.freeze([AAD_BACKUP_V1, AAD_ARCHIVE_V1]);
 const PARAMS = Object.freeze({
   N: 65536,
   r: 8,
@@ -39,7 +48,8 @@ function scryptAsync(password, salt, keylen, options) {
   });
 }
 
-export function isBackupEnvelope(v) {
+export function isBackupEnvelope(v, aad = AAD_BACKUP_V1) {
+  if (!AAD_ALLOWED.includes(aad)) return false;
   return Boolean(
     v &&
     v.v === 1 &&
@@ -49,16 +59,17 @@ export function isBackupEnvelope(v) {
     typeof v.nonce === "string" &&
     typeof v.ct === "string" &&
     typeof v.tag === "string" &&
-    v.aad === AAD
+    v.aad === aad
   );
 }
 
-export async function sealBackupSecret(secret, password) {
+export async function sealBackupSecret(secret, password, { aad = AAD_BACKUP_V1 } = {}) {
   if (
     typeof secret !== "string" ||
     secret.length === 0 ||
     typeof password !== "string" ||
-    password.length === 0
+    password.length === 0 ||
+    !AAD_ALLOWED.includes(aad)
   ) {
     throw new BackupEnvelopeError(INVALID_SEAL_INPUT);
   }
@@ -71,7 +82,7 @@ export async function sealBackupSecret(secret, password) {
     maxmem: PARAMS.maxmem,
   });
   const cipher = crypto.createCipheriv("aes-256-gcm", key, nonce);
-  cipher.setAAD(Buffer.from(AAD, "utf8"));
+  cipher.setAAD(Buffer.from(aad, "utf8"));
   const ct = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
   return {
@@ -85,12 +96,12 @@ export async function sealBackupSecret(secret, password) {
     nonce: nonce.toString("base64"),
     ct: ct.toString("base64"),
     tag: tag.toString("base64"),
-    aad: AAD,
+    aad,
   };
 }
 
-export async function openBackupSecret(envelope, password) {
-  if (!isBackupEnvelope(envelope)) {
+export async function openBackupSecret(envelope, password, { aad = AAD_BACKUP_V1 } = {}) {
+  if (!isBackupEnvelope(envelope, aad)) {
     throw new BackupEnvelopeError(OPEN_FAILED);
   }
   // RT-01: v:1 accepts EXACTLY the frozen tuple (r/p always; N via the
@@ -119,7 +130,7 @@ export async function openBackupSecret(envelope, password) {
       maxmem: PARAMS.maxmem,
     });
     const decipher = crypto.createDecipheriv("aes-256-gcm", key, nonce);
-    decipher.setAAD(Buffer.from(AAD, "utf8"));
+    decipher.setAAD(Buffer.from(aad, "utf8"));
     decipher.setAuthTag(tag);
     const pt = Buffer.concat([
       decipher.update(Buffer.from(envelope.ct, "base64")),
