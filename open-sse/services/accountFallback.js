@@ -27,14 +27,21 @@ export function getQuotaCooldown(backoffLevel = 0) {
  * @param {number} status - HTTP status code
  * @param {string} errorText - Error message text
  * @param {number} backoffLevel - Current backoff level for exponential backoff
+ * @param {string} [provider] - Provider id/alias of the failing account (optional).
+ *   Rules with a `providers` allowlist match ONLY when this value is in the
+ *   list — fail-closed: an undefined/unknown provider skips scoped rules, so
+ *   callers that don't plumb the provider keep exactly the old behavior.
  * @returns {{ shouldFallback: boolean, cooldownMs: number, newBackoffLevel?: number }}
  */
-export function checkFallbackError(status, errorText, backoffLevel = 0) {
+export function checkFallbackError(status, errorText, backoffLevel = 0, provider = undefined) {
   const lowerError = errorText
     ? (typeof errorText === "string" ? errorText : JSON.stringify(errorText)).toLowerCase()
     : "";
 
   for (const rule of ERROR_RULES) {
+    // Provider-scoped rule: only applies when the caller named a provider in
+    // the rule's allowlist. Fail-closed — undefined provider skips it.
+    if (rule.providers && (!provider || !rule.providers.includes(provider))) continue;
     // Text-based rule: match substring in error message. Text evidence wins
     // over everything — a 402 carrying "quota exceeded" IS account-specific
     // (this account is out of credits; the next one may not be).
