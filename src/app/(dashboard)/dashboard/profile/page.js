@@ -10,6 +10,14 @@ import { APP_CONFIG } from "@/shared/constants/config";
 import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
 import { LOCALE_FLAGS } from "@/shared/constants/locales";
 
+// RT46-A3/O3: printable-ASCII-only passphrases on the dashboard surface.
+// Browser fetch truncates header chars U+0100–U+01FF (`codepoint & 0xFF`) —
+// without this client-side gate (enforced BEFORE any request fires), a
+// passphrase with such a char gets sealed under a TRANSFORMED value and the
+// archive becomes unopenable from every surface. The server 400 is the backstop.
+const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
+const PASSPHRASE_ASCII_HINT = "passphrase must be printable ASCII — spaces and hyphens are ignored";
+
 function getLocaleFromCookie() {
   if (typeof document === "undefined") return "en";
   const cookie = document.cookie
@@ -32,8 +40,16 @@ export default function ProfilePage() {
   const [passLoading, setPassLoading] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbStatus, setDbStatus] = useState({ type: "", message: "" });
-  const [dbAuth, setDbAuth] = useState({ open: false, mode: "", password: "" });
+  const [dbAuth, setDbAuth] = useState({ open: false, mode: "", password: "", archivePassphrase: "", encrypted: false });
   const pendingImportRef = useRef(null);
+  // v0.6.46 Option F export state machine. Opened AFTER the dbAuth password
+  // step (password collected FIRST in every path — auth → passphrase mental
+  // model). step: "choose" | "own" | "panel"; choice: "no" | "own" | "generate".
+  // The generated passphrase lives in this state ONLY: cleared on modal close
+  // AND on unmount (show-once discipline), never localStorage/sessionStorage,
+  // never console.log.
+  const [exportEncrypt, setExportEncrypt] = useState(null);
+  useEffect(() => () => setExportEncrypt(null), []);
   const [oidcForm, setOidcForm] = useState({
     authMode: "password",
     oidcIssuerUrl: "",
@@ -654,13 +670,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleExportDatabase = async (password) => {
+  const handleExportDatabase = async (password, archivePassphrase) => {
     setDbLoading(true);
     setDbStatus({ type: "", message: "" });
     try {
-      const res = await fetch("/api/settings/database", {
-        headers: { "x-9r-password": password },
-      });
+      const headers = { "x-9r-password": password };
+      // v0.6.46 Option F: passphrase-sealed export. No passphrase → no header
+      // → the .45 request is byte-identical.
+      if (archivePassphrase) headers["x-9r-archive-passphrase"] = archivePassphrase;
+      const res = await fetch("/api/settings/database", { headers });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to export database");
@@ -673,13 +691,18 @@ export default function ProfilePage() {
       const anchor = document.createElement("a");
       const stamp = new Date().toISOString().replace(/[.:]/g, "-");
       anchor.href = url;
-      anchor.download = `9router-backup-${stamp}.json`;
+      anchor.download = archivePassphrase
+        ? `9router-backup-${stamp}-encrypted.json`
+        : `9router-backup-${stamp}.json`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
 
-      setDbStatus({ type: "success", message: "Database backup downloaded" });
+      setDbStatus({
+        type: "success",
+        message: archivePassphrase ? "Encrypted backup downloaded" : "Database backup downloaded",
+      });
     } catch (err) {
       setDbStatus({ type: "error", message: err.message || "Failed to export database" });
     } finally {
@@ -687,27 +710,43 @@ export default function ProfilePage() {
     }
   };
 
+  // RT46-O7: parse the file at SELECTION time so encrypted-archive detection
+  // happens BEFORE the dbAuth modal opens (the parsed result is cached and
+  // reused at confirm — never reparsed).
   const handleImportDatabase = (event) => {
     const file = event.target.files?.[0];
     if (importFileRef.current) importFileRef.current.value = "";
     if (!file) return;
-    pendingImportRef.current = file;
     setDbStatus({ type: "", message: "" });
-    setDbAuth({ open: true, mode: "import", password: "" });
+    file
+      .text()
+      .then((raw) => {
+        const parsed = JSON.parse(raw);
+        const encrypted = parsed?.format === "9router-encrypted-archive";
+        pendingImportRef.current = { parsed, encrypted };
+        setDbAuth({ open: true, mode: "import", password: "", archivePassphrase: "", encrypted });
+      })
+      .catch((err) => {
+        pendingImportRef.current = null;
+        setDbStatus({ type: "error", message: err?.message || "Invalid backup file" });
+      });
   };
 
-  const runImportDatabase = async (password) => {
-    const file = pendingImportRef.current;
-    if (!file) return;
+  const runImportDatabase = async (password, archivePassphrase) => {
+    const pending = pendingImportRef.current;
+    if (!pending) return;
     setDbLoading(true);
     try {
-      const raw = await file.text();
-      const payload = JSON.parse(raw);
+      // Encrypted archives are posted as {archive, archivePassphrase, password};
+      // legacy files keep the .45 {...payload, password} body unchanged.
+      const body = pending.encrypted
+        ? { archive: pending.parsed, archivePassphrase: archivePassphrase || "", password }
+        : { ...pending.parsed, password };
 
       const res = await fetch("/api/settings/database", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, password }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -727,23 +766,165 @@ export default function ProfilePage() {
           ? `Database imported with notices: ${[...warnings, rekeyNote].filter(Boolean).join(" ")}`
           : "Database imported successfully",
       });
+      pendingImportRef.current = null;
+      setDbAuth({ open: false, mode: "", password: "", archivePassphrase: "", encrypted: false });
     } catch (err) {
       setDbStatus({ type: "error", message: err.message || "Invalid backup file" });
+      if (pending.encrypted) {
+        // The modal stayed open (encrypted imports never close it before the
+        // POST): a 400 "Wrong archive passphrase or corrupted archive" is
+        // surfaced verbatim in dbStatus while the modal remains available for
+        // retry — the DB is untouched server-side on failure.
+        setDbAuth((s) => ({ ...s, password, archivePassphrase: "" }));
+      }
     } finally {
-      pendingImportRef.current = null;
+      if (!pending.encrypted) pendingImportRef.current = null;
       setDbLoading(false);
     }
   };
 
+  // v0.6.46 Option F helpers — all passphrase material is state-only.
+  const closeExportEncrypt = () => setExportEncrypt(null);
+
+  const fetchGeneratedPassphrase = async (password) => {
+    const res = await fetch("/api/settings/database/archive-passphrase", {
+      headers: { "x-9r-password": password },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || typeof data.passphrase !== "string" || !data.passphrase) {
+      throw new Error(data.error || "Failed to generate passphrase");
+    }
+    return data.passphrase;
+  };
+
+  const continueEncryptChoice = async () => {
+    const ee = exportEncrypt;
+    if (!ee) return;
+    if (ee.choice === "own") {
+      setExportEncrypt({ ...ee, step: "own", error: "" });
+      return;
+    }
+    if (ee.choice === "generate") {
+      setExportEncrypt({ ...ee, loading: true, error: "", copyNote: "" });
+      try {
+        const generated = await fetchGeneratedPassphrase(ee.password);
+        setExportEncrypt((s) => (s ? { ...s, loading: false, step: "panel", generated, retype: "" } : s));
+      } catch (err) {
+        setExportEncrypt((s) =>
+          s ? { ...s, loading: false, error: err.message || "Failed to generate passphrase" } : s
+        );
+      }
+      return;
+    }
+    // "no" — the .45 export exactly: no header, same copy and filename.
+    closeExportEncrypt();
+    await handleExportDatabase(ee.password);
+  };
+
+  const finalizeEncryptedExport = async (passphrase) => {
+    const ee = exportEncrypt;
+    if (!ee) return;
+    // RT46-A3: the charset gate runs BEFORE any request fires (also enforced
+    // by disabling the action button; this is the hard backstop).
+    if (!PRINTABLE_ASCII.test(passphrase)) return;
+    closeExportEncrypt();
+    await handleExportDatabase(ee.password, passphrase);
+  };
+
+  const copyGeneratedPassphrase = async (text) => {
+    let note = null;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        note = "Copied to clipboard";
+      }
+    } catch {
+      note = null;
+    }
+    if (note === null) {
+      // Fallback for non-secure origins (http LAN): legacy execCommand path.
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (ok) note = "Copied to clipboard";
+      } catch {
+        note = null;
+      }
+    }
+    setExportEncrypt((s) => (s ? { ...s, copyNote: note || "Copy failed — select the passphrase text above and copy it manually, or use Download .txt" } : s));
+  };
+
+  const downloadPassphraseTxt = (passphrase) => {
+    const content = `9router backup passphrase\n\n${passphrase}\n\nStore this passphrase securely — if it is lost, the encrypted backup cannot be recovered.\n`;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "9router-backup-passphrase.txt";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  };
+
   // Confirm password modal, then run export or import.
   const handleDbAuthConfirm = async () => {
-    const { mode, password } = dbAuth;
-    setDbAuth({ open: false, mode: "", password: "" });
-    if (mode === "export") await handleExportDatabase(password);
-    else if (mode === "import") await runImportDatabase(password);
+    const { mode, password, archivePassphrase, encrypted } = dbAuth;
+    if (mode === "export") {
+      // Password collected FIRST; the encrypt-this-archive step comes after.
+      setDbAuth({ open: false, mode: "", password: "", archivePassphrase: "", encrypted: false });
+      setExportEncrypt({
+        password,
+        step: "choose",
+        choice: "no",
+        passphrase: "",
+        confirm: "",
+        generated: null,
+        retype: "",
+        error: "",
+        copyNote: "",
+        loading: false,
+      });
+    } else if (mode === "import") {
+      if (encrypted) {
+        // Stay open: a wrong passphrase surfaces the route's 400 while the
+        // modal remains available for retry (runImportDatabase closes it on
+        // success).
+        await runImportDatabase(password, archivePassphrase);
+      } else {
+        setDbAuth({ open: false, mode: "", password: "", archivePassphrase: "", encrypted: false });
+        await runImportDatabase(password);
+      }
+    }
   };
 
   const observabilityEnabled = settings.enableObservability === true;
+
+  // RT46-A3/O3: the printable-ASCII gate is part of the ACTION gate — a
+  // non-ASCII passphrase can never fire the request from this page.
+  const dbAuthCanConfirm =
+    !!dbAuth.password &&
+    (!dbAuth.encrypted || (!!dbAuth.archivePassphrase && PRINTABLE_ASCII.test(dbAuth.archivePassphrase)));
+  const ownEntryValid =
+    exportEncrypt?.step === "own" &&
+    exportEncrypt.passphrase.length > 0 &&
+    exportEncrypt.passphrase === exportEncrypt.confirm &&
+    PRINTABLE_ASCII.test(exportEncrypt.passphrase) &&
+    PRINTABLE_ASCII.test(exportEncrypt.confirm);
+  // Show-once retype: exact match against the fetched string — the browser
+  // never normalizes (the server does, symmetrically, at seal/open).
+  const retypeValid =
+    exportEncrypt?.step === "panel" &&
+    !!exportEncrypt.generated &&
+    exportEncrypt.retype === exportEncrypt.generated &&
+    PRINTABLE_ASCII.test(exportEncrypt.retype);
 
   const handleShutdown = async () => {
     setIsShuttingDown(true);
@@ -1675,15 +1856,15 @@ export default function ProfilePage() {
 
       <Modal
         isOpen={dbAuth.open}
-        onClose={() => setDbAuth({ open: false, mode: "", password: "" })}
+        onClose={() => setDbAuth({ open: false, mode: "", password: "", archivePassphrase: "", encrypted: false })}
         title="Confirm Password"
         size="sm"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setDbAuth({ open: false, mode: "", password: "" })} disabled={dbLoading}>
+            <Button variant="ghost" onClick={() => setDbAuth({ open: false, mode: "", password: "", archivePassphrase: "", encrypted: false })} disabled={dbLoading}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleDbAuthConfirm} loading={dbLoading} disabled={!dbAuth.password}>
+            <Button variant="primary" onClick={handleDbAuthConfirm} loading={dbLoading} disabled={!dbAuthCanConfirm}>
               Confirm
             </Button>
           </>
@@ -1698,10 +1879,177 @@ export default function ProfilePage() {
           type="password"
           value={dbAuth.password}
           onChange={(e) => setDbAuth((s) => ({ ...s, password: e.target.value }))}
-          onKeyDown={(e) => { if (e.key === "Enter" && dbAuth.password) handleDbAuthConfirm(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && dbAuthCanConfirm) handleDbAuthConfirm(); }}
           placeholder="Current password"
           autoFocus
         />
+        {dbAuth.mode === "import" && dbAuth.encrypted && (
+          <>
+            <p className="text-amber-600 dark:text-amber-400 my-3 text-sm">
+              This backup is encrypted with a passphrase. If it is lost, the backup cannot be recovered.
+            </p>
+            <Input
+              type="password"
+              value={dbAuth.archivePassphrase}
+              onChange={(e) => setDbAuth((s) => ({ ...s, archivePassphrase: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === "Enter" && dbAuthCanConfirm) handleDbAuthConfirm(); }}
+              placeholder="Backup passphrase"
+            />
+            {dbAuth.archivePassphrase && !PRINTABLE_ASCII.test(dbAuth.archivePassphrase) && (
+              <p className="text-red-500 text-xs mt-1">{PASSPHRASE_ASCII_HINT}</p>
+            )}
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={!!exportEncrypt}
+        onClose={closeExportEncrypt}
+        title="Encrypt this archive?"
+        size="md"
+        footer={
+          exportEncrypt?.step === "choose" ? (
+            <>
+              <Button variant="ghost" onClick={closeExportEncrypt} disabled={exportEncrypt.loading || dbLoading}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={continueEncryptChoice} loading={exportEncrypt.loading}>
+                Continue
+              </Button>
+            </>
+          ) : exportEncrypt?.step === "own" ? (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => setExportEncrypt({ ...exportEncrypt, step: "choose", error: "" })}
+                disabled={dbLoading}
+              >
+                Back
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => finalizeEncryptedExport(exportEncrypt.passphrase)}
+                loading={dbLoading}
+                disabled={!ownEntryValid}
+              >
+                Download Encrypted Backup
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={closeExportEncrypt} disabled={dbLoading}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => finalizeEncryptedExport(exportEncrypt.generated)}
+                loading={dbLoading}
+                disabled={!retypeValid}
+              >
+                Download Encrypted Backup
+              </Button>
+            </>
+          )
+        }
+      >
+        {exportEncrypt?.step === "choose" && (
+          <div className="flex flex-col gap-2">
+            {[
+              { key: "no", label: "No, keep it unencrypted", hint: "Provider access tokens stay unencrypted; store the file securely." },
+              { key: "own", label: "Encrypt with my own passphrase", hint: "Choose a passphrase of 10+ characters." },
+              { key: "generate", label: "Generate a passphrase for me", hint: "Shown once — save it when it appears." },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setExportEncrypt((s) => (s ? { ...s, choice: option.key } : s))}
+                className={cn(
+                  "text-left p-3 rounded-lg border transition-colors",
+                  exportEncrypt.choice === option.key
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <p className="text-sm font-medium">{option.label}</p>
+                <p className="text-xs text-text-muted mt-0.5">{option.hint}</p>
+              </button>
+            ))}
+            {exportEncrypt.error && <p className="text-red-500 text-sm mt-1">{exportEncrypt.error}</p>}
+          </div>
+        )}
+        {exportEncrypt?.step === "own" && (
+          <div className="flex flex-col">
+            <Input
+              type="password"
+              value={exportEncrypt.passphrase}
+              onChange={(e) => setExportEncrypt((s) => (s ? { ...s, passphrase: e.target.value } : s))}
+              onKeyDown={(e) => { if (e.key === "Enter" && ownEntryValid) finalizeEncryptedExport(exportEncrypt.passphrase); }}
+              placeholder="Passphrase"
+              autoFocus
+            />
+            {exportEncrypt.passphrase && !PRINTABLE_ASCII.test(exportEncrypt.passphrase) && (
+              <p className="text-red-500 text-xs mt-1">{PASSPHRASE_ASCII_HINT}</p>
+            )}
+            <p className="text-xs text-text-muted mt-1 mb-3">
+              minimum 10 characters (I and L count as 1, O as 0; spaces and hyphens are ignored)
+            </p>
+            <Input
+              type="password"
+              value={exportEncrypt.confirm}
+              onChange={(e) => setExportEncrypt((s) => (s ? { ...s, confirm: e.target.value } : s))}
+              onKeyDown={(e) => { if (e.key === "Enter" && ownEntryValid) finalizeEncryptedExport(exportEncrypt.passphrase); }}
+              placeholder="Confirm passphrase"
+            />
+            {exportEncrypt.confirm && !PRINTABLE_ASCII.test(exportEncrypt.confirm) && (
+              <p className="text-red-500 text-xs mt-1">{PASSPHRASE_ASCII_HINT}</p>
+            )}
+            {exportEncrypt.passphrase && exportEncrypt.confirm && exportEncrypt.passphrase !== exportEncrypt.confirm && (
+              <p className="text-red-500 text-xs mt-1">Passphrases do not match</p>
+            )}
+            <p className="text-amber-600 dark:text-amber-400 text-sm mt-4">
+              Everything in this backup — provider tokens, API keys, settings — is encrypted with this passphrase. If you lose it, the backup cannot be recovered.
+            </p>
+          </div>
+        )}
+        {exportEncrypt?.step === "panel" && exportEncrypt.generated && (
+          <div className="flex flex-col">
+            <p className="text-text-muted text-sm mb-2">
+              This passphrase cannot be shown again — save it now.
+            </p>
+            <pre className="p-3 rounded-lg bg-bg border border-border font-mono text-sm sm:text-base whitespace-pre-wrap break-all select-text">
+              {exportEncrypt.generated}
+            </pre>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Button variant="outline" icon="content_copy" onClick={() => copyGeneratedPassphrase(exportEncrypt.generated)}>
+                Copy
+              </Button>
+              <Button variant="outline" icon="download" onClick={() => downloadPassphraseTxt(exportEncrypt.generated)}>
+                Download .txt
+              </Button>
+            </div>
+            {exportEncrypt.copyNote && (
+              <p className="text-xs text-text-muted mt-2">{exportEncrypt.copyNote}</p>
+            )}
+            <div className="mt-4">
+              <Input
+                type="password"
+                value={exportEncrypt.retype}
+                onChange={(e) => setExportEncrypt((s) => (s ? { ...s, retype: e.target.value } : s))}
+                onKeyDown={(e) => { if (e.key === "Enter" && retypeValid) finalizeEncryptedExport(exportEncrypt.generated); }}
+                placeholder="Re-type the passphrase to confirm"
+              />
+              {exportEncrypt.retype && !PRINTABLE_ASCII.test(exportEncrypt.retype) && (
+                <p className="text-red-500 text-xs mt-1">{PASSPHRASE_ASCII_HINT}</p>
+              )}
+              {exportEncrypt.retype && PRINTABLE_ASCII.test(exportEncrypt.retype) && exportEncrypt.retype !== exportEncrypt.generated && (
+                <p className="text-red-500 text-xs mt-1">Passphrase does not match — check it against the text above</p>
+              )}
+            </div>
+            <p className="text-amber-600 dark:text-amber-400 text-sm mt-4">
+              Everything in this backup — provider tokens, API keys, settings — is encrypted with this passphrase. If you lose it, the backup cannot be recovered.
+            </p>
+          </div>
+        )}
       </Modal>
     </div>
   );
