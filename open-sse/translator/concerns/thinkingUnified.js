@@ -261,7 +261,9 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display) {
     case "openai": {
       if (none && canDisable) { body.reasoning_effort = "none"; break; }
       const level = toLevel(eff);
-      if (level) body.reasoning_effort = normalizeOpenAILevel(level, supportedLevels);
+      // "auto" is not a wire-valid effort (opencode Console 400s muse-spark with
+      // "unknown variant `auto`") — omit and let the server default (auto) apply.
+      if (level && level !== "auto") body.reasoning_effort = normalizeOpenAILevel(level, supportedLevels);
       break;
     }
     case "claude-adaptive": {
@@ -351,7 +353,7 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display) {
     case "step": {
       if (none && canDisable) break;
       const level = toLevel(eff);
-      if (level) body.reasoning_effort = level === "xhigh" || level === "max" ? "high" : level;
+      if (level && level !== "auto") body.reasoning_effort = level === "xhigh" || level === "max" ? "high" : level;
       break;
     }
     case "tokenrouter": {
@@ -374,7 +376,7 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display) {
         break;
       }
       const level = toLevel(eff);
-      if (level) body.params.reasoning_effort = level;
+      if (level && level !== "auto") body.params.reasoning_effort = level;
       break;
     }
     default:

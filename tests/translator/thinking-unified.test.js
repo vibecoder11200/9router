@@ -184,6 +184,23 @@ describe("applyThinking per provider format", () => {
     const out = apply("openai", "kimi-k2.7", { reasoning_effort: "auto" }, "kimchi");
     expect(out.reasoning_effort).toBe("high");
   });
+  it("openai format omits reasoning_effort for auto instead of forwarding it (opencode Console rejects auto)", () => {
+    const out = apply("openai", "muse-spark-1.3-contributor-free", { reasoning_effort: "auto" }, "opencode");
+    expect(out.reasoning_effort).toBeUndefined();
+  });
+  it("openai format omits reasoning.effort auto from the native Responses object shape too", () => {
+    const out = apply("openai-responses", "muse-spark-1.3-contributor-free", { reasoning: { effort: "auto" } }, "opencode");
+    expect(out.reasoning).toBeUndefined();
+    expect(out.reasoning_effort).toBeUndefined();
+  });
+  it("openai format omits reasoning_effort for auto via model(auto) suffix too", () => {
+    const out = apply("openai", "muse-spark-1.3-contributor-free(auto)", { reasoning_effort: "low" }, "opencode");
+    expect(out.reasoning_effort).toBeUndefined();
+  });
+  it("openai format still forwards concrete levels", () => {
+    const out = apply("openai", "muse-spark-1.3-contributor-free", { reasoning_effort: "low" }, "opencode");
+    expect(out.reasoning_effort).toBe("low");
+  });
   it("Kimi unsupported OpenAI levels → supported reasoning_effort", () => {
     const minimal = apply("openai", "kimi-k2.7", { reasoning_effort: "minimal" }, "kimchi");
     const xhigh = apply("openai", "kimi-k2.7", { reasoning_effort: "xhigh" }, "kimchi");
