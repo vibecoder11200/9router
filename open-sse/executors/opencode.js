@@ -6,7 +6,7 @@ import { getThinkingLevels } from "../providers/thinkingLevels.js";
 import { injectReasoningContent } from "../utils/reasoningContentInjector.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 import { isMuseSparkModel } from "../providers/models/helpers.js";
-import { applyFingerprintTools } from "../utils/opencodeFingerprint.js";
+import { applyFingerprintTools, recordRenamedToolNames } from "../utils/opencodeFingerprint.js";
 import { ANTHROPIC_API_VERSION } from "../providers/shared.js";
 import {
   normalizeResponsesInput,
@@ -14,13 +14,13 @@ import {
   coerceResponsesArguments,
   coerceResponsesOutput,
   RESPONSES_MIN_OUTPUT_TOKENS,
+  shortenResponsesToolName,
 } from "../translator/formats/responsesApi.js";
 // Fork: live UA version + catalog-driven responses routing (providers/opencodeCatalog.js).
 import { ensureOpencodeCatalog, getOpencodeCliUserAgent, isResponsesServed } from "../providers/opencodeCatalog.js";
 import { getModelTargetFormat, PROVIDER_ID_TO_ALIAS } from "../config/providerModels.js";
 
 const MAX_SESSION_LENGTH = 256;
-const MAX_TOOL_NAME_LEN = 128;
 const SESSION_HEADER = "x-opencode-session";
 const SESSION_FIELD = "_opencodeSession";
 const REQ_FIELD = "_opencodeRequest";
@@ -321,6 +321,9 @@ function resolveOpencodeRequestId(body, credentials, sessionId) {
 function normalizeResponsesTools(body) {
   if (!Array.isArray(body.tools)) return;
   const validNames = new Set();
+  // wire name -> original name for names shortened past the Console 64-char cap.
+  const renamed = new Map();
+  const origToWire = new Map();
   body.tools = body.tools.filter((tool) => {
     if (!tool || typeof tool !== "object" || Array.isArray(tool)) return false;
     const fn = tool.function && typeof tool.function === "object" && !Array.isArray(tool.function) ? tool.function : null;
@@ -334,7 +337,11 @@ function normalizeResponsesTools(body) {
     if (parameters.type === "object" && !parameters.properties) parameters = { ...parameters, properties: {} };
     for (const k of Object.keys(tool)) delete tool[k];
     tool.type = "function";
-    tool.name = name.slice(0, MAX_TOOL_NAME_LEN);
+    tool.name = shortenResponsesToolName(name);
+    if (tool.name !== name) {
+      renamed.set(tool.name, name);
+      origToWire.set(name, tool.name);
+    }
     if (description) tool.description = description;
     tool.parameters = parameters;
     validNames.add(tool.name);
@@ -343,9 +350,15 @@ function normalizeResponsesTools(body) {
   if (body.tool_choice && typeof body.tool_choice === "object" && !Array.isArray(body.tool_choice)) {
     if (body.tool_choice.type === "function") {
       const n = typeof body.tool_choice.name === "string" ? body.tool_choice.name.trim() : "";
-      if (!n || !validNames.has(n)) delete body.tool_choice;
+      // Retarget an explicit choice at the shortened wire name before the
+      // validNames membership check would otherwise drop it.
+      const wire = origToWire.get(n);
+      if (wire) body.tool_choice = { ...body.tool_choice, name: wire };
+      const eff = wire || n;
+      if (!eff || !validNames.has(eff)) delete body.tool_choice;
     }
   }
+  recordRenamedToolNames(body, renamed);
 }
 
 function sanitizeResponsesItems(body) {
@@ -367,7 +380,8 @@ function sanitizeResponsesItems(body) {
     delete item.reasoning_encrypted_content;
     if (item.type === "function_call") {
       if (!item.name || typeof item.name !== "string" || item.name.trim() === "") return false;
-      item.name = item.name.trim().slice(0, MAX_TOOL_NAME_LEN);
+      // Same deterministic shortening as tools[] so replayed history matches.
+      item.name = shortenResponsesToolName(item.name.trim());
       item.call_id = clampResponsesCallId(item.call_id);
       item.arguments = coerceResponsesArguments(item.arguments);
       return true;

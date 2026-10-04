@@ -32,6 +32,26 @@ export const MAX_RESPONSES_CALL_ID_LEN = 64;
 // value instead of forwarding it.
 export const RESPONSES_MIN_OUTPUT_TOKENS = 16;
 
+// Console also caps tool names at 64 chars — ZCode MCP tools (mcp__server__tool)
+// reach 70+ and 400 with "`name` must be at most 64 characters". Deterministic
+// shortening keeps tools[] and replayed function_call history names identical
+// within and across turns (same original → same wire name), so callers can map
+// the wire name back to the original for response restoration.
+export const RESPONSES_MAX_TOOL_NAME_LEN = 64;
+
+export function shortenResponsesToolName(name) {
+  const n = String(name ?? "");
+  if (n.length <= RESPONSES_MAX_TOOL_NAME_LEN) return n;
+  // FNV-1a hash of the FULL name → order-independent, collision-safe;
+  // keep a recognizable prefix. 55 + 1 + 8 = 64 exactly.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < n.length; i++) {
+    h ^= n.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${n.slice(0, 55)}_${h.toString(36).padStart(8, "0").slice(0, 8)}`;
+}
+
 // Fallback ids share one Date.now() when a batch of items is sanitized in a tight
 // loop — a per-process sequence keeps same-millisecond ids unique so
 // function_call ↔ function_call_output correlation never collides.

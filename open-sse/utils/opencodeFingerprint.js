@@ -150,10 +150,12 @@ export function applyFingerprintTools(body, flat) {
   return map;
 }
 
-/** Store the rename map for `body`. */
+/** Store the rename map for `body`, merging with any earlier map (e.g. length
+ *  shortening recorded before fingerprint canonicalisation). */
 export function recordRenamedToolNames(body, map) {
   if (!body || typeof body !== "object" || !map?.size) return;
-  renamedToolNames.set(body, map);
+  const prev = renamedToolNames.get(body);
+  renamedToolNames.set(body, prev ? new Map([...prev, ...map]) : map);
 }
 
 /** Retrieve the rename map for `body`. */

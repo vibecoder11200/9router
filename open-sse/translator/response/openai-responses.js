@@ -591,7 +591,9 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
           index: idx,
           id: state.currentToolCallId,
           type: OPENAI_BLOCK.FUNCTION,
-          function: { name: item.name || "", arguments: "" }
+          // Upstream may echo a wire-shortened name (Console 64-char cap,
+          // fingerprint canonicalisation) — restore the caller's original.
+          function: { name: state.toolNameMap?.get(item.name) || item.name || "", arguments: "" }
         }]
       }
     );
