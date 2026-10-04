@@ -1,3 +1,15 @@
+# v0.6.59 (2026-10-04)
+
+Fixes ZCode failing against opencode free models (muse-spark backends) with two sequential 400s that oh-my-pi never hit, because it sends neither value: a `reasoning.effort` of `"auto"` (ZCode's default reasoning level) and a `max_output_tokens` of `1` (hardcoded in ZCode's Test-model connectivity probe). Both were forwarded verbatim by the pipeline; both are now normalized to what the opencode Console actually accepts. Verified against the live backend: the probe body now maps to `max_output_tokens: 16` + a valid (or absent) effort, streams complete with `finish_reason: "stop"`, and concrete client values (e.g. ZCode turns sending 32000 or no cap at all) are untouched.
+
+## Fixed
+- **Thinking: `reasoning.effort` "auto" omitted instead of forwarded on OpenAI-family formats** (`openai`, `step`, `commandcode`). The opencode Console rejects `"auto"` with `unknown variant 'auto', expected one of none, minimal, low, medium, high, xhigh, max`. Every other thinking format already normalized auto (gemini/kimi/deepseek/zai map it, tokenrouter omits it, claude-adaptive clamps it) — the openai branch was the last one leaking a non-wire value past `normalizeOpenAILevel` (which only clamps max/ultra). The field is now dropped so the server default (auto) applies, mirroring the tokenrouter branch. Covers all three client shapes: `reasoning_effort: "auto"`, the native Responses `reasoning: { effort: "auto" }` object, and the `model(auto)` suffix override; concrete levels still forward unchanged.
+- **opencode-zen / opencode-go: `max_output_tokens` floored at 16 on the `/responses` path** (Console minimum: `The number must be '>= 16'`). ZCode's connectivity probe hardcodes `maxOutputTokens: 1`, which surfaced as a second 400 once the effort error was fixed (upstream validates params sequentially). The floor applies after the `max_tokens`/`max_completion_tokens` → `max_output_tokens` mapping in both executors (zen free + go PAYG both serve muse-spark backends); the constant lives next to the other Responses wire constraints in `responsesApi.js`. Deliberately responses-only: the chat endpoints accept tiny caps (probed live: `max_tokens: 1` → 200 with a `length` finish), and 16 is exactly the validator minimum — streams complete at 16 across repeated probes.
+
+## Tests
+- 5 thinking-normalization cases: auto omitted for the string/object/suffix shapes, concrete levels still forwarded (`tests/translator/thinking-unified.test.js`).
+- 12 executor floor cases for both opencode executors: sub-16 values floored via all three token fields, normal values and absent caps untouched, chat path explicitly not floored (`tests/unit/opencode-responses-min-output.test.js`).
+
 # v0.6.58 (2026-10-03)
 
 Upstream sync: migrates everything from decolua/9router v0.5.92 → v0.5.95 (upstream range `57c04f00..a99cf572`, 40 commits) into the fork, preserving all fork features (xray/V2Ray integration, alerts, circuit breakers, key budgets, gemini-web/ds2api/genspark/orcarouter/totu-ai providers, GitHub-Releases distribution). Root README.md intentionally not taken.
