@@ -13,6 +13,7 @@ import {
   clampResponsesCallId,
   coerceResponsesArguments,
   coerceResponsesOutput,
+  RESPONSES_MIN_OUTPUT_TOKENS,
 } from "../translator/formats/responsesApi.js";
 // Fork: live UA version + catalog-driven responses routing (providers/opencodeCatalog.js).
 import { ensureOpencodeCatalog, getOpencodeCliUserAgent, isResponsesServed } from "../providers/opencodeCatalog.js";
@@ -443,6 +444,12 @@ export class OpenCodeExecutor extends BaseExecutor {
       }
       delete body.max_tokens;
       delete body.max_completion_tokens;
+      // Console rejects max_output_tokens < 16 ("The number must be `>= 16`") —
+      // ZCode's connectivity probe sends maxOutputTokens: 1. Floor instead of
+      // forwarding, same as opencode-zen/opencode-go.
+      if (body.max_output_tokens !== undefined && body.max_output_tokens < RESPONSES_MIN_OUTPUT_TOKENS) {
+        body.max_output_tokens = RESPONSES_MIN_OUTPUT_TOKENS;
+      }
       normalizeOpencodeReasoning(model, body);
       body.stream = true;
       body.store = false;

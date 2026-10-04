@@ -1,7 +1,9 @@
 // opencode Console rejects max_output_tokens < 16 on /responses ("The number
 // must be `>= 16`"). ZCode's connectivity probe sends maxOutputTokens: 1, so the
 // executors floor the mapped value instead of forwarding it. Regression tests.
+// Covers all three opencode aliases: oc (OpenCodeExecutor), ocz (zen), opencode-go.
 import { describe, it, expect } from "vitest";
+import { OpenCodeExecutor } from "../../open-sse/executors/opencode.js";
 import { OpenCodeZenExecutor } from "../../open-sse/executors/opencode-zen.js";
 import { OpenCodeGoExecutor } from "../../open-sse/executors/opencode-go.js";
 
@@ -17,7 +19,8 @@ function baseBody(extra = {}) {
 }
 
 describe.each([
-  ["opencode-zen", OpenCodeZenExecutor],
+  ["opencode (oc)", OpenCodeExecutor],
+  ["opencode-zen (ocz)", OpenCodeZenExecutor],
   ["opencode-go", OpenCodeGoExecutor],
 ])("%s responses max_output_tokens floor", (name, Executor) => {
   it("floors sub-16 values to 16 (ZCode probe sends 1)", () => {
