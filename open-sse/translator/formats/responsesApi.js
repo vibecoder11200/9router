@@ -26,6 +26,12 @@ export function normalizeResponsesInput(input) {
 // Strict Responses upstreams reject overlong call_ids with InputValidationError (#393).
 export const MAX_RESPONSES_CALL_ID_LEN = 64;
 
+// Console (muse-spark backends) validates max_output_tokens >= 16 — anything
+// lower is a 400 ("The number must be `>= 16`"). ZCode's connectivity probe
+// sends maxOutputTokens: 1, so executors targeting /responses floor the mapped
+// value instead of forwarding it.
+export const RESPONSES_MIN_OUTPUT_TOKENS = 16;
+
 // Fallback ids share one Date.now() when a batch of items is sanitized in a tight
 // loop — a per-process sequence keeps same-millisecond ids unique so
 // function_call ↔ function_call_output correlation never collides.

@@ -7,6 +7,7 @@ import {
   clampResponsesCallId,
   coerceResponsesArguments,
   coerceResponsesOutput,
+  RESPONSES_MIN_OUTPUT_TOKENS,
 } from "../translator/formats/responsesApi.js";
 
 const SESSION_HEADER = "x-opencode-session";
@@ -298,6 +299,11 @@ export class OpenCodeZenExecutor extends DefaultExecutor {
     }
     delete out.max_tokens;
     delete out.max_completion_tokens;
+    // Console rejects max_output_tokens < 16 ("The number must be `>= 16`") —
+    // ZCode's connectivity probe sends maxOutputTokens: 1. Floor instead of forwarding.
+    if (out.max_output_tokens !== undefined && out.max_output_tokens < RESPONSES_MIN_OUTPUT_TOKENS) {
+      out.max_output_tokens = RESPONSES_MIN_OUTPUT_TOKENS;
+    }
     if (out.reasoning_effort !== undefined && out.reasoning === undefined) {
       out.reasoning = { effort: out.reasoning_effort, summary: "auto" };
     }
