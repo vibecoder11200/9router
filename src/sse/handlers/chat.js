@@ -49,6 +49,15 @@ import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
 // back and retry the same account rather than burning it.
 const MAX_MANAGED_CONN_RETRIES = 2;
 
+// Max times a single request will replay after a managed-pool *status-level*
+// rotatable error (429 rate-limit keyed to the egress IP, 5xx). The rotation
+// triggered by the error swaps the egress in the background; we settle-wait it
+// and replay the same request on the fresh IP instead of surfacing the error
+// to clients that classify the upstream body as terminal (omp reads
+// FreeUsageLimitError as a non-retryable rate limit and stalls the turn until
+// a human continues; the same 429 one IP later succeeds — rotation heals).
+const MAX_MANAGED_ROTATABLE_RETRIES = 1;
+
 
 /**
  * Handle chat completion request
@@ -296,6 +305,9 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   // Retries used so far for managed-pool connection failures (port-down during
   // rotation). Bounded by MAX_MANAGED_CONN_RETRIES per request.
   let managedConnRetries = 0;
+  // Replays used after managed-pool status-level rotatable errors (429/5xx on
+  // the egress IP). Bounded by MAX_MANAGED_ROTATABLE_RETRIES per request.
+  let managedRotatableRetries = 0;
   // Set when a proxy-side INFRA failure terminates its recovery paths (strict
   // pool fetch refused/died, managed pool teardown). Pool state, not account
   // state — the account below is skipped WITHOUT a model-lock or breaker
@@ -603,6 +615,22 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
           error: typeof result.error === "string" ? result.error : "",
           model: `${provider}/${model}`,
         }).catch(() => {});
+        // Status-level rotatable error (429 on the egress IP, 5xx): the turn
+        // dies here for clients that treat the upstream body as terminal —
+        // omp's retry classifier reads FreeUsageLimitError as a plain rate
+        // limit and never replays, stalling the turn until a human continues,
+        // while the same request one rotation later succeeds. Heal it in the
+        // loop instead: settle-wait the rotation we just triggered (bounded;
+        // its own cooldown guards make this a no-op when throttled) and
+        // replay the same request once on the fresh egress.
+        if (managedRotatableRetries < MAX_MANAGED_ROTATABLE_RETRIES) {
+          managedRotatableRetries++;
+          await waitForManagedRotationSettle({ maxWaitMs: 6000 });
+          log.warn("PROXY", `Managed-pool rotatable error (${result.status}); egress settled, replaying request ${managedRotatableRetries}/${MAX_MANAGED_ROTATABLE_RETRIES}`);
+          lastError = result.error;
+          lastStatus = result.status;
+          continue;
+        }
       }
     }
 
