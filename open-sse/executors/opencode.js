@@ -15,6 +15,7 @@ import {
   coerceResponsesOutput,
   RESPONSES_MIN_OUTPUT_TOKENS,
   shortenResponsesToolName,
+  ensureResponsesReasoningHeadroom,
 } from "../translator/formats/responsesApi.js";
 // Fork: live UA version + catalog-driven responses routing (providers/opencodeCatalog.js).
 import { ensureOpencodeCatalog, getOpencodeCliUserAgent, isResponsesServed } from "../providers/opencodeCatalog.js";
@@ -465,6 +466,7 @@ export class OpenCodeExecutor extends BaseExecutor {
         body.max_output_tokens = RESPONSES_MIN_OUTPUT_TOKENS;
       }
       normalizeOpencodeReasoning(model, body);
+      ensureResponsesReasoningHeadroom(body);
       body.stream = true;
       body.store = false;
       normalizeResponsesTools(body);

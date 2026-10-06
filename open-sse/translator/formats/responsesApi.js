@@ -52,6 +52,29 @@ export function shortenResponsesToolName(name) {
   return `${n.slice(0, 55)}_${h.toString(36).padStart(8, "0").slice(0, 8)}`;
 }
 
+// Console returns an EMPTY completion when reasoning alone would exceed
+// max_output_tokens — reasoning tokens draw from the same cap (probed live:
+// cap 8000/4000 with effort high → content "" + finish_reason "in_progress",
+// deterministic 3/3; cap 32000/no-cap → full answers). Agent clients that set
+// the official-client default (32000) plus a high effort can still burn the
+// whole cap on reasoning mid-task, ending the turn as a clean-looking empty
+// response. Raise sub-65536 caps for high-tier efforts — a cap is a ceiling,
+// not consumption, and the model accepts up to 131072.
+export const RESPONSES_HIGH_EFFORT_MIN_OUTPUT_TOKENS = 65536;
+const RESPONSES_HIGH_EFFORTS = new Set(["high", "xhigh", "max"]);
+
+export function ensureResponsesReasoningHeadroom(body) {
+  const reasoning = body?.reasoning;
+  const effort = reasoning && typeof reasoning === "object" && !Array.isArray(reasoning)
+    ? reasoning.effort
+    : body?.reasoning_effort;
+  if (typeof effort !== "string" || !RESPONSES_HIGH_EFFORTS.has(effort.toLowerCase().trim())) return;
+  const cap = body?.max_output_tokens;
+  if (typeof cap === "number" && Number.isFinite(cap) && cap > 0 && cap < RESPONSES_HIGH_EFFORT_MIN_OUTPUT_TOKENS) {
+    body.max_output_tokens = RESPONSES_HIGH_EFFORT_MIN_OUTPUT_TOKENS;
+  }
+}
+
 // Fallback ids share one Date.now() when a batch of items is sanitized in a tight
 // loop — a per-process sequence keeps same-millisecond ids unique so
 // function_call ↔ function_call_output correlation never collides.

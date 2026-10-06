@@ -9,6 +9,7 @@ import {
   coerceResponsesOutput,
   RESPONSES_MIN_OUTPUT_TOKENS,
   shortenResponsesToolName,
+  ensureResponsesReasoningHeadroom,
 } from "../translator/formats/responsesApi.js";
 import { recordRenamedToolNames } from "../utils/opencodeFingerprint.js";
 
@@ -326,6 +327,7 @@ export class OpenCodeZenExecutor extends DefaultExecutor {
       if (!out.reasoning.summary) out.reasoning.summary = "auto";
     }
     delete out.reasoning_effort;
+    ensureResponsesReasoningHeadroom(out);
     out.stream = true;
     out.store = false;
     ensureResponsesFingerprintTools(out);

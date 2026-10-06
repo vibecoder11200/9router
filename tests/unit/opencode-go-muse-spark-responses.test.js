@@ -103,7 +103,8 @@ describe("OpenCodeGoExecutor routing + sanitization", () => {
       reasoning_effort: "high",
     };
     const out = ex.transformRequest(MODEL, body, true, {});
-    expect(out.max_output_tokens).toBe(2048);
+    // cap raised: 2048 + effort high is the empty-completion trap (reasoning eats the cap)
+    expect(out.max_output_tokens).toBe(65536);
     expect(out.max_tokens).toBeUndefined();
     expect(out.reasoning).toEqual({ effort: "high", summary: "auto" });
     expect(out.stream).toBe(true);
