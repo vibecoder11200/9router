@@ -6,6 +6,9 @@ const ICON_ALIASES = {
   "gitlab-duo": "gitlab",
   "vercel-ai-gateway": "vercel",
   "ollama-search": "ollama",
+  // MiniMax Code rides the existing MiniMax brand mark
+  "minimax-code": "minimax",
+  "minimax-code-global": "minimax",
 };
 
 // Icon files are PNG by convention; vector logos are registered here by id so

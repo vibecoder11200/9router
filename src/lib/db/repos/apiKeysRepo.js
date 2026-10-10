@@ -2,6 +2,9 @@ import { v4 as uuidv4 } from "uuid";
 import crypto from "node:crypto";
 import { getAdapter } from "../driver.js";
 import { getOrCreateInstallSecret } from "@/lib/auth/installSecret.js";
+// Upstream v0.5.99: per-key access control column helpers.
+import { keyAccessFromColumns, keyAccessToColumns } from "@/shared/utils/keyAccess.js";
+import { KEY_ACCESS_UNRESTRICTED } from "@/shared/constants/keyAccess.js";
 
 // S7: raw API keys are never stored. Lookup key = HMAC-SHA256(raw key,
 // per-install secret); the legacy plaintext `key` column survives only as a
@@ -47,6 +50,8 @@ function rowToKey(row) {
     // v0.6.45: imported keyHash this install's secret cannot validate (re-key
     // clears it — phase 03). Older rows without the column resolve to false.
     needsRekey: row.needsRekey === 1 || row.needsRekey === true,
+    // Upstream v0.5.99: per-key access control (unrestricted by default).
+    access: keyAccessFromColumns(row.accessRestricted, row.accessAllow),
   };
 }
 
@@ -83,6 +88,15 @@ export async function getApiKeyById(id) {
   return rowToKey(row);
 }
 
+// Upstream v0.5.99 keyAccess: read the presented key's access settings for the
+// /v1 gates. Fork adaptation: raw keys live only as hashes (S7), so resolve
+// through getApiKeyRow (hash-first lookup + legacy plaintext backfill) instead
+// of upstream's plaintext `WHERE key = ?`.
+export async function getApiKeyByKey(key) {
+  if (!key) return null;
+  return rowToKey(await getApiKeyRow(key));
+}
+
 export async function createApiKey(name, machineId) {
   if (!machineId) throw new Error("machineId is required");
   const db = await getAdapter();
@@ -95,10 +109,12 @@ export async function createApiKey(name, machineId) {
     machineId,
     isActive: true,
     createdAt: new Date().toISOString(),
+    access: { restricted: false, allow: [] },
   };
+  const cols = keyAccessToColumns(KEY_ACCESS_UNRESTRICTED);
   db.run(
-    `INSERT INTO apiKeys(id, key, keyHash, name, machineId, isActive, createdAt) VALUES(?, ?, ?, ?, ?, ?, ?)`,
-    [apiKey.id, apiKey.key, hashApiKey(result.key), apiKey.name, apiKey.machineId, 1, apiKey.createdAt]
+    `INSERT INTO apiKeys(id, key, keyHash, name, machineId, isActive, createdAt, accessRestricted, accessAllow) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [apiKey.id, apiKey.key, hashApiKey(result.key), apiKey.name, apiKey.machineId, 1, apiKey.createdAt, cols.accessRestricted, cols.accessAllow]
   );
   // Full key only in the creation result, so the UI can show it exactly once.
   return { ...apiKey, key: result.key };
@@ -147,14 +163,19 @@ export async function updateApiKey(id, data) {
       softThresholdPct: budget.softThresholdPct ?? (row.softThresholdPct ?? 80),
       hardBlock: budget.hardBlock ?? (row.hardBlock ?? 0),
     };
+    // Upstream v0.5.99: per-key access control round-trips through rowToKey's
+    // parsed access (or a route-validated data.access override).
+    const cols = keyAccessToColumns(merged.access);
     db.run(
       `UPDATE apiKeys SET name = ?, machineId = ?, isActive = ?,
-        budgetType = ?, budgetLimit = ?, budgetWindow = ?, softThresholdPct = ?, hardBlock = ?
+        budgetType = ?, budgetLimit = ?, budgetWindow = ?, softThresholdPct = ?, hardBlock = ?,
+        accessRestricted = ?, accessAllow = ?
         WHERE id = ?`,
       [
         merged.name, merged.machineId, merged.isActive ? 1 : 0,
         next.budgetType, next.budgetLimit, next.budgetWindow,
         next.softThresholdPct, next.hardBlock,
+        cols.accessRestricted, cols.accessAllow,
         id,
       ]
     );

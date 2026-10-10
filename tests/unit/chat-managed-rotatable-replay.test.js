@@ -98,8 +98,19 @@ vi.mock("@/lib/pxpipe/events.js", () => ({ appendPxpipeEvent: vi.fn(() => { }) }
 vi.mock("open-sse/utils/modelMarkers.js", () => ({
   stripModelContextMarker: vi.fn((model) => ({ model, contextMarker: null })),
 }));
-vi.mock("open-sse/translator/formats.js", () => ({ detectFormatByEndpoint: vi.fn(() => null) }));
+vi.mock("open-sse/translator/formats.js", () => ({
+  detectFormatByEndpoint: vi.fn(() => null),
+  // helpers.js reads FORMATS at module scope (keyAccess → model chain).
+  FORMATS: {
+    OPENAI: "openai", OPENAI_RESPONSES: "openai-responses", OPENAI_RESPONSE: "openai-response",
+    CLAUDE: "claude", GEMINI: "gemini", GEMINI_CLI: "gemini-cli", GEMINI_WEB: "gemini-web",
+    VERTEX: "vertex", CODEX: "codex", ANTIGRAVITY: "antigravity", KIRO: "kiro",
+    CURSOR: "cursor", OLLAMA: "ollama", COMMANDCODE: "commandcode",
+  },
+}));
 vi.mock("open-sse/config/runtimeConfig.js", () => ({
+  // searxng.js (keyAccess → model import chain) reads SEARXNG_URL at module scope.
+  SEARXNG_URL: "http://localhost:8888/search",
   HTTP_STATUS: {
     BAD_REQUEST: 400, UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404,
     METHOD_NOT_ALLOWED: 405, PAYLOAD_TOO_LARGE: 413, UNPROCESSABLE_ENTITY: 422,

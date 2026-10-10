@@ -17,8 +17,9 @@ describe("aggregateComboCapabilities: resolveCaps override", () => {
 
   it("falls back to the pattern default without a resolver", () => {
     const caps = aggregateComboCapabilities(models);
-    // glm-5.3 has no exact entry, so the *glm-5.3* pattern gives 200k and caps the combo.
-    expect(caps.contextWindow).toBe(200_000);
+    // glm-5.3 has no exact entry, so the *glm-5.3* pattern applies — upstream
+    // #4544 raised the 5.3 line to the real 1M window (was a stale 200k pin).
+    expect(caps.contextWindow).toBe(1_000_000);
   });
 
   it("uses the fed limits when a resolver supplies them", () => {

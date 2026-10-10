@@ -3,6 +3,9 @@ import { getAdapter } from "./driver.js";
 import { stringifyJson, parseJson } from "./helpers/jsonCol.js";
 import { getMeta, setMeta } from "./helpers/metaStore.js";
 import { isBackupEnvelope, openBackupSecret } from "@/lib/auth/backupEnvelope.js";
+// Upstream v0.5.99: per-key access control (export/import round-trip).
+import { keyAccessFromColumns, keyAccessToColumns, validateKeyAccessInput } from "@/shared/utils/keyAccess.js";
+import { KEY_ACCESS_UNRESTRICTED } from "@/shared/constants/keyAccess.js";
 import crypto from "node:crypto";
 
 /**
@@ -58,7 +61,7 @@ export {
 // threw ReferenceError on any database holding at least one API key.
 import { hashApiKey, maskApiKey } from "./repos/apiKeysRepo.js";
 export {
-  getApiKeys, getApiKeyById, createApiKey, updateApiKey, deleteApiKey, validateApiKey,
+  getApiKeys, getApiKeyById, getApiKeyByKey, createApiKey, updateApiKey, deleteApiKey, validateApiKey,
   rekeyApiKey,
   getApiKeyRow, getApiKeyHashNameMap,
   hashApiKey, maskApiKey,
@@ -164,6 +167,8 @@ export async function exportDb(options = {}) {
       // Sticky: an inert (needsRekey) row re-exported stays inert until
       // re-keyed on some install.
       needsRekey: r.needsRekey === 1 || r.needsRekey === true ? 1 : 0,
+      // Upstream v0.5.99: per-key access control rides along as an object.
+      access: keyAccessFromColumns(r.accessRestricted, r.accessAllow),
     })),
     combos: db.all(`SELECT * FROM combos`).map((r) => ({ id: r.id, name: r.name, kind: r.kind, models: parseJson(r.models, []), createdAt: r.createdAt, updatedAt: r.updatedAt })),
     modelAliases: {},
@@ -400,9 +405,20 @@ async function doImportDb(payload, options = {}) {
       // missing password leaves the local secret untouched, so hashes still
       // validate and needsRekey stays 0.
       const inert = !newSecret && Boolean(k.keyHash) && foreignOrUnknown;
+      // Upstream v0.5.99: per-key access rides in the archive as an `access`
+      // object. A backup without `access` (older version) restores
+      // unrestricted, exactly as before; a malformed `access` is refused.
+      let access = KEY_ACCESS_UNRESTRICTED;
+      if (k.access !== undefined) {
+        const checked = validateKeyAccessInput(k.access);
+        if (!checked.ok) throw new Error(`apiKeys ${k.id}: ${checked.error}`);
+        access = checked.value;
+      }
+      const accessCols = keyAccessToColumns(access);
       db.run(
         `INSERT OR REPLACE INTO apiKeys(id, key, keyHash, name, machineId, isActive, createdAt,
-          budgetType, budgetLimit, budgetWindow, softThresholdPct, hardBlock, needsRekey) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          budgetType, budgetLimit, budgetWindow, softThresholdPct, hardBlock, needsRekey,
+          accessRestricted, accessAllow) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           k.id, k.key, k.keyHash || null, k.name || null, k.machineId || null,
           k.isActive === false ? 0 : 1, k.createdAt || new Date().toISOString(),
@@ -411,6 +427,7 @@ async function doImportDb(payload, options = {}) {
           Number(k.softThresholdPct) || 80,
           k.hardBlock === 1 || k.hardBlock === true ? 1 : 0,
           (k.needsRekey === 1 || k.needsRekey === true || inert) ? 1 : 0,
+          accessCols.accessRestricted, accessCols.accessAllow,
         ]
       );
     }

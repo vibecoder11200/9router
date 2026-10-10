@@ -135,6 +135,12 @@ import p130 from "./bai.js";
 import p136 from "./tinyfish.js";
 import p137 from "./v1m.js";
 import p138 from "./muse.js";
+// Upstream v0.5.99 providers (minimax-code ×2, bedrock ×2), numbered p139-142
+// for the same reason.
+import p139 from "./minimax-code.js";
+import p140 from "./minimax-code-global.js";
+import p141 from "./bedrock.js";
+import p142 from "./bedrock-xai.js";
 // Fork custom providers (appended after upstream; renumbered from p124-128 to
 // p131-135 to avoid clashing with upstream's qoder-cn + p125-130 slots)
 import p131 from "./gemini-web.js";
@@ -276,6 +282,10 @@ export default [
   p136,
   p137,
   p138,
+  p139,
+  p140,
+  p141,
+  p142,
   // Fork custom providers
   p131,
   p132,

@@ -9,7 +9,7 @@ function toBoolean(value) {
   return undefined;
 }
 
-const VALID_PROXY_TYPES = ["http", "vercel", "cloudflare", "deno", "proxyxoay"];
+const VALID_PROXY_TYPES = ["http", "vercel", "cloudflare", "deno", "proxyxoay", "netlify"];
 
 // Proxy schemes accepted at the network layer (undici ProxyAgent / env proxy).
 // Group entries can use any of these; "direct" means no proxy (server IP).

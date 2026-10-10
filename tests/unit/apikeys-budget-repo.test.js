@@ -44,13 +44,15 @@ function fakeAdapter() {
         return { changes: 1 };
       }
       if (sql.startsWith("UPDATE apiKeys SET name")) {
-        // New phase-08 UPDATE: name, machineId, isActive, budget×5, id
-        const row = state.rows.get(params[8]);
+        // v0.5.99 UPDATE: name, machineId, isActive, budget×5,
+        // access×2 (upstream keyAccess), id
+        const row = state.rows.get(params[10]);
         if (!row) return { changes: 0 };
         Object.assign(row, {
           name: params[0], machineId: params[1], isActive: params[2],
           budgetType: params[3], budgetLimit: params[4], budgetWindow: params[5],
           softThresholdPct: params[6], hardBlock: params[7],
+          accessRestricted: params[8], accessAllow: params[9],
         });
         return { changes: 1 };
       }

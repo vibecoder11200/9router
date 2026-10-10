@@ -52,7 +52,7 @@ function normalizeProxyPoolUpdate(body = {}, existing = null) {
   // by the rotation job) and must pass through verbatim — running them through
   // the group normaliser would drop empty placeholders and strip live `_px`
   // metadata.
-  const validTypes = ["http", "vercel", "cloudflare", "deno", "proxyxoay"];
+  const validTypes = ["http", "vercel", "cloudflare", "deno", "proxyxoay", "netlify"];
   const nextType = Object.prototype.hasOwnProperty.call(body, "type")
     ? (validTypes.includes(body?.type) ? body.type : "http")
     : (existing?.type || "http");

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
+import { validateKeyAccessInput } from "@/shared/utils/keyAccess.js";
 
 // GET /api/keys/[id] - Get single key
 export async function GET(request, { params }) {
@@ -21,7 +22,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { isActive, name, budgetType, budgetLimit, budgetWindow, softThresholdPct, hardBlock } = body;
+    const { isActive, name, budgetType, budgetLimit, budgetWindow, softThresholdPct, hardBlock, access } = body;
 
     const existing = await getApiKeyById(id);
     if (!existing) {
@@ -47,6 +48,13 @@ export async function PUT(request, { params }) {
       if (budgetWindow !== undefined) updateData.budgetWindow = budgetWindow;
       if (softThresholdPct !== undefined) updateData.softThresholdPct = softThresholdPct;
       if (hardBlock !== undefined) updateData.hardBlock = hardBlock;
+    }
+
+    // Upstream v0.5.99: per-key access control ({ restricted, allow }).
+    if (access !== undefined) {
+      const checked = validateKeyAccessInput(access);
+      if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
+      updateData.access = checked.value;
     }
 
     const updated = await updateApiKey(id, updateData);
