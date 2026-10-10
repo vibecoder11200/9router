@@ -1,3 +1,45 @@
+# v0.6.60 (2026-10-10)
+
+Upstream sync: migrates everything from decolua/9router v0.5.95 → v0.5.99 (upstream range `a99cf572..ce4460ef`, 28 commits) into the fork, preserving all fork features (xray/V2Ray integration, alerts, circuit breakers, key budgets + S7 hashed keys, gemini-web/ds2api/genspark/orcarouter/totu-ai providers, GitHub-Releases distribution). Root README.md / cli README.md intentionally not taken. Registry renumbering: upstream's four new providers land as p139-p142 (fork owns p131-135, p136-138 = tinyfish/v1m/muse).
+
+## New providers (upstream)
+- **AWS Bedrock** (`bedrock` / `br`, plus `bedrock-xai` / `brx` for Grok over Bedrock): full executor with SigV4 signing, AWS event-stream decoding, credential resolution from static keys, `~/.aws/config` profiles and AWS SSO (`@aws-sdk/credential-providers`, optional + lazily imported), Add/Edit connection forms with profile and session-token semantics, validate/test probes, and suggested-models support.
+- **MiniMax Code (mcode)** credits lane (`minimax-code` CN + `minimax-code-global`): Anthropic-messages executor, signed account/plan usage API, OAuth device flow, and live catalog from the mcode env endpoint.
+
+## Features (upstream)
+- **Per-API-key access control**: a key can be restricted to an allow-list of combos and models (Endpoint page → key row). Gates run in every /v1 handler (chat, embeddings, stt, tts, image, video, systemone, search, fetch, /v1/models) before credential lookup; restricted keys see only their allowed models in /v1/models; capacity-adapter models are filtered per key. DB: additive `accessRestricted`/`accessAllow` columns (SCHEMA_VERSION 6→7), export/import round-trips, migration backup on boot. Fork adaptation: the key lookup rides the S7 hash-first path (`getApiKeyRow`), never a plaintext `WHERE key = ?`.
+- **Netlify relay proxy pool** alongside vercel/cloudflare/deno relays, with one-click deploy route + dashboard modal.
+- **Hermes per-profile configuration** across API, Dashboard and CLI: profile list with per-profile endpoint status dots, apply-to-all (known-endpoint guarded), YAML/env helpers split into `hermesProfiles` + `hermesYaml` modules, new `/api/cli-tools/hermes-profiles` route.
+- **CLI `connect` rework**: model choices now come from the server operator's own cli-tools config; new `show` command (per-tool config/models), `--save`, Pi + Oh My Pi tool support; TUI combos store real model IDs (`comboModelId` util).
+- **ElevenLabs Scribe STT**: elevenlabs as a speech-to-text provider (sttCore path, dashboard STT example).
+- **Antigravity**: Claude Sonnet 5.5 + Opus 5.5 (with thinkingCanDisable/forced-tool-choice constraints), refreshed model catalog, quota lookup via `getAntigravityModelQuota` (alias-aware) with strike-block interplay preserved; MITM defaults moved to Gemini 3.8.
+- **systemone**: Cloudflare AI clef-flash endpoint.
+
+## Fixes (upstream)
+- GLM-5.3 line cannot disable thinking (#4656) and GLM-5.2/5.3 context is 1M (#4544).
+- Muse: Responses-only models route to their declared transport (URL now matches the translated body) + nested `reasoning.effort` on the Responses wire; a non-streaming client behind a Responses upstream takes the forced-SSE→JSON path.
+- Gemini: `$ref` keys renamed in functionResponse payloads (#4532-adjacent), duplicate `tool_call_ids` uniquified, `properties`-named tool params no longer misread as schema nodes (#4620).
+- Codex: exact image token usage tracked (persisted per request), explicit tool `strict` flags preserved.
+- Cursor: empty AgentService turns rejected without a successful stop; reasoning effort forwarded to AgentService Run.
+- Kimi: Responses clients route to the Kimi Code `/responses` endpoint.
+- Ollama: `prompt_eval_cached_count` reported as `cached_tokens`.
+- codebuddy-cn catalog synced to the 2026-09-30 server config (maxOutput raises, kimi-k2.8-preview, v4.1-flash efforts).
+- Dashboard: combo picker shows compatible node models without a connection (#4659), mobile layouts fixed for endpoint/provider-models/cli-tools pages, 9Remote sidebar item opens the website directly.
+
+## Fork-side adaptations during migration
+- `getKeyAccessContext`/`getApiKeyByKey` built on the S7 hash-first lookup; upstream's plaintext lookup never shipped.
+- HermesToolCard: upstream's auto-select of `apiKeys[0].key` dropped (masked display value in this fork); `getKeyToUse()` keeps fork semantics.
+- CLI `connect`: reusing an existing key only when its listed value is not masked (S7) — otherwise a fresh key is created; raw keys still only ever appear in the creation response.
+- `thinkingUnified`: the fork's "omit effort auto" rule (v0.6.59) extended to the new `openai-responses` case.
+- `ping.js` (dashboard model test) untouched — the fork already bypasses API keys via the CLI token, which is unrestricted by design.
+- Schema version follows the fork line: 6 → 7 (upstream bumped 1 → 2); the keyAccess migration test asserts `schema-1-to-7` backups.
+
+## Tests
+- Full suite compared against a v0.6.59 baseline worktree: **zero newly-failing test files** (one previously-failing suite, xai-oauth-service, now passes). 132/132 new-feature tests green (bedrock ×5 suites, minimax-code ×2, key-access ×3, netlify-relay, elevenlabs-stt, hermes ×2, cli connect/show, kimi/muse/glm/cursor/gemini fix suites).
+- Fork tests updated for the new repo layer: budget UPDATE param layout (access columns), chat-suite mocks gained `FORMATS`/`SEARXNG_URL`/`getApiKeyByKey` (new keyAccess import chain), combo-caps expectation to the corrected 1M GLM-5.3 window.
+- Baselines regenerated and byte-stable: 98 providers, 128 alias tokens.
+- `npm run build` (Next 16 webpack) passes end-to-end.
+
 # v0.6.59 (2026-10-04)
 
 Fixes ZCode failing against opencode free models (muse-spark backends) with five sequential issues that oh-my-pi never hit: a `reasoning.effort` of `"auto"` (ZCode's default reasoning level), a `max_output_tokens` of `1` (hardcoded in ZCode's Test-model connectivity probe), MCP tool names over 64 chars (agent turns with 78 tools), and reasoning-heavy turns exhausting a 32000 output cap and ending as empty responses that need a manual Continue. All were forwarded verbatim by the pipeline; all are now normalized to what the opencode Console actually accepts. Verified against the live backend: the probe body maps to `max_output_tokens: 16` + a valid (or absent) effort, streams complete with `finish_reason: "stop"`, and concrete client values (e.g. ZCode turns sending 32000 or no cap at all) are untouched.
