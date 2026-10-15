@@ -90,14 +90,14 @@ describe("opencode api.json catalog", () => {
     });
   });
 
-  it("routes undeclared responses-only models to /zen/v1/responses", async () => {
+  it("routes undeclared responses-only models to /inference/v1/responses", async () => {
     globalThis.fetch = stubFetch(API_JSON);
     await ensureOpencodeCatalog();
 
     const executor = new OpenCodeExecutor();
-    expect(executor.buildUrl("muse-spark-2.0-free")).toBe("https://opencode.ai/zen/v1/responses");
-    expect(executor.buildUrl("muse-spark-2.0-free(xhigh)")).toBe("https://opencode.ai/zen/v1/responses");
-    expect(executor.buildUrl("mimo-v3-free")).toBe("https://opencode.ai/zen/v1/chat/completions");
+    expect(executor.buildUrl("muse-spark-2.0-free")).toBe("https://opencode.ai/inference/v1/responses");
+    expect(executor.buildUrl("muse-spark-2.0-free(xhigh)")).toBe("https://opencode.ai/inference/v1/responses");
+    expect(executor.buildUrl("mimo-v3-free")).toBe("https://opencode.ai/inference/v1/chat/completions");
   });
 
   it("keeps registry declarations authoritative over the catalog", async () => {
@@ -106,8 +106,8 @@ describe("opencode api.json catalog", () => {
     await ensureOpencodeCatalog();
 
     const executor = new OpenCodeExecutor();
-    expect(executor.buildUrl("muse-spark-1.3-contributor-free")).toBe("https://opencode.ai/zen/v1/responses");
-    expect(executor.buildUrl("mimo-v2.5-free")).toBe("https://opencode.ai/zen/v1/chat/completions");
+    expect(executor.buildUrl("muse-spark-1.3-contributor-free")).toBe("https://opencode.ai/inference/v1/responses");
+    expect(executor.buildUrl("mimo-v2.5-free")).toBe("https://opencode.ai/inference/v1/chat/completions");
   });
 
   it("suggested-models filter drops deprecated ids once the catalog is synced", () => {
@@ -136,7 +136,7 @@ describe("opencode api.json catalog", () => {
     expect(suggested).toEqual(["muse-spark-2.0-free", "mimo-v3-free"]);
   });
 
-  it("resolves the zen User-Agent version from npm and falls back when unavailable", async () => {
+  it("resolves the CLI User-Agent version from npm and falls back when unavailable", async () => {
     // Before any sync: pinned fallback, never a stale hardcoded release.
     expect(getOpencodeCliUserAgent()).toBe(OPENCODE_UA_FALLBACK);
 
@@ -151,12 +151,12 @@ describe("opencode api.json catalog", () => {
     });
     await ensureOpencodeCatalog();
     await new Promise((r) => setTimeout(r, 0));
-    expect(getOpencodeCliUserAgent()).toBe("opencode/9.9.9 ai-sdk/provider-utils/4.0.38 runtime/bun/1.3.14");
+    expect(getOpencodeCliUserAgent()).toBe("opencode/latest/9.9.9/cli");
 
     // A malformed npm payload keeps the last known version.
     npmPayload = { nope: true };
     await __refreshOpencodeCatalogForTests();
     await new Promise((r) => setTimeout(r, 0));
-    expect(getOpencodeCliUserAgent()).toBe("opencode/9.9.9 ai-sdk/provider-utils/4.0.38 runtime/bun/1.3.14");
+    expect(getOpencodeCliUserAgent()).toBe("opencode/latest/9.9.9/cli");
   });
 });

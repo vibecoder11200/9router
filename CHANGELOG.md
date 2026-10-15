@@ -1,3 +1,37 @@
+# v0.6.61 (2026-10-15)
+
+Upstream sync: migrates everything from decolua/9router v0.5.99 → v0.5.104 (upstream range `3ef4d8e3..87a74e1b`, 41 commits) into the fork, preserving all fork features. Root README.md / cli README.md intentionally not taken; upstream's reverted per-key token-quota feature (2aa9307f + revert 6ed88685) never shipped and is not migrated. Registry renumbering: upstream's new nous provider lands as **p143** (upstream p138; fork owns p131-142).
+
+## New providers (upstream)
+- **Nous Research** (`nous` / `ns`): OAuth device-code flow (free portal account) or API key, free-tier chat models (`meituan/longcat-*`, `stepfun/step-*`, `upstage/solar-mini4:free`, `poolside/laguna-*`, `stealth/missingno`), nested `reasoning:{enabled,effort}` thinking format, API-key attribution tags, live catalog + validate/test probes, token-refresh integration.
+
+## Features (upstream)
+- **OpenCode Free v2 migration**: free tier moved `/zen/v1` → `/inference/v1`; UA switched to the v2 CLI shape `opencode/<channel>/<version>/<client>` (v1 form gets 403 FreeTierError since 2026-10-14); session ids encode the inverted-timestamp counter correctly (translated session ids pin counter=1); `x-opencode-request` dropped in favor of `x-opencode-session-id`/`x-session-affinity`/`x-session-id`; free-tier fingerprint is now OpenCode's exact `read` + `shell` definitions with caller collisions aliased (`read_client` etc.) and history retargeted; `-free` models on the keyed zen lane use the attested `Bearer public` identity; reasoning_content placeholder injected for Zen multi-turn chats.
+- **Gemini 4 Argon** across gemini/vertex/antigravity: no "minimal" thinking tier (clamped to LOW), cannot disable thinking, sampling params dropped and `functionResponse`-last merge for Gemini 4; vertex honors API-key project/location, Argon pinned to global multi-region.
+- **Cursor IDE quota in the dashboard**: DashboardService spend + request buckets (usage service + QuotaTable rows); "Auto (Server Picks)" resolves to the account's default agent model; long AgentService sessions recovered from empty turns; strictProxy held on the h2 path (`proxyPoolId`/`strictProxy` threaded through chatCore → proxyFetch).
+- **Anchored auto-ping schedule**: per-connection fixed local-time slots alongside the reactive reset ping (`quotaPingSchedule` + `AutoPingScheduleModal`); unified mode selection, scheduler starts on its own when only a schedule exists; Codex ping model moved to gpt-5.6-terra (gpt-5.5 retired).
+- **Model picker search**: regex/negation search, batch (multi-)select, provider filtering; no-auth free providers exposed in `/v1/models`; custom-model shadows deduped and provider-id capability lookup fixed; custom models pruned on node deletion.
+- **Hermes audio transcription** via 9router (hermes-settings STT wiring + tool card).
+- **Usage stats**: `input_tokens`/`output_tokens` fallback for legacy rows; stable key masking; Qoder add-on (free-credit promo) quota surfaced with "never expires" sentinel handling.
+- **Combo fallback** on HTTP 200 with zero usable content; dashboard proxy dropdown/tooltip clipping fixed via body portal.
+- Claude models advertise PDF input; forced-SSE→JSON returns proper Claude messages for Claude-format clients; headroom compression warnings no longer fire when tools dominate the body.
+
+## Fixes (upstream)
+- GitHub Copilot embeddings routed to `api.githubcopilot.com` (ada-002 replaces retired 3-large).
+- opencode-go: `claude-haiku-5-5` served only by `/zen/go/v1/messages` (declared targetFormat routes it), `response_format` dropped for deepseek models; commandcode haiku-5-5 pinned to catalog limits.
+- Antigravity IDE version 2.22.0; Cursor KV ack metadata round-trip locked by tests; zed-native-auth test DATA_DIR isolation.
+
+## Fork-side adaptations during migration
+- **opencodeCatalog UA**: the fork's live npm-resolved CLI version now emits the v2 shape `opencode/latest/<version>/cli` (fallback `opencode/latest/2.0.26/cli`); registry/catalog-driven responses routing, Console tool-name shortening (64-char cap) and max_output_tokens floor/reasoning headroom all kept, with the shorten map merging into the new fingerprint alias map.
+- **usageRepo**: upstream's trim/masking changes folded into the fork's S7 identity layer (`resolveApiKeyMeta` + hash map) — raw keys are trimmed before hashing/masking; the fork's fingerprint-based `apiKeyKey` grouping kept.
+- Nous test mocks gained the fork's `isStrictProxyFailure` export; combo detail page keeps the S7 "never prefill masked keys" behavior while taking upstream's active-connection filter.
+- zed-native-auth cleanup made Windows-tolerant (EPERM retry on temp-dir removal).
+
+## Tests
+- Full suite compared against a v0.6.60 baseline worktree under identical load: **zero deterministic newly-failing tests** (83 vs 81 baseline fails; the delta is load-order flakes — stream-fuzz/xray-subscription-repo/usage-dispatch flip between runs on both trees; each passes 10/10 standalone). Migration-introduced failures fixed: catalog URL expectations (inference/v1), fingerprint alias semantics in the tool-name-limit suite, nous route mock export, zed EPERM cleanup.
+- Baselines regenerated and byte-stable: **99 providers** (nous added), 128 alias tokens; oauth-urls baseline unchanged.
+- `npm run build` green; GitNexus detect_changes reviewed (critical blast radius confined to the migrated upstream scope).
+
 # v0.6.60 (2026-10-10)
 
 Upstream sync: migrates everything from decolua/9router v0.5.95 → v0.5.99 (upstream range `a99cf572..ce4460ef`, 28 commits) into the fork, preserving all fork features (xray/V2Ray integration, alerts, circuit breakers, key budgets + S7 hashed keys, gemini-web/ds2api/genspark/orcarouter/totu-ai providers, GitHub-Releases distribution). Root README.md / cli README.md intentionally not taken. Registry renumbering: upstream's four new providers land as p139-p142 (fork owns p131-135, p136-138 = tinyfish/v1m/muse).

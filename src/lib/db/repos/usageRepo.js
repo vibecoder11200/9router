@@ -9,9 +9,10 @@ import { hashApiKey } from "./apiKeysRepo.js";
 // same first 8 chars, so head-only masking is NOT unique. Keep head+tail.
 function maskApiKey(key) {
   if (!key || typeof key !== "string") return null;
-  if (key.length <= 12) return key.charAt(0) + "***";
+  const trimmed = key.trim();
+  if (trimmed.length <= 12) return trimmed.charAt(0) + "***";
   // Keep the tail: keys sharing a machine-id prefix (team keys) must not collide.
-  return key.slice(0, 8) + "…" + key.slice(-4);
+  return trimmed.slice(0, 8) + "…" + trimmed.slice(-4);
 }
 
 // Stable non-sensitive per-key identity (raw keys must never leak into API
@@ -34,12 +35,13 @@ function resolveApiKeyMeta(rawKey, apiKeyHashMap) {
   if (!rawKey || typeof rawKey !== "string") {
     return { keyName: "Local (No API Key)", apiKeyMasked: null, apiKeyKey: "local-no-key" };
   }
+  const trimmed = rawKey.trim();
   let keyInfo = null;
-  try { keyInfo = apiKeyHashMap?.get?.(hashApiKey(rawKey)) || null; } catch { /* hashing needs the install secret; absent → fallback */ }
+  try { keyInfo = apiKeyHashMap?.get?.(hashApiKey(trimmed)) || null; } catch { /* hashing needs the install secret; absent → fallback */ }
   return {
-    keyName: keyInfo?.name || `${rawKey.slice(0, 8)}…${rawKey.slice(-4)}`,
-    apiKeyMasked: maskApiKey(rawKey),
-    apiKeyKey: apiKeyFingerprint(rawKey),
+    keyName: keyInfo?.name || `${trimmed.slice(0, 8)}…${trimmed.slice(-4)}`,
+    apiKeyMasked: maskApiKey(trimmed),
+    apiKeyKey: apiKeyFingerprint(trimmed),
   };
 }
 
@@ -666,8 +668,8 @@ export async function getUsageStats(period = "all") {
 
     for (const r of filtered) {
       const tokens = parseJson(r.tokens, {}) || {};
-      const promptTokens = tokens.prompt_tokens || 0;
-      const completionTokens = tokens.completion_tokens || 0;
+      const promptTokens = tokens.prompt_tokens || tokens.input_tokens || r.promptTokens || 0;
+      const completionTokens = tokens.completion_tokens || tokens.output_tokens || r.completionTokens || 0;
       const cachedTokens = tokens.cached_tokens || tokens.cache_read_input_tokens || 0;
       const entryCost = r.cost || 0;
       const providerDisplayName = providerNodeNameMap[r.provider] || r.provider;

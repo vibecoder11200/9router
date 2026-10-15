@@ -17,14 +17,16 @@ const CATALOG_URL = "https://models.opencode.ai/api.json";
 const CATALOG_REFRESH_MS = 6 * 60 * 60 * 1000;
 const CATALOG_TIMEOUT_MS = 10_000;
 
-// The zen free tier fingerprints the official CLI via User-Agent. The CLI
-// version drifts constantly (multiple releases per week), so it is resolved
-// live from the npm registry — the same feed the CLI's own update check hits.
-// The runtime suffix has no registry source and changes rarely; it stays
-// pinned. FALLBACK covers the window before the first version resolves.
+// The free tier fingerprints the official CLI via User-Agent. Upstream
+// (OpenCode v2, /inference/v1) only accepts the v2 shape
+// opencode/<channel>/<version>/<client> — the v1 "opencode/<version>" form
+// with a runtime suffix is answered with 403 FreeTierError since 2026-10-14.
+// The CLI version drifts constantly (multiple releases per week), so it is
+// resolved live from the npm registry — the same feed the CLI's own update
+// check hits. FALLBACK (channel "latest", client "cli") covers the window
+// before the first version resolves.
 const CLI_VERSION_URL = "https://registry.npmjs.org/opencode-ai/latest";
-export const OPENCODE_UA_SUFFIX = "ai-sdk/provider-utils/4.0.38 runtime/bun/1.3.14";
-export const OPENCODE_UA_FALLBACK = `opencode/1.18.27 ${OPENCODE_UA_SUFFIX}`;
+export const OPENCODE_UA_FALLBACK = "opencode/latest/2.0.26/cli";
 
 // null = never resolved → getOpencodeCliUserAgent() returns the pinned fallback.
 let responsesIds = null;
@@ -34,7 +36,7 @@ let refreshTimer = null;
 let inFlight = null;
 
 export function getOpencodeCliUserAgent() {
-  return cliVersion ? `opencode/${cliVersion} ${OPENCODE_UA_SUFFIX}` : OPENCODE_UA_FALLBACK;
+  return cliVersion ? `opencode/latest/${cliVersion}/cli` : OPENCODE_UA_FALLBACK;
 }
 
 export function isResponsesServed(modelId) {

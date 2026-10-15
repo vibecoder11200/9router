@@ -64,9 +64,12 @@ describe.each([
   });
 
   it("leaves short names untouched and records no map", () => {
-    const body = responsesBody({ tools: [flatTool("read")] });
+    // Neutral name: a caller tool named exactly `read`/`shell` now travels
+    // under a fingerprint alias (see the merge describe below), which would
+    // record a map for an unrelated reason.
+    const body = responsesBody({ tools: [flatTool("lookup")] });
     new Executor().transformRequest(MODEL, body, true, {});
-    expect(body.tools.some((t) => t.name === "read")).toBe(true);
+    expect(body.tools.some((t) => t.name === "lookup")).toBe(true);
     expect(takeRenamedToolNames(body)).toBeNull();
   });
 
@@ -109,13 +112,16 @@ describe.each([
 });
 
 describe("fingerprint + length rename maps merge (opencode executor)", () => {
-  it("keeps both the case-variant and the shortened entry", () => {
+  it("keeps both the fingerprint alias and the shortened entry", () => {
     const body = responsesBody({
-      tools: [flatTool("Bash"), flatTool(LONG_NAME)],
+      tools: [flatTool("read"), flatTool(LONG_NAME)],
     });
     new OpenCodeExecutor().transformRequest(MODEL, body, true, {});
     const map = takeRenamedToolNames(body);
-    expect(map?.get("bash")).toBe("Bash");
+    // Upstream v0.5.104 fingerprint: a caller `read` (definition differs from
+    // OpenCode's) is concealed under an alias and restored on the way back;
+    // the length shortening map rides along in the same merged WeakMap entry.
+    expect(map?.get("read_client")).toBe("read");
     expect(map?.get(shortenResponsesToolName(LONG_NAME))).toBe(LONG_NAME);
   });
 });

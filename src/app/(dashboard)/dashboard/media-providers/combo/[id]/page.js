@@ -75,7 +75,7 @@ export default function ComboDetailPage() {
       if (aliasesRes.ok) setModelAliases((await aliasesRes.json()).aliases || {});
       // S7: /api/keys returns the MASKED display value — never prefill it into
       // a credential field (U+2022 breaks fetch headers). Local mode sends no key.
-      if (connsRes.ok) setConnections((await connsRes.json()).connections || []);
+      if (connsRes.ok) setConnections(((await connsRes.json()).connections || []).filter((x) => x.isActive !== false));
       if (!comboRes.ok) { setCombo(null); setLoading(false); return; }
       const c = await comboRes.json();
       setCombo(c);
