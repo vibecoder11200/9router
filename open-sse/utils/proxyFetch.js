@@ -321,6 +321,9 @@ async function getDirectInsecureDispatcher() {
  */
 async function fetchWithTlsFallback(url, options, proxyUrl) {
   const run = async (insecure) => {
+    // Protocol adapters may need Node's HTTP/1 transport on the direct path.
+    // Keep proxy/no-proxy resolution and strict-proxy enforcement here.
+    if (!proxyUrl && options.directFetch) return await options.directFetch(url, options);
     if (!proxyUrl) {
       if (!insecure) return originalFetch(url, options);
       const dispatcher = await getDirectInsecureDispatcher();
@@ -336,7 +339,7 @@ async function fetchWithTlsFallback(url, options, proxyUrl) {
   try {
     return await run(false);
   } catch (err) {
-    const isStrictSsl = process.env.STRICT_SSL === "true" || process.env.STRICT_SSL === "1";
+    const isStrictSsl = options.strictTls === true || process.env.STRICT_SSL === "true" || process.env.STRICT_SSL === "1";
     if (!isStrictSsl && isTlsCertError(err)) {
       if (options.body && typeof options.body.getReader === "function" && options.body.locked) {
         throw err;

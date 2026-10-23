@@ -4,6 +4,11 @@ import { PROVIDER_MODELS, getModelTargetFormat } from "../../open-sse/config/pro
 import { getThinkingLevels } from "../../open-sse/providers/thinkingLevels.js";
 import { FORMATS } from "../../open-sse/translator/formats.js";
 import { OpenCodeExecutor } from "../../open-sse/executors/opencode.js";
+// Fork (ad2b32d5): high-effort reasoning turns get max_output_tokens headroom —
+// the Console counts reasoning tokens against the cap, so a 2048 cap with
+// effort high truncates mid-thought. The fork's executor raises it to
+// RESPONSES_HIGH_EFFORT_MIN_OUTPUT_TOKENS instead of passing 2048 through.
+import { RESPONSES_HIGH_EFFORT_MIN_OUTPUT_TOKENS } from "../../open-sse/translator/formats/responsesApi.js";
 import "../translator/registerAll.js";
 import { translateRequest } from "../../open-sse/translator/index.js";
 
@@ -188,7 +193,9 @@ describe("OpenCode Free Muse Spark thinking", () => {
       });
 
       expect(out.reasoning).toEqual({ effort: "high", summary: "auto" });
-      expect(out.max_output_tokens).toBe(2048);
+      // Fork headroom (ad2b32d5) raises small caps for high efforts; upstream's
+      // passthrough expectation of 2048 does not hold on the fork.
+      expect(out.max_output_tokens).toBe(RESPONSES_HIGH_EFFORT_MIN_OUTPUT_TOKENS);
       expect(out.max_tokens).toBeUndefined();
     }
   });

@@ -12,9 +12,17 @@ const resultsPath = process.argv[2];
 if (!resultsPath) { console.error("Missing results.json path"); process.exit(2); }
 
 const r = JSON.parse(readFileSync(resultsPath, "utf8"));
+// Normalize Windows backslash paths, then strip the runner-specific prefix
+// (CI "/app/...", local checkouts) so entries match known-fills.txt's
+// "tests/..." spelling on every platform.
+const relTestFile = (name) => {
+  const norm = String(name).replaceAll("\\", "/");
+  const i = norm.indexOf("tests/");
+  return i >= 0 ? norm.slice(i) : norm;
+};
 const nowFails = r.testResults.flatMap(f =>
   f.assertionResults.filter(a => a.status === "failed")
-    .map(a => f.name.split("/app/")[1] + " :: " + a.fullName)
+    .map(a => relTestFile(f.name) + " :: " + a.fullName)
 );
 
 // Regression = fail bây giờ NHƯNG không có trong baseline known-fails

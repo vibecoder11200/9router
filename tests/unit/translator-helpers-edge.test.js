@@ -14,23 +14,17 @@ describe("normalizeClaudePassthrough — haiku adaptive thinking (docs 11 §1)",
     expect(out.thinking).toEqual({ type: "adaptive" });
   });
 
-  it("folds mid-conversation system messages into the neighbouring user turn", () => {
-    // Upstream v0.5.55 (re-anchor passthrough cache breakpoints) replaced hoisting
-    // with in-place folding: hoisting into body.system put volatile content ahead of
-    // the whole conversation and invalidated the prefix cache every request.
-    const out = normalizeClaudePassthrough({
+  // 7e5f5a88 folds these into the neighbouring user turn instead of hoisting them into
+  // body.system: volatile reminders ahead of the conversation broke the prefix cache.
+  it("folds mid-conversation system messages into the preceding user turn", () => {    const out = normalizeClaudePassthrough({
       messages: [
         { role: "user", content: "hi" },
         { role: "system", content: "be brief" },
       ],
     });
     expect(out.system).toBeUndefined();
-    expect(out.messages).toHaveLength(1);
-    expect(out.messages[0].role).toBe("user");
-    expect(out.messages[0].content).toEqual([
-      { type: "text", text: "hi" },
-      { type: "text", text: "be brief" },
-    ]);
+    expect(out.messages).toEqual([
+      { role: "user", content: [{ type: "text", text: "hi" }, { type: "text", text: "be brief" }] },    ]);
     expect(out.messages.every((m) => m.role !== "system")).toBe(true);
   });
 });

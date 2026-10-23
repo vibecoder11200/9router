@@ -335,6 +335,12 @@ export class OpenCodeZenExecutor extends DefaultExecutor {
     if (out.max_output_tokens !== undefined && out.max_output_tokens < RESPONSES_MIN_OUTPUT_TOKENS) {
       out.max_output_tokens = RESPONSES_MIN_OUTPUT_TOKENS;
     }
+    // Fork (0cda66af, re-anchored here from the translator): "auto" is not a
+    // wire-valid effort for the Console — muse-spark answers 400 "reasoning.effort:
+    // unknown variant `auto`" — so drop it and let the server default apply.
+    // Upstream's OpenCodeExecutor does the same via dropAdaptiveReasoningEffort;
+    // the keyed zen lane needs its own guard at this conversion point.
+    if (out.reasoning_effort === "auto") delete out.reasoning_effort;
     if (out.reasoning_effort !== undefined && out.reasoning === undefined) {
       out.reasoning = { effort: out.reasoning_effort, summary: "auto" };
     }

@@ -71,9 +71,7 @@ vi.mock("../../open-sse/rtk/index.js", () => ({
 vi.mock("../../open-sse/rtk/headroom.js", () => ({
   compressWithHeadroom: vi.fn(async () => null),
   formatHeadroomLog: vi.fn(() => ""),
-  // chatCore.js also imports these two (used for diagnostics/phantom-savings
-  // logging at chatCore.js:205,209). Mock them so the import doesn't blow up
-  // when headroom is disabled — matches the actual headroom.js export surface.
+  // chatCore also imports these (fb543a1f); a mock missing them fails the import.
   formatHeadroomSizeLog: vi.fn(() => ""),
   isHeadroomPhantomSavings: vi.fn(() => false),
 }));
@@ -130,7 +128,10 @@ function makeOptions(bodyStream) {
   };
 }
 
-describe("forceStream provider config", () => {
+// The first test pays for importing chatCore's module graph (3s+ under full-suite
+// load); a test that times out keeps running and its late fetch call leaks into the
+// next test's mock counts, so give the file room instead of cascading failures.
+describe("forceStream provider config", { timeout: 20_000 }, () => {
   beforeEach(() => {
     executeMock.mockReset();
     executeMock.mockRejectedValue(new Error("boom"));

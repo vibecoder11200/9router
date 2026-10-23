@@ -116,19 +116,16 @@ describe("commandcode-to-openai — finish", () => {
 });
 
 describe("commandcode-to-openai — error event", () => {
-  // Upstream v0.5.79: mid-stream error events THROW (stringified, never
-  // "[object Object]") instead of being emitted as fake content — throwing
-  // lets the stream handler mark the stream failed and report in-band.
-  it("throws a readable stringified error for object error events", () => {
-    expect(() =>
-      feed([
-        { type: "error", error: { type: "server_error", message: "Boom" } },
-      ]),
-    ).toThrowError(/Boom/);
+  // Since 092c84ea an error event throws (so the stream is marked errored and can be
+  // retried) instead of being emitted as fake content with finish_reason "stop".
+  it("stringifies object errors so client sees readable message", () => {
+    let message = "";
     try {
       feed([{ type: "error", error: { type: "server_error", message: "Boom" } }]);
-    } catch (e) {
-      expect(e.message).not.toContain("[object Object]");
+    } catch (err) {
+      message = err.message;
     }
+    expect(message).toContain("Boom");
+    expect(message).not.toContain("[object Object]");
   });
 });

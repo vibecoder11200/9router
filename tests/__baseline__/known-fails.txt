@@ -1,11 +1,14 @@
-tests/unit/antigravity-mitm.test.js :: Antigravity MITM model handling flags the out-of-box agent/Default model mandatory
-# v0.5.40: cursor-agent-proto.test.js ships 35 failing tests in upstream v0.5.40 ITSELF.
-# The test imports buildAgentRunFrame / encodeAgentValue / decodeMcpArgs / etc. that the
-# upstream source never exports (cursorProtobuf.js lacks them; cursor.js keeps
-# buildAgentRunFrame non-exported). Verified failing on a clean upstream/master checkout.
-# Plus cursor-models.test.js "live model catalog" needs network. Not merge regressions.
-tests/unit/cursor-agent-proto.test.js :: Cursor AgentService codec (cursorProtobuf.js)
+# Failures that remain on master (re-triaged 2026-10-23 during the v0.5.104 -> v0.5.109
+# upstream migration, against a clean v0.6.61 baseline worktree under identical load).
+# Grouped by cause; remove an entry as soon as its test passes.
+
+# Documented in upstream's own known-fails (their 2026-10-21 triage, commit b6a9ca43).
+# Also failing on the fork's v0.6.61 baseline (stale local entries, now recorded).
+
 tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
+tests/unit/combo-autoswitch.test.js :: detectRequiredCapabilities web_search tool -> search
+tests/unit/combo-autoswitch.test.js :: reorderByCapabilities keeps order when no model matches
+tests/unit/mimo-free.live.test.js :: MiMo Free anti-abuse gate (live) chat WITH Chrome User-Agent → 200
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import extracts tokens using exact keys
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import falls back to fuzzy key matching on macOS when exact keys are missing
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import linux uses single hardcoded path and original error message
@@ -15,42 +18,50 @@ tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import unsupported platform returns 400
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import unwraps JSON-encoded string values
 tests/unit/openai-to-claude.test.js :: openaiToClaudeResponse omits empty Read pages tool argument before emitting Claude input deltas
-tests/unit/rtk.test.js :: RTK flag default off, toggle works
-tests/unit/rtk.test.js :: compressMessages (disabled) returns null when disabled
-tests/unit/rtk.test.js :: compressMessages (enabled) compresses Claude array-form tool_result text parts
-tests/unit/rtk.test.js :: compressMessages (enabled) compresses Claude string-form tool_result
-tests/unit/rtk.test.js :: compressMessages (enabled) compresses OpenAI tool message (string content)
-tests/unit/rtk.test.js :: compressMessages (enabled) handles mix of messages without crashing
-tests/unit/rtk.test.js :: compressMessages (enabled) never produces empty content (R14 guard)
-tests/unit/rtk.test.js :: compressMessages (enabled) skips below MIN_COMPRESS_SIZE (<500 bytes)
-tests/unit/rtk.test.js :: compressMessages (enabled) skips is_error tool_result
-tests/unit/rtk.test.js :: compressMessages (enabled) skips when body has no messages
 tests/unit/translator-request-normalization.test.js :: request normalization claudeToOpenAIRequest flattens text-only content arrays into string
 tests/unit/translator-request-normalization.test.js :: request normalization filterToOpenAIFormat flattens text-only arrays to string
 tests/unit/translator-request-normalization.test.js :: request normalization parseSSELine supports provider raw NDJSON stream lines
 tests/unit/translator-request-normalization.test.js :: request normalization translateRequest keeps /v1/messages Claude->OpenAI text payloads string-safe
 
-# v0.5.45 migration — 6 NEW failing tests, all non-merge-regressions:
-#   - kiro-terminal-integrity (2): vitest 5000ms timeout on slow Windows CI; passes on Linux
-#   - tunnel-pid-ownership (1): new upstream test; vitest lacks the @/ alias config that
-#     jsconfig.json defines (@/* -> ./src/*). Same project-wide vitest config gap as other
-#     @/-importing tests; not a code regression.
-#   - windsurf-executor (3): PRE-EXISTING upstream bug in v0.5.45 — registry/executor use
-#     server.codeium.com but the test asserts server.self-serve.windsurf.com. Verified on
-#     a clean upstream/master checkout. Reported upstream; not caused by this merge.
-tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery bounds the retry HTTP error body
-tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery surfaces retry HTTP failures as SSE after heartbeat commits headers
-tests/unit/tunnel-pid-ownership.test.js :: cloudflared PID ownership does not let an old child clear its successor PID
-tests/unit/windsurf-executor.test.js :: WindsurfExecutor class constructor wires config from PROVIDERS.windsurf
-tests/unit/windsurf-executor.test.js :: WindsurfExecutor class buildUrl returns the GetChatMessage endpoint
-tests/unit/windsurf-executor.test.js :: WindsurfExecutor class PROVIDERS.windsurf baseUrl is the chat endpoint (registry in sync)
+# Broken on PRISTINE upstream v0.5.109 itself (verified on a clean upstream/master
+# checkout with the same vitest install; their CI never runs the full suite, so these
+# shipped unfixed after their 2026-10-21 triage). Fail here identically — not merge
+# regressions.
 
-# v0.5.50 migration — 3 NEW failing tests, all upstream-shipped snapshot bugs:
-#   - golden-url-header (3): the buildHeaders snapshot shipped by upstream v0.5.50 is
-#     out of sync with the code. Verified failing on a CLEAN upstream/master checkout
-#     (4 fails there too: cline, clinepass, kimi + 1). The header VALUES are correct
-#     (HTTP-Referer, X-Msh-Device-Id present); only the committed snapshot drifted.
-#     Not caused by this merge.
-tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) > cline → headers (apiKey / oauth)
-tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) > clinepass → headers (apiKey / oauth)
-tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) > kimi → headers (apiKey / oauth)
+tests/unit/codebuddy-block-backoff.test.js :: CodeBuddy Intl block backoff (#5024) does not classify every 11128 code as a block
+tests/unit/codebuddy-block-backoff.test.js :: CodeBuddy Intl block backoff (#5024) keeps the same text request-scoped for provider codebuddy-cn
+tests/unit/codebuddy-block-backoff.test.js :: CodeBuddy Intl block backoff (#5024) keeps the same text request-scoped for provider null
+tests/unit/codebuddy-block-backoff.test.js :: CodeBuddy Intl block backoff (#5024) keeps the same text request-scoped for provider openai
+tests/unit/codebuddy-block-backoff.test.js :: CodeBuddy Intl block backoff (#5024) still stops a combo on a malformed CodeBuddy request
+tests/unit/combo-credit-fallback.test.js :: combo credit fallback routes a 400 response correctly: Bad request
+tests/unit/headroom-responses-format.test.js :: compressWithHeadroom openai-responses format (#1998) skips Responses tool/reasoning history instead of collapsing it into a message (#2132)
+
+# Pre-existing fork-baseline failures (fail identically on the clean v0.6.61
+# baseline tree: the gemini-web RPC suite predates a geminiWebRpc.js export
+# rename, and the legacy oauth/db/source-inspection expectations below were
+# never re-baselined after earlier upstream migrations).
+tests/unit/compatible-provider-connections.test.js :: compatible provider connections API creates one API-key connection for an OpenAI-compatible node
+tests/unit/db-sqlite-vs-lowdb.test.js :: DB SQLite layer — public API parity proxyPools: CRUD with sort by updatedAt desc
+tests/unit/executor-const-guard.test.js :: OpenCode Free endpoint routing normalizes Chat token/thinking fields only for the Responses models
+tests/unit/gemini-web-provider-registration.test.js :: gemini-web provider registration has deprecationNotice with risk warning
+tests/unit/gemini-web-rpc.test.js :: buildBatchExecutePayload builds URL-encoded form body
+tests/unit/gemini-web-rpc.test.js :: buildBatchExecutePayload encodes special characters
+tests/unit/gemini-web-rpc.test.js :: buildGeneratePayload converts OpenAI messages to Gemini Web format
+tests/unit/gemini-web-rpc.test.js :: buildGeneratePayload extracts text from content arrays
+tests/unit/gemini-web-rpc.test.js :: buildGeneratePayload handles empty messages gracefully
+tests/unit/gemini-web-rpc.test.js :: buildGenerateRequestBody builds complete URL-encoded request body
+tests/unit/gemini-web-rpc.test.js :: buildRpcBody defaults to boq_assistant-bard-web-ui
+tests/unit/gemini-web-rpc.test.js :: extractGeneratedText extracts the longest string from nested arrays
+tests/unit/gemini-web-rpc.test.js :: extractGeneratedText skips URLs and token-like strings
+tests/unit/gemini-web-rpc.test.js :: extractModelList finds model identifiers in nested data
+tests/unit/gemini-web-rpc.test.js :: parseBatchExecuteResponse handles missing prefix gracefully
+tests/unit/gemini-web-rpc.test.js :: parseBatchExecuteResponse parses a single frame
+tests/unit/gemini-web-rpc.test.js :: parseBatchExecuteResponse parses multiple frames
+tests/unit/gemini-web-rpc.test.js :: parseBatchExecuteResponse returns empty array for null/empty input
+tests/unit/gemini-web-rpc.test.js :: parseBatchExecuteResponse skips malformed frames
+tests/unit/gemini-web-rpc.test.js :: parseResponseFrames yields frames from generator
+tests/unit/gemini-web-session.test.js :: rotateGeminiWebCookies — validation throws on invalid input
+tests/unit/headroom-detect.test.js :: headroom detect prefers the interpreter that actually has headroom-ai installed
+tests/unit/model-routing.test.js :: model routing keeps built-in provider aliases ahead of compatible node prefixes
+tests/unit/reasoningContentInjector.test.js :: injectReasoningContent — MiniMax thinking round-trip DefaultExecutor transformRequest runs the injector for minimax
+tests/unit/security-audit.test.js :: AUDIT-002: API key masking byApiKey object keys should use masked key, not raw key

@@ -27,6 +27,7 @@ import Ds2apiManager from "./Ds2apiManager";
 import BulkImportGrokCliModal from "./BulkImportGrokCliModal";
 import CustomConfigCard from "./CustomConfigCard";
 import AutoPingScheduleModal from "./AutoPingScheduleModal";
+import WebLoginButton, { WEB_LOGIN_PROVIDERS } from "../components/WebLoginButton.js";
 import { getScheduleSlotLabels } from "@/shared/services/quotaPingSchedule";
 
 const ONE_BY_ONE_DELAY_MS = 1000;
@@ -1653,6 +1654,9 @@ export default function ProviderDetailPage() {
                   </>
                 ) : (
                   <>
+                    {!isCompatible && WEB_LOGIN_PROVIDERS.has(providerId) && (
+                      <WebLoginButton providerId={providerId} onConnected={fetchConnections} />
+                    )}
                     {!isCompatible && providerId === "iflow" && (
                       <Button size="sm" icon="cookie" variant="secondary" onClick={() => setShowIFlowCookieModal(true)}>
                         Cookie
@@ -1718,6 +1722,9 @@ export default function ProviderDetailPage() {
               {connectionsList}
               {!isCompatible && (
                 <div className="mt-4 grid grid-cols-1 gap-2 sm:flex">
+                  {WEB_LOGIN_PROVIDERS.has(providerId) && (
+                    <WebLoginButton providerId={providerId} onConnected={fetchConnections} />
+                  )}
                   {providerId === "iflow" && (
                     <Button
                       size="sm"

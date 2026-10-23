@@ -31,7 +31,13 @@ export function getQuotaCooldown(backoffLevel = 0) {
  *   Rules with a `providers` allowlist match ONLY when this value is in the
  *   list — fail-closed: an undefined/unknown provider skips scoped rules, so
  *   callers that don't plumb the provider keep exactly the old behavior.
- * @returns {{ shouldFallback: boolean, cooldownMs: number, newBackoffLevel?: number }}
+ * @returns {{ shouldFallback: boolean, cooldownMs: number, newBackoffLevel?: number, requestScoped?: boolean }}
+ *
+ * `shouldFallback` answers "is the CREDENTIAL at fault?" (account rotation).
+ * `requestScoped` answers "is the REQUEST itself what this member rejected?"
+ * (combo rotation). They are different questions: a context overflow or a
+ * validation 400 means the credential is healthy but this member cannot serve
+ * this request, so combo rotation must still try the next member.
  */
 export function checkFallbackError(status, errorText, backoffLevel = 0, provider = undefined) {
   const lowerError = errorText
@@ -58,8 +64,10 @@ export function checkFallbackError(status, errorText, backoffLevel = 0, provider
   // means the request itself is bad — no account lock, no fallback, the same
   // request fails identically on every other account. This deliberately
   // overrides the generic status rules below for 400/401/402/404/405/413/422.
+  // requestScoped (upstream v0.5.109): the credential is healthy, so combo
+  // rotation may still advance to the next member for this request.
   if (NO_FALLBACK_STATUSES.has(Number(status))) {
-    return { shouldFallback: false, cooldownMs: 0 };
+    return { shouldFallback: false, cooldownMs: 0, requestScoped: true };
   }
 
   for (const rule of ERROR_RULES) {
@@ -84,7 +92,7 @@ export function checkFallbackError(status, errorText, backoffLevel = 0, provider
   // Account-scoped statuses keep their rules above (401/402/403/404/429), and the
   // text rules still win for rate-limit / quota / capacity wording.
   if (status >= 400 && status < 500 && status !== 401 && status !== 402 && status !== 403 && status !== 429) {
-    return { shouldFallback: false, cooldownMs: 0 };
+    return { shouldFallback: false, cooldownMs: 0, requestScoped: true };
   }
 
   // Default: transient cooldown for any unmatched error

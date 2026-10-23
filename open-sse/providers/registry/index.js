@@ -85,6 +85,7 @@ import p80 from "./searchapi.js";
 import p81 from "./searxng.js";
 import p82 from "./serper.js";
 import p83 from "./siliconflow.js";
+import p144 from "./sensenova.js";
 import p84 from "./stability-ai.js";
 import p85 from "./tavily.js";
 import p86 from "./together.js";
@@ -143,6 +144,16 @@ import p141 from "./bedrock.js";
 import p142 from "./bedrock-xai.js";
 // Upstream v0.5.104 provider (nous), renumbered from upstream's p138 → p143.
 import p143 from "./nous.js";
+// Upstream v0.5.109 providers, renumbered from upstream's p139/p140/p143/p144/
+// p146/p147/p151 → p144-p150 (upstream gemini-web is imported as gemini-web-ui
+// because the fork's own RPC gemini-web already owns the "gemini-web" id).
+// sensenova's p144 import sits in the alphabetical section above (next to p83).
+import p145 from "./deepseek-web.js";
+import p146 from "./gemini-web-ui.js";
+import p147 from "./muse-web.js";
+import p148 from "./chatgpt-web.js";
+import p149 from "./veoaifree-web.js";
+import p150 from "./uc-web.js";
 // Fork custom providers (appended after upstream; renumbered from p124-128 to
 // p131-135 to avoid clashing with upstream's qoder-cn + p125-130 slots)
 import p131 from "./gemini-web.js";
@@ -238,6 +249,7 @@ export default [
   p81,
   p82,
   p83,
+  p144,
   p84,
   p85,
   p86,
@@ -295,4 +307,10 @@ export default [
   p133,
   p134,
   p135,
+  p145,
+  p146,
+  p147,
+  p148,
+  p149,
+  p150,
 ];

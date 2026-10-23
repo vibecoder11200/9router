@@ -67,6 +67,9 @@ const DEFAULT_SETTINGS = {
   ponytailLevel: "full",
   ds2apiEnabled: false,
   ds2apiUrl: "http://localhost:5001",
+  // User-authored system prompt, injected independently of the built-in savers.
+  customPromptEnabled: false,
+  customPrompt: "",
   pxpipeEnabled: false,
   pxpipeAutoInstall: true,
   pxpipeMinChars: 25000,

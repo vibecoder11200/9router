@@ -84,3 +84,30 @@ describe("OpenCodeZenExecutor free-tier auth", () => {
     expect(headers["x-opencode-session"]).toMatch(OPENCODE_SESSION_RE);
   });
 });
+
+describe("OpenCodeZenExecutor adaptive auto drop (fork 0cda66af, re-anchored)", () => {
+  it("drops reasoning_effort auto before the Console /responses conversion instead of shipping unknown variant `auto`", () => {
+    const executor = new OpenCodeZenExecutor();
+    const out = executor.transformRequest(
+      "muse-spark-1.3-contributor-free",
+      { messages: [{ role: "user", content: "hi" }], reasoning_effort: "auto", stream: true },
+      true,
+      { connectionId: "zen-auto-drop-test" },
+    );
+    expect(out.reasoning_effort).toBeUndefined();
+    // The nested reasoning object must not carry effort "auto" either — omitting
+    // the field lets the Console apply its own (adaptive) default.
+    expect(out.reasoning?.effort).toBeUndefined();
+  });
+
+  it("keeps a named effort through the conversion", () => {
+    const executor = new OpenCodeZenExecutor();
+    const out = executor.transformRequest(
+      "muse-spark-1.3-contributor-free",
+      { messages: [{ role: "user", content: "hi" }], reasoning_effort: "high", stream: true },
+      true,
+      { connectionId: "zen-named-effort-test" },
+    );
+    expect(out.reasoning).toMatchObject({ effort: "high" });
+  });
+});
