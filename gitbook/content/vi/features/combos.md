@@ -118,6 +118,31 @@ Cursor/Cline/Any tool:
 
 ---
 
+## Chiến lược Routing của Combo
+
+Trên **Dashboard → Combos**, bạn có thể chọn cách các model trong mỗi combo được chọn cho các request đến:
+
+### 1. Fallback (Mặc định)
+Thử các model theo thứ tự đã cấu hình. Model đầu tiên luôn được gọi trước; nếu nó trả về rate limit (429) hoặc lỗi tạm thời (502/503/504), 9Router tự động fallback sang model tiếp theo trong chuỗi.
+
+### 2. Round Robin
+Xoay vòng các model giữa các request đến để phân phối tải và tránh đốt hết quota của một model duy nhất. Bạn có thể cấu hình sticky limit (số lần gọi mỗi model trước khi xoay vòng).
+
+### 3. Smart Router (System One)
+Dùng một **decision model System One** (cấu hình tại **Media Providers → System One**) để đánh giá prompt của người dùng và chọn động model tối ưu trước khi bắt đầu sinh output.
+- **Fail-Open**: Nếu model System One không reachable hoặc timeout (mặc định 8 giây), 9Router an toàn fallback về thứ tự tuần tự chuẩn.
+- **Chính sách phiên (giữ Prompt Cache)**:
+  - **Smart Switch (Mặc định, thích ứng với độ tin cậy ≥80%)**: Nhớ model đã chọn cho phiên để giữ prompt cache phía upstream luôn ấm (Claude Prompt Cache, KV-cache của DeepSeek, Gemini Implicit Cache). Nếu tác vụ của người dùng thay đổi hoàn toàn ở lượt sau và System One tin cậy cao (≥80%), phiên tự động chuyển sang model tối ưu mới.
+  - **Strict Lock (1 task = 1 phiên)**: Đánh giá System One một lần ở lượt đầu, sau đó khóa model đó cho toàn bộ phiên. Thêm **0 ms độ trễ** và **0 lời gọi router thừa** ở các lượt sau, đảm bảo tái dùng 100% prompt cache.
+  - **Per-Turn**: Đánh giá System One ở mỗi lượt độc lập, không dính phiên.
+  - **Ngưỡng tùy chỉnh**: Tự chọn ngưỡng độ tin cậy (50%–95%) cần đạt để kích hoạt việc đổi model.
+- **Khả năng phục hồi**: Nếu model đang dùng bị rate limit (429) hoặc lỗi, khóa phiên được xóa và fallback chuẩn sang model tiếp theo thực hiện ngay lập tức.
+
+### 4. Fusion
+Truy vấn song song tất cả các model trong panel, rồi dùng một model Judge để tổng hợp thành một câu trả lời chất lượng cao cuối cùng. Phù hợp nhất với các bài toán suy luận phức tạp cần nhiều góc nhìn.
+
+---
+
 ## Ví dụ Combos
 
 ### Ví dụ 1: Premium Coding (Subscription → Cheap → Free)

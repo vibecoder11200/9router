@@ -118,6 +118,31 @@ Cursor/Cline/Cualquier herramienta:
 
 ---
 
+## Estrategias de enrutamiento de combos
+
+En **Dashboard → Combos** puedes elegir cómo se seleccionan los modelos de cada combo para las solicitudes entrantes:
+
+### 1. Fallback (predeterminado)
+Prueba los modelos secuencialmente en el orden configurado. El primer modelo siempre se llama primero; si devuelve un límite de tasa (429) o un error transitorio (502/503/504), 9Router hace fallback automáticamente al siguiente modelo de la cadena.
+
+### 2. Round Robin
+Rotar los modelos entre las solicitudes entrantes para repartir la carga y evitar agotar la cuota de un solo modelo. Puedes configurar un límite fijo (sticky limit: llamadas por modelo antes de rotar).
+
+### 3. Smart Router (System One)
+Usa un **modelo de decisión System One** (configurado en **Media Providers → System One**) para evaluar los prompts del usuario y elegir dinámicamente el modelo óptimo antes de que comience la generación.
+- **Fail-Open**: si el modelo System One no está disponible o agota el tiempo (8 s por defecto), 9Router hace fallback de forma segura al orden secuencial estándar.
+- **Políticas de sesión (retención de prompt cache)**:
+  - **Smart Switch (predeterminado, adaptativo con confianza ≥80%)**: recuerda el modelo elegido para la sesión y mantiene caliente la caché de prompts del proveedor (Claude Prompt Cache, KV-cache de DeepSeek, Gemini Implicit Cache). Si la tarea del usuario cambia drásticamente en un turno posterior y System One tiene alta confianza (≥80%), la sesión cambia automáticamente al nuevo modelo óptimo.
+  - **Strict Lock (1 tarea = 1 sesión)**: evalúa System One una sola vez en el primer turno y luego bloquea ese modelo para toda la sesión. Añade **0 ms de latencia** y **0 llamadas extra al router** en los turnos siguientes, garantizando el 100 % de reutilización de la caché de prompts.
+  - **Per-Turn**: evalúa System One en cada turno de forma independiente, sin adherencia de sesión.
+  - **Umbral personalizado**: elige tu propio umbral de confianza (50 %–95 %) necesario para activar un cambio de modelo.
+- **Resiliencia**: si el modelo activo sufre un límite de tasa (429) o falla, el bloqueo de sesión se libera y el fallback estándar al siguiente modelo se ejecuta de inmediato.
+
+### 4. Fusion
+Consulta en paralelo todos los modelos del panel y luego usa un modelo Judge para sintetizar una única respuesta final de alta calidad. Ideal para razonamiento complejo donde se necesitan múltiples perspectivas.
+
+---
+
 ## Combos de ejemplo
 
 ### Ejemplo 1: Premium Coding (Suscripción → Barato → Gratis)
