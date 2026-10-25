@@ -1,3 +1,16 @@
+# v0.6.63 (2026-10-25)
+
+Patch release on top of the v0.5.109 upstream sync (v0.6.62).
+
+## Fixes
+- **OpenCode free tier: the dashboard Test button no longer probes the network** (port of upstream PR #5193, fixes decolua/9router#5149; related to the FreeUsageLimitError reports #5128/#5138/#5107/#5080). The probe sent the v1 `opencode/1.18.31` fingerprint that OpenCode has rejected — and IP-flagged — with 403 FreeTierError / 429 FreeUsageLimitError since 2026-10-14, making the Test button the only place in the app still emitting the flagged fingerprint (real traffic has used the v2 shape since v0.6.61). The free lane authenticates with `Bearer public` (nothing to validate), so Test now returns green without a call; `opencode-go` keeps its live `/usage` probe. Known trade-off (same as upstream): the button can no longer report the free lane being down — real requests still surface upstream errors normally. Test ported with fork adaptations (go-lane `/usage` assertion, `isStrictProxyFailure` mock).
+
+## Docs
+- GitBook: the v0.6.62 "Combo Routing Strategies" section (Smart Router / session policies) translated into **vi / zh-CN / es / ja**, matching each language's terminology and layout (section lands before the Example Combos heading in all five languages).
+
+## Tests
+- New `opencode-test-no-probe.test.js` (free lane: zero fetch calls; go lane: exactly one probe). Golden URL/header snapshot re-stamped at 0.6.63; no other expectations changed.
+
 # v0.6.62 (2026-10-23)
 
 Upstream sync: migrates everything from decolua/9router v0.5.104 → v0.5.109 (upstream range `87a74e1b..f39d8f07`, 39 commits starting at the requested 38a0c449) into the fork, preserving all fork features. Root README.md / cli README.md intentionally not taken. Registry renumbering: upstream's seven new providers land as **p144-p150** (upstream p139/p140/p143/p144/p146/p147/p151; fork owns p131-p143). Upstream's new browser-driven `gemini-web` is imported as **`gemini-web-ui`** (alias `gweb2`) because the fork's own RPC gemini-web (p131) keeps the `gemini-web` id and the `gweb` alias — saved fork connections are untouched.
