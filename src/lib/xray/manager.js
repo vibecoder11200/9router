@@ -1667,5 +1667,95 @@ export async function installXrayOrchestrated({ version, onProgress } = {}) {
   }
 }
 
+/**
+ * One-click rollback to the `.prev` binary retained by the last install
+ * (RT-5) — the user-facing path for "the new binary breaks my config". The
+ * install route accepts any older tag, but the release picker only lists
+ * recent releases, while `.prev` is always the exact binary that ran before.
+ * Shares the install single-flight lock: a rollback racing an install would
+ * swap files under each other.
+ *
+ * @returns {{ rolledBack: true, version, restarted, restartError? }}
+ */
+export async function rollbackXrayOrchestrated() {
+  if (installLock.busy) {
+    const e = new Error("an xray install is already in progress");
+    e.code = "INSTALL_IN_PROGRESS";
+    throw e;
+  }
+  installLock.busy = true;
+
+  // pauseXrayHealthCheck mutates scheduler state; keep a settings snapshot
+  // around so resume can re-arm with the same cadence.
+  let healthSettings = null;
+  try {
+    const { pauseXrayHealthCheck, resumeXrayHealthCheck } = await import("./healthScheduler.js");
+    const { killTempXrayProcesses } = await import("./reaper.js");
+    const {
+      getDrainingPids, terminateXrayPid, removeDrainingPid,
+      getManagedPid, setManagedPid,
+    } = await import("./process.js");
+    const { rollbackXrayToPrev, getPrevXrayVersion } = await import("./installer.js");
+
+    if (!getPrevXrayVersion()) {
+      const e = new Error("no previous version retained (.prev is empty) — pick a specific older version from the dropdown instead");
+      e.code = "NO_PREV";
+      throw e;
+    }
+
+    try {
+      healthSettings = await getSettings();
+      pauseXrayHealthCheck();
+    } catch { /* scheduler pause best-effort */ }
+
+    // Same quiesce as an install: blue-green retirees and cmdline-verified
+    // temp probes all run the SAME BINARY_PATH the restore replaces, and
+    // Windows refuses to rename a running .exe.
+    for (const entry of getDrainingPids()) {
+      try {
+        await terminateXrayPid(entry.pid);
+        removeDrainingPid(entry.pid);
+      } catch { /* best-effort per pid */ }
+    }
+    try { killTempXrayProcesses(); } catch { /* best-effort */ }
+
+    const wasRunning = Boolean(getStatus().pid);
+    const runningPid = getManagedPid();
+    if (runningPid) {
+      try {
+        await terminateXrayPid(runningPid);
+        setManagedPid(null);
+      } catch { /* stale/unstoppable pid — proceed with the file swap */ }
+    }
+
+    if (!rollbackXrayToPrev()) {
+      const e = new Error("rollback failed — .prev restore did not complete");
+      e.code = "ROLLBACK_FAILED";
+      throw e;
+    }
+
+    const response = { rolledBack: true, version: getInstalledVersion(), restarted: false };
+    if (!wasRunning) return response;
+    // The proxy was up before the rollback — bring it back on the restored
+    // binary. A failure here is reported (restartError), not retried: the
+    // files ARE the pre-update state the user asked for.
+    try {
+      await restartXrayService();
+      response.restarted = true;
+    } catch (restartErr) {
+      response.restartError = restartErr.message;
+    }
+    return response;
+  } finally {
+    try {
+      if (healthSettings) {
+        const { resumeXrayHealthCheck } = await import("./healthScheduler.js");
+        resumeXrayHealthCheck(healthSettings);
+      }
+    } catch { /* resume best-effort */ }
+    installLock.busy = false;
+  }
+}
+
 export { installXray, getXrayRuntimeVersion, getXrayLogTail, getXraySyncState };
 export { MANAGED_POOL_ID };

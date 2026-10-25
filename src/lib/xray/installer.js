@@ -405,6 +405,15 @@ export function rollbackXrayToPrev() {
   return restoreFromPrevDir();
 }
 
+/** Version held in `.prev` (the RT-5 rollback source), or null if none. */
+export function getPrevXrayVersion() {
+  try {
+    const marker = path.join(XRAY_DIR, ".prev", PREV_VERSION_MARKER);
+    if (!fs.existsSync(marker)) return null;
+    return fs.readFileSync(marker, "utf8").trim() || null;
+  } catch { return null; }
+}
+
 function restoreFromPrevDir() {
   const prevDir = path.join(XRAY_DIR, ".prev");
   if (!fs.existsSync(prevDir)) return false;

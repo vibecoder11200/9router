@@ -25,6 +25,50 @@ const PID_FILE = path.join(XRAY_DIR, "xray.pid");
 const DRAINING_FILE = path.join(XRAY_DIR, "xray.pid.draining");
 const LOG_FILE = path.join(XRAY_DIR, "xray.log");
 const STARTUP_TIMEOUT_MS = 8000;
+// One shared append-only log for the managed instance, blue-green spawns and
+// temp test probes. A model-filter run spawns a probe per config, so a config
+// xray keeps rejecting (e.g. plaintext VLESS under the v26.10.21 policy)
+// writes an error block per probe and the file grew unbounded (a 318MB
+// xray.log on a real box). Rotate at every spawn boundary — a long-lived
+// instance keeps its fd on the rotated file until the next restart, which is
+// exactly when restart-loop hammering resumes.
+const LOG_ROTATE_BYTES = 10 * 1024 * 1024;
+
+// (exported for tests — every spawn path calls this before opening the log)
+export function maybeRotateXrayLog() {
+  try {
+    if (fs.statSync(LOG_FILE).size < LOG_ROTATE_BYTES) return;
+    const old = `${LOG_FILE}.old`;
+    try { if (fs.existsSync(old)) fs.unlinkSync(old); } catch { /* best-effort */ }
+    fs.renameSync(LOG_FILE, old);
+  } catch { /* missing/unreadable log → nothing to rotate */ }
+}
+
+/** Read the last ≤cap bytes of the xray log (used for exit diagnostics). */
+function readLogTailBytes(cap = 8192) {
+  try {
+    const st = fs.statSync(LOG_FILE);
+    const len = Math.min(st.size, cap);
+    const fd = fs.openSync(LOG_FILE, "r");
+    try {
+      const buf = Buffer.alloc(len);
+      fs.readSync(fd, buf, 0, len, st.size - len);
+      return buf.toString("utf8");
+    } finally { fs.closeSync(fd); }
+  } catch { return ""; }
+}
+
+/**
+ * Xray-core ≥ v26.10.21 refuses plaintext VLESS outbounds addressed to a
+ * public IP (config-load failure, exit code 23). The bare code tells the
+ * user nothing actionable — match the log line and explain the fix.
+ */
+function xrayExitHint() {
+  if (/without TLS or other encryption is prohibited/i.test(readLogTailBytes())) {
+    return " — this node is plaintext VLESS to a public-IP address; xray v26.10.21+ refuses it. Pick another node, enable TLS, or roll the binary back (Xray page → Rollback).";
+  }
+  return "";
+}
 
 function ensureDir() {
   if (!fs.existsSync(XRAY_DIR)) fs.mkdirSync(XRAY_DIR, { recursive: true });
@@ -135,6 +179,7 @@ export async function startManagedXray({ configPath }) {
 
   ensureDir();
   const binary = getXrayBinaryPath();
+  maybeRotateXrayLog();
   const outFd = fs.openSync(LOG_FILE, "a");
 
   const child = spawn(binary, ["run", "-c", configPath], {
@@ -166,7 +211,7 @@ export async function startManagedXray({ configPath }) {
       clearTimeout(startupTimer);
       clearPid();
       try { fs.closeSync(outFd); } catch {}
-      const e = new Error(`xray exited early (code=${code}) — see xray.log`);
+      const e = new Error(`xray exited early (code=${code}) — see xray.log${xrayExitHint()}`);
       e.code = "EARLY_EXIT";
       e.exitCode = code;
       reject(e);
@@ -317,6 +362,7 @@ export async function spawnNextManagedXray({ configPath }) {
   }
   ensureDir();
   const binary = getXrayBinaryPath();
+  maybeRotateXrayLog();
   const outFd = fs.openSync(LOG_FILE, "a");
   let child;
   try {
@@ -345,6 +391,14 @@ export async function spawnNextManagedXray({ configPath }) {
 export function getXrayLogTail(maxLines = 200) {
   try {
     if (!fs.existsSync(LOG_FILE)) return "";
+    // Never slurp the whole file: before rotation existed, a multi-hundred-MB
+    // xray.log made every dashboard poll read it all into memory.
+    const st = fs.statSync(LOG_FILE);
+    const TAIL_BYTES = 256 * 1024;
+    if (st.size > TAIL_BYTES) {
+      const lines = readLogTailBytes(TAIL_BYTES).split(/\r?\n/).filter(Boolean);
+      return lines.slice(-maxLines).join("\n");
+    }
     const content = fs.readFileSync(LOG_FILE, "utf8");
     const lines = content.split(/\r?\n/).filter(Boolean);
     return lines.slice(-maxLines).join("\n");
@@ -368,6 +422,7 @@ export async function spawnTempXray({ configPath }) {
     throw err;
   }
   const binary = getXrayBinaryPath();
+  maybeRotateXrayLog();
   const outFd = fs.openSync(LOG_FILE, "a");
   const child = spawn(binary, ["run", "-c", configPath], {
     stdio: ["ignore", outFd, outFd],

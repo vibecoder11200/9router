@@ -275,7 +275,10 @@ export default function XrayProxyPage() {
   // Lazy: fetched the first time the version dropdown is opened.
   const fetchReleases = useCallback(async () => {
     try {
-      const res = await fetch("/api/xray/version/releases", { cache: "no-store" });
+      // Max page (30): older-but-still-relevant tags (e.g. the last known-good
+      // from months back) must stay pickable — anything older falls back to
+      // the .prev Rollback button.
+      const res = await fetch("/api/xray/version/releases?per_page=30", { cache: "no-store" });
       const data = await res.json();
       setReleases(data.releases || []);
       if (data.error) {
@@ -389,6 +392,36 @@ export default function XrayProxyPage() {
 
   const handleVersionDropdownOpen = () => {
     if (!releasesLoaded) fetchReleases();
+  };
+
+  // One-click restore of the `.prev` binary retained by the last install
+  // (RT-5) — the direct answer to "the new binary breaks my nodes".
+  const handleRollback = async () => {
+    const prev = status?.rollbackVersion;
+    if (!prev) return;
+    setConfirmState({
+      message: `Roll the xray binary back to ${prev} (the version retained from before the last update)? The proxy restarts automatically if it is running.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        setBusy(true);
+        try {
+          const res = await fetch("/api/xray/install/rollback", { method: "POST" });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          if (data.restartError) {
+            notify.error(`Rolled back to ${data.version}, but the proxy did not restart: ${data.restartError}`);
+          } else {
+            notify.success(`Rolled back to ${data.version}${data.restarted ? " · proxy restarted" : ""}`);
+          }
+          await fetchStatus();
+          await fetchVersionInfo();
+        } catch (e) {
+          notify.error(`Rollback failed: ${e.message}`);
+        } finally {
+          setBusy(false);
+        }
+      },
+    });
   };
 
   // ── Subscription manager handlers ────────────────────────────────────────
@@ -911,6 +944,7 @@ export default function XrayProxyPage() {
             onInstall={handleInstall}
             onCheck={handleCheckVersion}
             onDropdownOpen={handleVersionDropdownOpen}
+            onRollback={handleRollback}
           />
           {status.binaryInstalled && status.status === "running" && (
             <>

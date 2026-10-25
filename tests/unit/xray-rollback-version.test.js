@@ -29,6 +29,7 @@ afterAll(() => {
 
 function writePrev({ withMarker }) {
   const xrayDir = path.join(tempDir, "xray");
+  fs.rmSync(path.join(xrayDir, ".prev"), { recursive: true, force: true });
   fs.mkdirSync(path.join(xrayDir, ".prev"), { recursive: true });
   // The retained OLD binary and the pre-install version marker.
   fs.writeFileSync(path.join(xrayDir, ".prev", "xray.exe"), "old-binary");
@@ -57,5 +58,24 @@ describe("rollbackXrayToPrev restores the pre-install version", () => {
     expect(installer.rollbackXrayToPrev()).toBe(true);
     // No marker → no claim about the old version; the file stays as-is.
     expect(installer.getInstalledVersion()).toBe("v9.9.9");
+  });
+});
+
+describe("getPrevXrayVersion (the dashboard Rollback button's source)", () => {
+  it("reports the retained version while .prev exists", () => {
+    writePrev({ withMarker: true });
+    expect(installer.getPrevXrayVersion()).toBe("v1.0.0");
+  });
+
+  it("is null without a marker, without .prev, and after a rollback consumes it", () => {
+    writePrev({ withMarker: false });
+    expect(installer.getPrevXrayVersion()).toBeNull();
+
+    fs.rmSync(path.join(tempDir, "xray", ".prev"), { recursive: true, force: true });
+    expect(installer.getPrevXrayVersion()).toBeNull();
+
+    writePrev({ withMarker: true });
+    expect(installer.rollbackXrayToPrev()).toBe(true);
+    expect(installer.getPrevXrayVersion()).toBeNull();
   });
 });

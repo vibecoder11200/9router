@@ -16,6 +16,7 @@ export default function VersionPanel({
   onInstall,
   onCheck,
   onDropdownOpen,
+  onRollback,
 }) {
   return (
     <>
@@ -38,6 +39,18 @@ export default function VersionPanel({
         {status.binaryInstalled ? "Update / Reinstall" : "Install Xray Binary"}
       </Button>
       <Button variant="ghost" onClick={onCheck} disabled={busy}>Check</Button>
+      {/* .prev (RT-5) holds the exact pre-update binary — always available
+          even when the wanted version has fallen off the 30-release list. */}
+      {status.rollbackVersion && (
+        <Button
+          variant="ghost"
+          onClick={onRollback}
+          disabled={busy}
+          title={`Restore the binary retained from before the last update (${status.rollbackVersion})`}
+        >
+          Rollback to {status.rollbackVersion}
+        </Button>
+      )}
     </>
   );
 }

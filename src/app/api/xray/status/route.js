@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStatus } from "@/lib/xray/manager";
+import { getPrevXrayVersion } from "@/lib/xray/installer";
 import { listXraySubscriptions } from "@/lib/db/repos/subscriptionRepo";
 import { getSelectedXrayConfig } from "@/lib/localDb";
 
@@ -24,7 +25,10 @@ export async function GET() {
     const activeConfig = status.activeConfigId
       ? await getSelectedXrayConfig().catch(() => null)
       : null;
-    return NextResponse.json({ ...status, sync, activeConfig });
+    // The version retained in `.prev` by the last install (RT-5) — powers
+    // the dashboard's one-click Rollback button. Null when nothing is retained.
+    const rollbackVersion = getPrevXrayVersion();
+    return NextResponse.json({ ...status, rollbackVersion, sync, activeConfig });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

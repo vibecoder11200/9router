@@ -1,3 +1,21 @@
+# v0.6.64 (2026-10-25)
+
+Xray operability release, prompted by a real incident: xray-core **v26.10.21** (installed via the dashboard's "latest") refuses plaintext-VLESS outbounds addressed to a public IP at config load (exit code 23), which killed a box's proxy and produced 30k failed-start blocks / a **318MB xray.log** in two days. The post-install auto-rollback (RT-5) did not fire because the binary swap itself restarts fine on the previously-active node — the failure only appears when a violating node is selected later.
+
+## Features
+- **One-click binary rollback (Xray page)**: a `Rollback to <version>` button appears whenever the last install retained a `.prev` directory (RT-5), restoring the exact pre-update binary with no download. Backed by `POST /api/xray/install/rollback` (`rollbackXrayOrchestrated` in manager.js — shares the install single-flight lock, quiesces blue-green retirees/temp probes like an install, restarts the proxy if it was running, reports `restartError` honestly). `GET /api/xray/status` now exposes `rollbackVersion`. The release picker now requests the max page (30) so the last known-good version stays selectable longer; anything older is one Rollback click away.
+- **Actionable exit-23 error**: `xray exited early (code=23)` now carries the diagnosis when the log matches the plaintext-VLESS policy refusal ("pick another node, enable TLS, or roll the binary back").
+
+## Fixes
+- **xray.log rotation**: every spawn path (managed start, blue-green switch, per-config temp probes — the model-filter run is the hammer that writes an error block per probe) now rotates the log to `xray.log.old` at a 10MiB cap before appending; disk usage is bounded at log + .old.
+- **Dashboard log viewer no longer slurps the file**: `getXrayLogTail` reads a 256KB tail window instead of `readFileSync` of the whole (previously unbounded) log per poll.
+
+## Ops
+- Incident box remediated by hand while the fixes were being written: binary restored from `.prev` to v26.3.27 (`xray run -test` → Configuration OK), proxy back up (SOCKS 127.0.0.1:10808/10809), 318MB log truncated with a 145KB tail kept as `xray.log.old`.
+
+## Tests
+- New `xray-log-rotation.test.js` (rotation at/under cap, second rotation replaces `.old`, oversized-log tail window) and `xray-api-install-rollback.test.js` (route contract: 200/400/409/500 mapping, restart-failure still 200); `xray-rollback-version.test.js` extended for `getPrevXrayVersion` (with marker / without / consumed after rollback). Full xray suite: 206 passed.
+
 # v0.6.63 (2026-10-25)
 
 Patch release on top of the v0.5.109 upstream sync (v0.6.62).
