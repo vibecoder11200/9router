@@ -1,4 +1,15 @@
-# v0.6.68 (2026-10-27)
+# v0.6.69 (2026-10-27)
+
+Hardening release from the same production incident: after an ungraceful app exit (crash, `kill`, or an `npm i -g` upgrade replacing the process — which happened twice on the box today), the detached xray survives holding the SOCKS/HTTP ports while the pid file keeps pointing at it. On the next boot `getVerifiedManagedPid()` sees a live, verifiably-xray pid and reports "already running", so **both auto-start and a manual start early-return with the proxy wedged** — nothing listens, and the only recovery is hand-deleting `xray.pid` and calling `/api/xray/start`.
+
+## Fixes
+- **Boot-time orphan reaper for the managed xray** (`src/lib/xray/process.js`, `initializeApp.js`): `reapOrphanedManagedXray()` runs once at app boot before any start attempt. A verified pid that this process did not spawn itself is by definition a leftover from a previous instance — it is terminated via `terminateXrayPid` (which waits for the ports to be released) and the pid file cleared, so auto-start binds cleanly. A pid this process did spawn (`lastSpawnedPid`, maintained through `startManagedXray` and blue-green `setManagedPid`) is spared; the X7 cmdline kill-safety check still guards against recycled pids.
+- Verified against the live box sequence (orphans from 06:11 and 12:47 blocked the 14:10 boot; manual pid-file removal was needed).
+
+## Tests
+- New `xray-orphan-reap.test.js` (4 cases): orphan killed + pid file cleared, own-spawned pid spared with the file intact, no-op without a pid file, no-op on a dead pid. Full suite: 5098 passed / 49 baseline fails (+ the known under-load `xai-oauth-service` flake that passes 5/5 in isolation).
+
+
 
 Third and final hotfix for the lazy runtime-dep loader. v0.6.67 worked in the standalone build but failed **in the CLI build** (the artifact npm installs actually run): its bundler loader treats a `file://` URL as a module specifier — `wreq-js unavailable (Cannot find module 'file:///…dist/wreq-js.js')` — even though the identical URL imports fine in plain node. Every webpack-transformed form of dynamic import has now failed in a different published build; the only reliable shape is an import the bundler cannot see at all.
 

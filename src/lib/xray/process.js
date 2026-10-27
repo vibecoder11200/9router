@@ -90,6 +90,10 @@ function clearPid() {
   try { if (fs.existsSync(PID_FILE)) fs.unlinkSync(PID_FILE); } catch { /* ignore */ }
 }
 
+// Pid of a managed xray spawned by THIS process (the child handle is dropped
+// after unref, so this is the only same-process ownership record).
+let lastSpawnedPid = null;
+
 /**
  * Kill a PID on Windows WITHOUT flashing a cmd.exe console window.
  *
@@ -198,6 +202,7 @@ export async function startManagedXray({ configPath }) {
 
   child.unref();
   writePid(child.pid);
+  lastSpawnedPid = child.pid;
 
   // Startup gate: the process must stay alive past STARTUP_TIMEOUT_MS. A fast
   // exit (bad config, port conflict, missing assets) rejects with EARLY_EXIT.
@@ -275,6 +280,33 @@ export async function restartXray({ configPath }) {
 }
 
 /**
+ * Kill a managed-xray process left behind by a PREVIOUS app instance.
+ *
+ * xray is spawned detached + unref'd, so an ungraceful app exit (crash,
+ * `kill`, an `npm i -g` upgrade replacing the process) leaves it alive
+ * holding the SOCKS/HTTP ports — while the next boot's
+ * getVerifiedManagedPid() sees a live, verifiably-xray pid and reports
+ * "already running", making BOTH auto-start and a manual /api/xray/start
+ * early-return with the proxy wedged (seen twice in production on
+ * 2026-10-27: orphans from 06:11 and 12:47 blocked the 14:10 boot).
+ *
+ * Called once at app boot before any start attempt: a verified pid this
+ * process did not spawn itself is by definition a leftover from an earlier
+ * instance, so terminate it (terminateXrayPid waits for the ports to be
+ * released) and clear the pid file for a clean spawn.
+ *
+ * @returns {Promise<{killed: boolean, pid?: number, reason?: string}>}
+ */
+export async function reapOrphanedManagedXray() {
+  const pid = getVerifiedManagedPid();
+  if (!pid) return { killed: false, reason: "not_running" };
+  if (pid === lastSpawnedPid) return { killed: false, reason: "ours", pid };
+  await terminateXrayPid(pid);
+  clearPid();
+  return { killed: true, pid };
+}
+
+/**
  * Gracefully terminate an xray instance by PID: SIGTERM, escalate to SIGKILL
  * after 3s. Waits for the process to actually die so the caller can rely on
  * its ports being released. Windows uses PowerShell Stop-Process.
@@ -298,10 +330,16 @@ export async function terminateXrayPid(pid) {
 }
 
 /** Overwrite the managed PID file (used by blue-green switch to promote the
- *  new instance, or to restore the previous one when a candidate fails). */
+ *  new instance, or to restore the previous one when a candidate fails).
+ *  Both instances were spawned by this process, so either pid counts as
+ *  "ours" for the boot-time orphan reaper. */
 export function setManagedPid(pid) {
-  if (pid) writePid(pid);
-  else clearPid();
+  if (pid) {
+    writePid(pid);
+    lastSpawnedPid = pid;
+  } else {
+    clearPid();
+  }
 }
 
 // ─── draining-instance bookkeeping (blue-green switch) ─────────────────────
