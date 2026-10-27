@@ -161,7 +161,8 @@ import p132 from "./ds2api.js";
 import p133 from "./genspark-web.js";
 import p134 from "./orcarouter.js";
 import p135 from "./totu-ai.js";
-
+// Upstream v0.5.111 provider (runcrate), renumbered from upstream's p152 → p151.
+import p151 from "./runcrate.js";
 export default [
   p0,
   p1,
@@ -313,4 +314,5 @@ export default [
   p148,
   p149,
   p150,
+  p151,
 ];

@@ -1,4 +1,34 @@
-# v0.6.64 (2026-10-25)
+# v0.6.65 (2026-10-27)
+
+Upstream sync: migrates everything from decolua/9router v0.5.109 → **v0.5.111** (upstream range `f39d8f07..3a978a63`, 16 commits) into the fork, preserving all fork features. Root README.md intentionally not taken (fork policy). Registry: upstream's new Runcrate lands as **p151** (upstream p152; fork owns p131-p150).
+
+## Features (upstream)
+- **Ollama Local TTS (Phonon)**: `ollama-local` registers as a TTS provider serving the 15-tag Phonon family with 38 preset voices; normalizes the requested format to wav/pcm (the only two Ollama accepts), discovers other installed phonon tags on a 404, falls back to the `default` voice, and synthesizes without a stored connection (local server). `/v1/audio/speech` now honors `response_format` from the body, and the dashboard TTS card gains per-provider format options plus an in-browser WAV header wrapper so raw PCM previews.
+- **Ollama Local embeddings**: `ollama-local` also registers as an embedding provider for `/v1/embeddings` — normalizes a saved host carrying `/v1` or `/v1/embeddings` suffixes, sends a bearer token only when an API key is configured, forwards `dimensions` when positive; catalog lists the 14 embedding model families with their dimensions.
+- **Runcrate** (`rc`, p151): OpenAI-compatible upstream serving DeepSeek V4.1 Flash (×2), GLM 5.3 / 5.3 Flash, Qwen3.8 Flash and gpt-oss-120b; validated through `GET /api/v1/billing/balance` because the public `/v1/models` answers 200 for any key.
+- **Kimi K3.1 Pro** on two lanes: CommandCode catalog entry (id verbatim `moonshotai/Kimi-K3.1-Pro` upstream — the router does not normalize casing) riding the existing NDJSON `/alpha/generate` lane, and OpenCode Go chat lane (vision + video input, always-on Kimi thinking, 1,048,576 context, 131,072 output, dedicated $2/$10 pricing).
+
+## Fixes (upstream)
+- **OpenCode free tier restored** (the 429 FreeUsageLimitError wave): three independent gates fixed together — (1) TLS ClientHello: free-lane requests now route through a wreq-js session sending Bun's BoringSSL cipher list via the new `services/opencodeTlsClient.js` (optional dep, fail-open to native fetch; note a configured proxy still bypasses the TLS client and the lane will 429 again); (2) session ids are minted from the current time (the old sha256-derived 36-bit time field fell outside the free-tier window ~9/10 of the time) and memoized per conversation; (3) the system prompt now carries the CLI `<env>` marker on all three request shapes (chat, Responses `instructions`, claude `system`), always paired with a declared tool list. BaseExecutor forwards a `directFetch` hook to `proxyAwareFetch` (the fork's proxyFetch already supported it).
+- **Fingerprint tool collisions normalize in place**: a caller tool colliding with the OpenCode `read`/`shell` fingerprint (e.g. Windows-pwsh wording of the same tool) now keeps its name and adopts OpenCode's schema when its parameters can carry them, instead of being aliased to `<name>_client` and breaking the client's own tool dispatch (#4971, #5011).
+- **Pi CLI card stops destroying hand-set model settings**: Apply no longer rebuilds `~/.pi/agent/models.json` from scratch — caps (`contextWindow`/`maxTokens`) are merged forward, corrupt values are sanitized instead of written back, `name === id` no longer overwrites a hand-edited label, and per-model cap selectors were added to the card.
+- **Translator**: `image_url` parts inside `role:"tool"` messages convert to Claude image blocks instead of 400ing (#5125).
+- **Headroom** compresses only text leaves and copies them back, preserving native Claude PDFs, tool-use ids/inputs, tool results, signed thinking, citations and cache controls (#4670); invalid proxy responses fail open.
+- **DeepSeek**: `deepseek-v4.1-flash` sends `deepseek-flash` upstream (the id the API accepts) while the client-facing id, aliases and thinking suffixes keep working (#4940).
+- **Claude**: Haiku 5.5 keeps adaptive thinking (downgrade to `enabled/10000` only below major version 5) (#5183).
+- **Thinking**: `reasoning_effort: max` survives GPT-5.6 / GPT-6 served through OpenAI Compatible nodes instead of clamping to `xhigh` (#5186).
+- **OpenCode Free**: `oc/deepseek-v4.1-flash-free` publishes a 330k context window so clients compact before the backend's limit (#5097).
+- **Codex Image**: the hosted `image_generation` tool call is driven from `gpt-6-sol` (exposed as `cx/gpt-6-sol-image`), superseding the `gpt-5.6-{sol,terra,luna}-image` aliases; `*gpt-6*image*` now matches ahead of the generic gpt-6 family pattern so image variants keep `imageOutput`.
+
+## Fork-side adaptations during migration
+- Registry renumber: runcrate imported as p151 (upstream's p152) after the fork's p131-p150 block.
+- `executors/opencode.js` merged by hand in one spot (import line): upstream's TLS session minting + `execute()` override coexist with the fork's catalog-driven responses routing, tool-name shortening (`recordRenamedToolNames` merge semantics kept — upstream's in-place normalization writes through a different path), live npm-registry CLI UA and `max_output_tokens` floor.
+- `tts.js`: upstream's body `response_format` + ollama-local no-connection synth land alongside the fork's key-budget enforcement and strict-proxy pool handling (different hunks).
+- capabilities/pricing: upstream's `kimi-k3.1-pro`, opencode 330k cap and `*gpt-6*image*` pattern coexist with the fork's codex `gpt-6.1-sol` entries.
+- Golden URL/header snapshot regenerated for runcrate (p151) after the suite run.
+- `wreq-js` was already a fork devDependency (v0.5.109 migration) — the new TLS client loads it through the existing `lazyRuntime` path; no dependency changes.
+
+
 
 Xray operability release, prompted by a real incident: xray-core **v26.10.21** (installed via the dashboard's "latest") refuses plaintext-VLESS outbounds addressed to a public IP at config load (exit code 23), which killed a box's proxy and produced 30k failed-start blocks / a **318MB xray.log** in two days. The post-install auto-rollback (RT-5) did not fire because the binary swap itself restarts fine on the previously-active node — the failure only appears when a violating node is selected later.
 
