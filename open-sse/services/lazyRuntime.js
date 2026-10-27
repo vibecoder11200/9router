@@ -11,7 +11,6 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { getWritableDataDir } from "../utils/writableDataDir.js";
 
@@ -47,6 +46,13 @@ function npmInstall(pkg, version) {
 const inflight = new Map();
 
 async function load(pkg) {
+  // createRequire must be fetched via dynamic import: with a static named
+  // import, the webpack minifier folded the `runtimeRequire` binding into
+  // `undefined` in the published bundle ((void 0).resolve(...) → TypeError),
+  // so step 2 and the on-demand install in step 3 were unreachable on every
+  // end-user install (broken opencode/grok TLS clients, browserPool) while
+  // working in dev, where the source runs unbundled (v0.6.65 regression).
+  const { createRequire } = await import("node:module");
   // 1) Resolvable from the app install (dev machine / traced standalone).
   try {
     return await import(/* webpackIgnore: true */ pkg);
@@ -54,9 +60,8 @@ async function load(pkg) {
     if (!isModuleMissing(error)) throw error;
   }
   // 2) Already present in the runtime dir from a previous install.
-  const runtimeRequire = createRequire(path.join(getRuntimeDir(), "package.json"));
   try {
-    return await import(pathToFileURL(runtimeRequire.resolve(pkg)).href);
+    return await import(pathToFileURL(createRequire(path.join(getRuntimeDir(), "package.json")).resolve(pkg)).href);
   } catch (error) {
     if (!isModuleMissing(error)) throw error;
   }
