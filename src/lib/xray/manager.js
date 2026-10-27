@@ -914,7 +914,12 @@ export async function testSingleConfigWithModel(configId, { model: modelStr, tim
     const latencyMs = Date.now() - startedAt;
     if (!result.success) {
       await updateXrayTestResult(config.id, { ok: false });
-      return { ok: false, latencyMs, status: result.status || 502, error: result.error || "Model probe failed" };
+      // App-side infra failure (e.g. wreq-js failing to load) — every node
+      // would fail identically; the probe says nothing about THIS config.
+      // Flagged so the runner can abort, the prune policy can refuse to
+      // delete, and the cache stays unpolluted.
+      const infraError = /wreq-js unavailable|playwright-core is missing/i.test(String(result.error || ""));
+      return { ok: false, infraError, latencyMs, status: result.status || 502, error: result.error || "Model probe failed" };
     }
 
     const rawText = await result.response.text().catch(() => "");
@@ -1186,6 +1191,9 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
   // no-op; keep at least 1 worker so the pool initializes harmlessly.
   const workerCount = Math.min(normalizeModelFilterConcurrency(concurrency), toTest.length || 1);
   let cursor = 0;
+  // Set to the error text once a probe fails on app-side infrastructure —
+  // breaks the worker loops and surfaces in the run summary.
+  let infraAbort = null;
 
   const maybePruneConfig = async (config, result) => {
     const decision = shouldPruneFilterResult(result, { prune, runningActiveConfigId, configId: config.id });
@@ -1214,6 +1222,9 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
   // cache-stats snapshot reflects this run's writes.
   const recordCache = async (config, result) => {
     if (result.pruned === true || result.pruneSkipped) return;
+    // An infra failure never tested the node — a cached fail row would be a
+    // lie about this config; leave it untested for the next healthy run.
+    if (result.infraError) return;
     try {
       await upsertModelFilterResult({
         configId: config.id,
@@ -1249,9 +1260,17 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
     // If a stop came in while waiting for traffic, skip the probe for this
     // config — it stays untested and will be picked up on the resume run.
     if (modelFilterCancelRequested) return;
+    // Same for an app-side infra failure: once one probe reports it (e.g.
+    // wreq-js cannot load), every remaining probe would burn its full
+    // timeout to produce the identical error — abort the run instead.
+    if (infraAbort) return;
     try {
       const probe = await probeFn(config, workerIdx);
       let result = { configId: config.id, name: config.name, host: config.host, country: config.country, ...probe };
+      if (result.infraError && !infraAbort) {
+        infraAbort = String(result.error || "").slice(0, 200);
+        console.warn(`[Xray] model filter aborting: app-side infra failure — ${infraAbort}`);
+      }
       result = await maybePruneConfig(config, result);
       results.push(result);
       await recordCache(config, result);
@@ -1304,7 +1323,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
   }
 
   const workers = Array.from({ length: workerCount }, async (_, workerIdx) => {
-    while (cursor < toTest.length && !modelFilterCancelRequested) {
+    while (cursor < toTest.length && !modelFilterCancelRequested && !infraAbort) {
       const index = cursor;
       cursor += 1;
       await testConfig(toTest[index], probeFn, workerIdx);
@@ -1333,6 +1352,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
     pruneSkipped: results.filter((r) => r.pruneSkipped).length,
     cached: cachedCount,
     cancelled,
+    abortedReason: infraAbort,
     results,
   };
 }

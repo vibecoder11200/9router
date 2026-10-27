@@ -45,14 +45,40 @@ function npmInstall(pkg, version) {
 
 const inflight = new Map();
 
+/**
+ * Resolve a package's entry file from the runtime dir WITHOUT createRequire.
+ * In the published webpack bundle every obtainable form of createRequire
+ * proved fragile: the static named import had its binding folded to
+ * `undefined` by the minifier ("(void 0).resolve(...)", shipped in v0.6.65),
+ * and the dynamic-import form hit CJS interop — the namespace only exposes
+ * `.default`, so the destructured `createRequire` was not a function
+ * ("j is not a function", shipped in v0.6.66). Reading package.json and
+ * walking the exports/main fields ourselves is interop-free and minifier-
+ * proof. Covers the two pinned lazy deps (wreq-js, playwright-core), whose
+ * "." export maps are simple condition objects; anything fancier falls
+ * through to MODULE_NOT_FOUND and the on-demand install path below.
+ */
+function resolveRuntimeEntry(pkg) {
+  const root = path.join(getRuntimeDir(), "node_modules", pkg);
+  const missing = (msg) => Object.assign(new Error(msg), { code: "ERR_MODULE_NOT_FOUND" });
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  } catch {
+    throw missing(`Cannot find package '${pkg}' in the runtime dir`);
+  }
+  const dot = manifest.exports?.["."] ?? (typeof manifest.exports === "string" ? manifest.exports : null);
+  const cond = typeof dot === "string"
+    ? dot
+    : (dot && typeof dot === "object" && !Array.isArray(dot) ? (dot.import || dot.default || dot.require || dot.node) : null);
+  const target = cond || manifest.module || manifest.main;
+  if (!target || typeof target !== "string") throw missing(`Package '${pkg}' has no resolvable entry`);
+  const entry = path.join(root, target);
+  if (!fs.existsSync(entry)) throw missing(`Cannot find module '${pkg}' (entry ${target} missing)`);
+  return entry;
+}
+
 async function load(pkg) {
-  // createRequire must be fetched via dynamic import: with a static named
-  // import, the webpack minifier folded the `runtimeRequire` binding into
-  // `undefined` in the published bundle ((void 0).resolve(...) → TypeError),
-  // so step 2 and the on-demand install in step 3 were unreachable on every
-  // end-user install (broken opencode/grok TLS clients, browserPool) while
-  // working in dev, where the source runs unbundled (v0.6.65 regression).
-  const { createRequire } = await import("node:module");
   // 1) Resolvable from the app install (dev machine / traced standalone).
   try {
     return await import(/* webpackIgnore: true */ pkg);
@@ -61,7 +87,7 @@ async function load(pkg) {
   }
   // 2) Already present in the runtime dir from a previous install.
   try {
-    return await import(pathToFileURL(createRequire(path.join(getRuntimeDir(), "package.json")).resolve(pkg)).href);
+    return await import(pathToFileURL(resolveRuntimeEntry(pkg)).href);
   } catch (error) {
     if (!isModuleMissing(error)) throw error;
   }
@@ -76,7 +102,7 @@ async function load(pkg) {
       `install it manually: cd "${dir}" && npm install ${pkg}@${version}`
     );
   }
-  return import(pathToFileURL(createRequire(path.join(dir, "package.json")).resolve(pkg)).href);
+  return import(pathToFileURL(resolveRuntimeEntry(pkg)).href);
 }
 
 export function loadRuntimeDep(pkg) {

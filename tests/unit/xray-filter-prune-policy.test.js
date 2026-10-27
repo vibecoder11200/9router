@@ -61,4 +61,16 @@ describe("xray model-filter prune policy", () => {
     );
     expect(decision.prune).toBe(true);
   });
+
+  // v0.6.65/v0.6.66 regression shape: wreq-js failing to load made every
+  // probe fail identically and the filter pruned configs one infra error at
+  // a time (34 deleted on a production box before the run was stopped).
+  it("refuses to prune on an app-side infra failure (wreq-js unavailable)", () => {
+    const decision = shouldPruneFilterResult(
+      { ok: false, infraError: true, status: 502, error: "[502]: [ProxyFetch] wreq-js unavailable (j is not a function)" },
+      { prune: true, ...base },
+    );
+    expect(decision.prune).toBe(false);
+    expect(decision.reason).toBe("infra_error");
+  });
 });

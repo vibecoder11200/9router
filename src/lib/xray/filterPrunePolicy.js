@@ -23,6 +23,10 @@
 export function shouldPruneFilterResult(result, { prune = false, runningActiveConfigId = null, configId } = {}) {
   if (!prune || result?.ok) return { prune: false };
   if (result?.tunnelOk === true) return { prune: false, reason: "upstream_rejected" };
+  // App-side infra failure (e.g. wreq-js failing to load): the probe result
+  // reflects OUR transport, not the node — deleting configs over it would
+  // wipe healthy inventory one identical error at a time.
+  if (result?.infraError === true) return { prune: false, reason: "infra_error" };
   if (runningActiveConfigId && configId === runningActiveConfigId) {
     return { prune: false, reason: "active_config_running" };
   }

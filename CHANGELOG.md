@@ -1,4 +1,19 @@
-# v0.6.66 (2026-10-27)
+# v0.6.67 (2026-10-27)
+
+Second hotfix for the lazy runtime-dep loader, plus a safety net so an app-side infrastructure failure can never mass-delete proxy configs again. Verified end to end at the **bundle** level this time — the exact gap that let both regressions ship.
+
+## Fixes
+- **lazyRuntime v2: no more createRequire anywhere** (`open-sse/services/lazyRuntime.js`). The v0.6.66 fix fetched `createRequire` via a dynamic `import("node:module")`, but in the published webpack bundle the CJS interop only exposes `.default` — the destructured binding was not a function ("wreq-js unavailable (j is not a function)"), reproducing the same all-probes-fail outage on the server minutes after it auto-updated. Step 2 (and the post-install import in step 3) now resolve the entry file manually from the package manifest (`exports["."]` import/default/require condition → `module` → `main`), which is interop-free and minifier-proof — there is no module-system API left to fold or mis-interop. Verified against both pinned deps' manifest shapes (wreq-js, playwright-core).
+- **End-to-end bundle verification**: built the standalone bundle, put wreq-js only in `<DATA_DIR>/runtime` (absent from the app install, so step 1 must fail), and drove a real `oc/deepseek-v4.1-flash-free` chat completion through it — response `"PONG"`, `billing_source: "free"`, cost 0. Both prior failure modes are now structurally impossible.
+
+## Hardening
+- **Model filter: infra failures abort the run and never prune** (`manager.js`, `filterPrunePolicy.js`). When a probe fails app-side (wreq-js/playwright-core cannot load), the result now carries `infraError`, the prune policy refuses to delete the config (`infra_error`), the failure is not written to the filter cache, and the run aborts with `abortedReason` instead of burning a 20s probe per config to produce thousands of identical errors. On the production box, v0.6.66's interop bug had already deleted 34 configs one identical error at a time before the run was stopped manually — that class of self-destruction is closed.
+
+## Tests
+- `xray-filter-prune-policy.test.js`: infra-error prune-refusal case (the production shape: `[ProxyFetch] wreq-js unavailable (j is not a function)`).
+- Full suite: 5096 passed / 49 failed — all 49 identical to the known-fails baseline.
+
+
 
 Hotfix: the lazy runtime-dep loader was broken in every published webpack build since v0.6.62, and v0.6.65's OpenCode free-tier TLS client turned it into a visible outage (every xray model-filter probe against `oc/*` models failed with `[502] wreq-js unavailable (Cannot read properties of undefined (reading 'resolve'))` — diagnosed live on a production box where the filter went 0-passed over ~7,300 probes while the proxy itself was healthy).
 
