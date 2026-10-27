@@ -1,4 +1,15 @@
-# v0.6.69 (2026-10-27)
+# v0.6.70 (2026-10-27)
+
+Follow-up to v0.6.69's orphan reaper: it was placed in `runHeavyStartup`, which only executes when a dashboard page renders the root layout at runtime — on a headless box (or any boot where nobody opens the dashboard) it never runs, so the wedge survived exactly the deployments that need it most. Verified end-to-end this time.
+
+## Fixes
+- **The orphan reaper now runs at server start** (`src/instrumentation.js` `register()`): Next runs instrumentation on boot regardless of page rendering, and the reap is pure fs + process-table work (no DB), so it fires immediately — killing a leftover managed xray, releasing the SOCKS/HTTP ports, and clearing `xray.pid` before anything tries to start. Also moved to the FIRST position in `runHeavyStartup` (was last, behind every hangable step); idempotent, so running in both places is a harmless re-check.
+- Local e2e proof of the exact production scenario: a live process with an xray cmdline and its pid in `xray.pid`, app booted headless — log line `[InitApp] Reaped orphaned managed xray (pid …) from a previous instance`, process dead, pid file cleared, no page render or login involved.
+
+## Tests
+- Unchanged suite: 5098 passed / 49 baseline fails (+ the known under-load `xai-oauth-service` flake).
+
+
 
 Hardening release from the same production incident: after an ungraceful app exit (crash, `kill`, or an `npm i -g` upgrade replacing the process — which happened twice on the box today), the detached xray survives holding the SOCKS/HTTP ports while the pid file keeps pointing at it. On the next boot `getVerifiedManagedPid()` sees a live, verifiably-xray pid and reports "already running", so **both auto-start and a manual start early-return with the proxy wedged** — nothing listens, and the only recovery is hand-deleting `xray.pid` and calling `/api/xray/start`.
 

@@ -105,8 +105,24 @@ export async function initializeApp() {
 }
 
 async function runHeavyStartup() {
-  await cleanupProviderConnections();
   const settings = await getSettings();
+
+  // FIRST, before anything that can hang (provider cleanup, mitm, tunnel):
+  // a managed xray orphaned by a previous app instance (crash, kill, npm -g
+  // upgrade) survives detached while holding the SOCKS/HTTP ports, and the
+  // start path then sees it as "already running" — auto-start and manual
+  // start both early-return with the proxy wedged. Kill it before any start
+  // attempt so the ports are free (runs regardless of xrayAutoStart; an
+  // orphan is xray running even when the user disabled it).
+  try {
+    const { reapOrphanedManagedXray } = await import("@/lib/xray/process.js");
+    const reaped = await reapOrphanedManagedXray();
+    if (reaped.killed) console.log(`[InitApp] Reaped orphaned managed xray (pid ${reaped.pid}) from a previous instance`);
+  } catch (e) {
+    console.warn(`[InitApp] Managed-xray orphan reap failed (non-fatal): ${e?.message || e}`);
+  }
+
+  await cleanupProviderConnections();
 
   // Reap orphaned temp-probe xray processes + files from any previous filter
   // job that was interrupted (crash/restart mid-job). Runs on every boot,
@@ -184,20 +200,6 @@ async function runHeavyStartup() {
   import("@/lib/xray/sync.js")
     .then(({ startSyncScheduler }) => startSyncScheduler())
     .catch((e) => console.log("[XraySync] scheduler start failed:", e.message));
-
-  // A managed xray orphaned by a previous app instance (crash, kill, npm -g
-  // upgrade) survives detached while holding the SOCKS/HTTP ports, and the
-  // start path then sees it as "already running" — auto-start and manual
-  // start both early-return with the proxy wedged. Kill it before any start
-  // attempt so the ports are free (runs regardless of xrayAutoStart; an
-  // orphan is xray running even when the user disabled it).
-  try {
-    const { reapOrphanedManagedXray } = await import("@/lib/xray/process.js");
-    const reaped = await reapOrphanedManagedXray();
-    if (reaped.killed) console.log(`[InitApp] Reaped orphaned managed xray (pid ${reaped.pid}) from a previous instance`);
-  } catch (e) {
-    console.warn(`[InitApp] Managed-xray orphan reap failed (non-fatal): ${e?.message || e}`);
-  }
 
   if (settings.xrayEnabled && settings.xrayAutoStart) {
     autoStartXray();
