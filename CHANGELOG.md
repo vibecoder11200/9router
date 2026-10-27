@@ -1,4 +1,16 @@
-# v0.6.65 (2026-10-27)
+# v0.6.66 (2026-10-27)
+
+Hotfix: the lazy runtime-dep loader was broken in every published webpack build since v0.6.62, and v0.6.65's OpenCode free-tier TLS client turned it into a visible outage (every xray model-filter probe against `oc/*` models failed with `[502] wreq-js unavailable (Cannot read properties of undefined (reading 'resolve'))` — diagnosed live on a production box where the filter went 0-passed over ~7,300 probes while the proxy itself was healthy).
+
+## Fixes
+- **lazyRuntime survives the webpack minifier** (`open-sse/services/lazyRuntime.js`): the published bundle constant-folded step 2's `const runtimeRequire = createRequire(...)` binding into `(void 0)` (verified verbatim in shipped chunk 5895: `(void 0).resolve(a)`), so loading a dep from `<DATA_DIR>/runtime` and the on-demand `npm install` fallback were both unreachable on end-user installs. Every `loadRuntimeDep` consumer was affected — `opencodeTlsClient`/`grokTlsClient` (wreq-js) and `browserPool`/`webLogin`/`obscura`/`gemini-web-ui` (playwright-core) — throwing instead of loading. Dev and CI never caught it because vitest runs the unbundled source. Fix: fetch `createRequire` via a runtime `import("node:module")` so there is no static binding to fold; verified the rebuilt chunk no longer contains the folded form.
+- **capabilities**: dropped a pre-existing duplicate `gpt-6.1-sol` codex entry left behind by the v0.5.104 sync (identical values, harmless — cleanup only).
+
+## Verified
+- Full suite 5095 passed / 49 failed — unchanged vs the known-fails baseline.
+- Production box (mitigated by hand before this release): model-filter probes went from all-fail to 3/3 passed (HTTP 200 + real exit IPs) once wreq-js could load; this release ships that ability for every install.
+
+
 
 Upstream sync: migrates everything from decolua/9router v0.5.109 → **v0.5.111** (upstream range `f39d8f07..3a978a63`, 16 commits) into the fork, preserving all fork features. Root README.md intentionally not taken (fork policy). Registry: upstream's new Runcrate lands as **p151** (upstream p152; fork owns p131-p150).
 
