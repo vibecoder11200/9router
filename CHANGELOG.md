@@ -1,4 +1,17 @@
-# v0.6.67 (2026-10-27)
+# v0.6.68 (2026-10-27)
+
+Third and final hotfix for the lazy runtime-dep loader. v0.6.67 worked in the standalone build but failed **in the CLI build** (the artifact npm installs actually run): its bundler loader treats a `file://` URL as a module specifier — `wreq-js unavailable (Cannot find module 'file:///…dist/wreq-js.js')` — even though the identical URL imports fine in plain node. Every webpack-transformed form of dynamic import has now failed in a different published build; the only reliable shape is an import the bundler cannot see at all.
+
+## Fix
+- **lazyRuntime v3: native dynamic import via `new Function`** (`open-sse/services/lazyRuntime.js`). All three import sites (app-install probe, runtime-dir entry, post-install entry) go through `new Function("u", "return import(u)")` — constructed at runtime, beyond the bundler's static reach, so V8 executes a real native `import()` in every build target. Server-side Node only (no CSP). The v0.6.67 manifest-based entry resolver is kept.
+
+## Verification — both published build shapes, at runtime
+- **Standalone build** (`.next/standalone/custom-server.js`): wreq-js present only in `<DATA_DIR>/runtime`, real `oc/deepseek-v4.1-flash-free` completion → `"PONG"`, `billing_source: "free"`.
+- **CLI build** (`cli npm run build` → `cli/app/custom-server.js` serving `.next-cli-build`, the exact artifact that failed on the server): same setup → `"PONG"`, 2.7s round-trip.
+- Both chunks verified to contain the untouched `return import(u)` constructor.
+- Full suite on the code: 5096 passed / 49 baseline fails (plus the known-under-load `xai-oauth-service` flake that passes 5/5 in isolation).
+
+
 
 Second hotfix for the lazy runtime-dep loader, plus a safety net so an app-side infrastructure failure can never mass-delete proxy configs again. Verified end to end at the **bundle** level this time — the exact gap that let both regressions ship.
 

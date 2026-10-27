@@ -45,6 +45,17 @@ function npmInstall(pkg, version) {
 
 const inflight = new Map();
 
+// Native dynamic import the bundler cannot rewrite. A plain `import(<string>)`
+// in the published bundles is compiled into the bundler's own loader, and that
+// loader is not native import: the standalone build folded a binding to
+// undefined (v0.6.65), the CLI build mangled CJS interop (v0.6.66, "j is not a
+// function") and treated a file:// URL as a module specifier (v0.6.67 on the
+// server, "Cannot find module 'file:///...'" — the same URL imports fine in
+// plain node). Constructing the import inside new Function puts it beyond the
+// bundler's static reach, so V8 executes a real native import. Server-side
+// Node only (new Function is not available under browser CSP).
+const nativeImport = new Function("u", "return import(u)");
+
 /**
  * Resolve a package's entry file from the runtime dir WITHOUT createRequire.
  * In the published webpack bundle every obtainable form of createRequire
@@ -81,13 +92,13 @@ function resolveRuntimeEntry(pkg) {
 async function load(pkg) {
   // 1) Resolvable from the app install (dev machine / traced standalone).
   try {
-    return await import(/* webpackIgnore: true */ pkg);
+    return await nativeImport(pkg);
   } catch (error) {
     if (!isModuleMissing(error)) throw error;
   }
   // 2) Already present in the runtime dir from a previous install.
   try {
-    return await import(pathToFileURL(resolveRuntimeEntry(pkg)).href);
+    return await nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href);
   } catch (error) {
     if (!isModuleMissing(error)) throw error;
   }
@@ -102,7 +113,7 @@ async function load(pkg) {
       `install it manually: cd "${dir}" && npm install ${pkg}@${version}`
     );
   }
-  return import(pathToFileURL(resolveRuntimeEntry(pkg)).href);
+  return nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href);
 }
 
 export function loadRuntimeDep(pkg) {
