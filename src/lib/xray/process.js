@@ -295,12 +295,26 @@ export async function restartXray({ configPath }) {
  * instance, so terminate it (terminateXrayPid waits for the ports to be
  * released) and clear the pid file for a clean spawn.
  *
+ * Kill-safety (X7/N4): only a pid PROVEN to be an xray binary is terminated.
+ * An UNPROVABLE live pid (probe tool failed — e.g. Windows CIM on an elevated
+ * process) is left untouched: killing it risks an unrelated recycled process,
+ * which is worse than the recoverable wedge it leaves behind.
+ *
  * @returns {Promise<{killed: boolean, pid?: number, reason?: string}>}
  */
 export async function reapOrphanedManagedXray() {
-  const pid = getVerifiedManagedPid();
+  const pid = getManagedPid();
   if (!pid) return { killed: false, reason: "not_running" };
   if (pid === lastSpawnedPid) return { killed: false, reason: "ours", pid };
+  const state = probeProcess(pid, "xray");
+  if (state === "gone") {
+    try { clearPid(); } catch { /* best-effort */ }
+    return { killed: false, reason: "not_running" };
+  }
+  if (state !== "ours") {
+    console.warn(`[XrayReap] Managed pid ${pid} is alive but unprovable — NOT killing (pid-reuse guard). Remove ${PID_FILE} manually if the proxy is wedged.`);
+    return { killed: false, reason: "unverified", pid };
+  }
   await terminateXrayPid(pid);
   clearPid();
   return { killed: true, pid };

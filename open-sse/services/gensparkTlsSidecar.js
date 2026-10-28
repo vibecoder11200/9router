@@ -26,12 +26,16 @@
  */
 
 import { spawn, execFile } from "node:child_process";
-import { createRequire } from "node:module";
+import fs from "node:fs";
+import https from "node:https";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const _fs = createRequire(import.meta.url)("node:fs");
+// Static `node:fs` import — this module is compiled into the hot chat chunk,
+// and a module-scope `createRequire(import.meta.url)("node:fs")` is the exact
+// shape the webpack minifier folded to `(void 0)` in published chunk 5895
+// (v0.6.65), which would 500 every /v1 request at chunk load.
 
 // ── Environment / paths ──────────────────────────────────────────────────────
 
@@ -48,7 +52,7 @@ const SIDECAR_CANDIDATES = [
   path.join(process.env.HOME || "/root", "9router", "open-sse", "services", "gensparkTlsSidecar.py"),
 ];
 export const SIDECAR_SCRIPT =
-  SIDECAR_CANDIDATES.find((p) => p && _fs.existsSync(p)) ||
+  SIDECAR_CANDIDATES.find((p) => p && fs.existsSync(p)) ||
   path.join(__dirname, "gensparkTlsSidecar.py");
 
 // Server venv location (matches the deploy layout). PYTHON overrides the executable.
@@ -89,7 +93,6 @@ export const COOKIE_REFRESH_PREFIX = "[genspark-cookie-refresh]";
 export function findSidecarPython() {
   // Prefer the prebuilt sidecar venv (already installed curl_cffi).
   try {
-    const fs = createRequire(import.meta.url)("node:fs");
     if (fs.existsSync(VENV_PY)) {
       return { command: VENV_PY, isVenv: true };
     }
@@ -103,8 +106,6 @@ export function findSidecarPython() {
  * Returns { ok, message, command }. Never throws.
  */
 async function bootstrapSidecarVenv(log) {
-  const fs = createRequire(import.meta.url)("node:fs");
-
   const basePython = DEFAULT_PYTHON;
   const venvDir = SERVER_VENV_DIR;
 
@@ -124,7 +125,6 @@ async function bootstrapSidecarVenv(log) {
     if (ensure.code !== 0) {
       // Download get-pip.py from the PyPA bootstrap page — PyPI is reachable from the server.
       try {
-        const https = createRequire(import.meta.url)("node:https");
         const getPip = await new Promise((resolve, reject) => {
           https.get("https://bootstrap.pypa.io/get-pip.py", (res) => {
             if (res.statusCode !== 200) { reject(new Error(`get-pip.py HTTP ${res.statusCode}`)); res.resume(); return; }

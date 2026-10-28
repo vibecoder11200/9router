@@ -61,6 +61,54 @@ export function getVerifiedManagedPid() {
   return pid;
 }
 
+// Pid of a DS2API spawned by THIS process — the ownership record the boot
+// reaper uses to tell its own child from a previous instance's orphan
+// (mirrors xray process.js lastSpawnedPid).
+let lastSpawnedPid = null;
+
+/** SIGTERM → bounded wait → SIGKILL, then a beat for the port to free. */
+async function terminateDS2APIPid(pid) {
+  if (!pid || !isPidAlive(pid)) return;
+  try { process.kill(pid, "SIGTERM"); } catch { /* already dead */ }
+  for (let i = 0; i < 30 && isPidAlive(pid); i++) {
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  if (isPidAlive(pid)) {
+    try { process.kill(pid, "SIGKILL"); } catch { /* already dead */ }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+
+/**
+ * Kill a managed DS2API left behind by a PREVIOUS app instance (crash /
+ * kill -9 / upgrade). Without this the detached sidecar survives forever and
+ * every later boot ADOPTS it via the alreadyRunning early-return — a stale
+ * binary/env/config that never takes effect again (the structural twin of
+ * the managed-xray orphan bug, audit F4).
+ *
+ * Kill-safety (X7/N4): only a pid PROVEN to be the DS2API binary is
+ * terminated; an unprovable live pid is left untouched with a loud log.
+ *
+ * @returns {Promise<{killed: boolean, pid?: number, reason?: string}>}
+ */
+export async function reapOrphanedManagedDS2API() {
+  const pid = getManagedPid();
+  if (!pid) return { killed: false, reason: "not_running" };
+  if (pid === lastSpawnedPid) return { killed: false, reason: "ours", pid };
+  const state = probeProcess(pid, "ds2api");
+  if (state === "gone") {
+    try { clearPid(); } catch { /* best-effort */ }
+    return { killed: false, reason: "not_running" };
+  }
+  if (state !== "ours") {
+    console.warn(`[DS2APIReap] Managed pid ${pid} is alive but unprovable — NOT killing (pid-reuse guard).`);
+    return { killed: false, reason: "unverified", pid };
+  }
+  await terminateDS2APIPid(pid);
+  clearPid();
+  return { killed: true, pid };
+}
+
 // Strong, auto-generated secrets so 9router can talk to the sidecar's admin API and
 // so callers route through it — the user never handles these. Env override wins.
 function generateCredentials() {
@@ -146,6 +194,7 @@ export async function startDS2API({ port } = {}) {
 
   child.unref();
   writePid(child.pid);
+  lastSpawnedPid = child.pid;
 
   // Wait until the process stays alive briefly or exits fast
   await new Promise((resolve, reject) => {

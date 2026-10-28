@@ -15,8 +15,24 @@ export async function register() {
       const { reapOrphanedManagedXray } = await import("@/lib/xray/process.js");
       const reaped = await reapOrphanedManagedXray();
       if (reaped.killed) console.log(`[InitApp] Reaped orphaned managed xray (pid ${reaped.pid}) from a previous instance`);
+      else if (reaped.reason === "unverified") console.warn(`[InitApp] Managed xray pid ${reaped.pid} alive but unprovable — left untouched (pid-reuse guard)`);
     } catch (e) {
       console.warn(`[InitApp] Managed-xray orphan reap failed (non-fatal): ${e?.message || e}`);
+    }
+
+    // v0.6.71 (audit F2/F3): on headless boots (API/tunnel-only servers where
+    // no page EVER renders the root layout) the layout-driven initializeApp
+    // path never runs — until now that meant NO signal handlers at all and
+    // none of the must-run-every-boot work (temp-probe reap, tunnel resume,
+    // xray/DS2API/headroom auto-start). Register the shutdown handlers
+    // synchronously and kick the boot-critical set fire-and-forget so the
+    // server starts serving immediately while the work runs concurrently.
+    try {
+      const { registerShutdownHandlers, runBootCriticalTasks } = await import("@/shared/services/initializeApp.js");
+      registerShutdownHandlers();
+      runBootCriticalTasks().catch((e) => console.error("[InitApp] boot-critical startup failed:", e?.message || e));
+    } catch (e) {
+      console.warn(`[InitApp] Boot services registration failed (non-fatal): ${e?.message || e}`);
     }
 
     // Resume proxyxoay.org rotation + forwarding servers for active pools.

@@ -149,8 +149,23 @@ function isProcessAlive(pid) {
   try {
     process.kill(pid, 0);
     return true;
-  } catch (err) {
-    return err.code === "EACCES";
+  } catch {
+    return false;
+  }
+}
+
+// PID-reuse guard (audit F8): every MITM spawn path — direct node, the sudo
+// wrapper, the runtime copy under DATA_DIR/runtime/mitm — carries "mitm" in
+// the child's command line. POSIX: verify via /proc before ADOPTING a PID
+// file entry, so a recycled pid can't fake a "running" status that blocks
+// auto-start and later signals an unrelated process. Windows / restricted
+// /proc: keep the previous pid-alive behavior (unprovable ≠ disproven).
+function isMitmProcess(pid) {
+  try {
+    const cmdline = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").replace(/\0/g, " ");
+    return /mitm/i.test(cmdline);
+  } catch {
+    return true;
   }
 }
 
@@ -407,7 +422,7 @@ async function getMitmStatus() {
     try {
       if (fs.existsSync(PID_FILE)) {
         const savedPid = parseInt(fs.readFileSync(PID_FILE, "utf-8").trim(), 10);
-        if (savedPid && isProcessAlive(savedPid)) {
+        if (savedPid && isProcessAlive(savedPid) && isMitmProcess(savedPid)) {
           running = true;
           pid = savedPid;
         } else {

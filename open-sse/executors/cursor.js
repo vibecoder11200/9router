@@ -33,7 +33,10 @@ const isCloudEnv = () => {
 let http2 = null;
 if (!isCloudEnv()) {
   try {
-    http2 = await import("http2");
+    const m = await import("http2");
+    // Namespace guard: a `.default`-only interop namespace (v0.6.66 class)
+    // would otherwise defer the failure to the first http2.connect call.
+    http2 = typeof m?.connect === "function" ? m : (m?.default ?? null);
   } catch {
     // http2 not available
   }

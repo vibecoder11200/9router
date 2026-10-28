@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
 import { DATA_DIR } from "@/lib/dataDir.js";
+import { probeProcess } from "@/lib/processGuard.js";
 import { findHeadroomBinary, findPython310, HEADROOM_COMPRESSION_EXTRAS, EXTRA_MARKERS, getInstalledHeadroomExtras } from "./detect.js";
 
 const HEADROOM_DIR = path.join(DATA_DIR, "headroom");
@@ -42,6 +43,70 @@ export function getManagedPid() {
   return pid && isPidAlive(pid) ? pid : null;
 }
 
+/**
+ * Like getManagedPid, but verifies the live process's command line actually
+ * references the headroom binary before trusting the PID file (X7
+ * kill-safety, audit F5 — this module previously killed a pid-alive-only
+ * pid, so a recycled PID could both wedge start ("already running") and
+ * SIGKILL an unrelated process on stop). A recycled PID is treated as a
+ * stale file: removed, never killed. An UNPROVABLE process (probe failed
+ * while the PID is alive) keeps its file and is reported as running.
+ */
+export function getVerifiedManagedPid() {
+  const pid = getManagedPid();
+  if (!pid) return null;
+  const state = probeProcess(pid, "headroom");
+  if (state === "gone") {
+    try { clearPid(); } catch { /* best-effort */ }
+    return null;
+  }
+  return pid;
+}
+
+// Pid of a proxy spawned by THIS process — the ownership record the boot
+// reaper uses to tell its own child from a previous instance's orphan.
+let lastSpawnedPid = null;
+
+/** SIGTERM → bounded wait → SIGKILL, then a beat for the port to free. */
+async function terminateHeadroomPid(pid) {
+  if (!pid || !isPidAlive(pid)) return;
+  try { process.kill(pid, "SIGTERM"); } catch { /* already dead */ }
+  for (let i = 0; i < 30 && isPidAlive(pid); i++) {
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  if (isPidAlive(pid)) {
+    try { process.kill(pid, "SIGKILL"); } catch { /* already dead */ }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+
+/**
+ * Kill a managed headroom proxy left behind by a PREVIOUS app instance
+ * (crash / kill -9 / upgrade) — without this the detached proxy survived
+ * forever and every later boot ADOPTED it via the alreadyRunning
+ * early-return with stale binary/flags (structural twin of the managed-xray
+ * orphan bug, audit F5). Kill-safety: only a PROVEN headroom pid is killed.
+ *
+ * @returns {Promise<{killed: boolean, pid?: number, reason?: string}>}
+ */
+export async function reapOrphanedManagedHeadroom() {
+  const pid = getManagedPid();
+  if (!pid) return { killed: false, reason: "not_running" };
+  if (pid === lastSpawnedPid) return { killed: false, reason: "ours", pid };
+  const state = probeProcess(pid, "headroom");
+  if (state === "gone") {
+    try { clearPid(); } catch { /* best-effort */ }
+    return { killed: false, reason: "not_running" };
+  }
+  if (state !== "ours") {
+    console.warn(`[HeadroomReap] Managed pid ${pid} is alive but unprovable — NOT killing (pid-reuse guard).`);
+    return { killed: false, reason: "unverified", pid };
+  }
+  await terminateHeadroomPid(pid);
+  clearPid();
+  return { killed: true, pid };
+}
+
 // Build proxy CLI flags for the active compression extras. `[code]` (AST
 // compression) is off by default in headroom → pass --code-aware to turn it on;
 // `[ml]` (Kompress) is on by default → pass --disable-kompress to turn it off.
@@ -61,7 +126,7 @@ export async function startHeadroomProxy({ port = DEFAULT_PORT, codeAware = fals
     throw err;
   }
 
-  const existing = getManagedPid();
+  const existing = getVerifiedManagedPid();
   if (existing) return { pid: existing, alreadyRunning: true };
 
   ensureDir();
@@ -85,6 +150,7 @@ export async function startHeadroomProxy({ port = DEFAULT_PORT, codeAware = fals
 
   child.unref();
   writePid(child.pid);
+  lastSpawnedPid = child.pid;
 
   // Wait until the process either stays alive briefly (success) or exits fast (failure).
   await new Promise((resolve, reject) => {
@@ -110,7 +176,7 @@ export async function startHeadroomProxy({ port = DEFAULT_PORT, codeAware = fals
 }
 
 export function stopHeadroomProxy() {
-  const pid = getManagedPid();
+  const pid = getVerifiedManagedPid();
   if (!pid) return { stopped: false, reason: "not_running" };
   try {
     process.kill(pid, "SIGTERM");
@@ -133,7 +199,7 @@ export function stopHeadroomProxy() {
 // Stop the managed proxy (if any), wait for the pid to die, then start again
 // with the given flags. Used when toggling active extras that require a restart.
 export async function restartHeadroomProxy(opts = {}) {
-  const pid = getManagedPid();
+  const pid = getVerifiedManagedPid();
   if (pid) {
     try { process.kill(pid, "SIGTERM"); } catch { /* already gone */ }
     // Wait up to ~3s for graceful exit, force-kill if still alive.

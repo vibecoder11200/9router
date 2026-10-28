@@ -17,6 +17,8 @@ import { getMitmStatus, startMitm, loadEncryptedPassword, initDbHooks, restoreTo
 import { syncToJson as syncMitmAliasCache } from "@/lib/mitmAliasCache";
 import { getInstallStatus } from "@/lib/ds2api/install";
 import { startManagedDS2API } from "@/lib/ds2api/lifecycle";
+import { reapOrphanedManagedDS2API, stopDS2API } from "@/lib/ds2api/process";
+import { reapOrphanedManagedHeadroom, stopHeadroomProxy } from "@/lib/headroom/process";
 import { DEFAULT_DS2API_URL, isLoopbackDS2APIUrl } from "@/lib/ds2api/detect";
 import { killAllBridges } from "@/lib/mcp/stdioSseBridge";
 import { reapOrphanedTempProbes } from "@/lib/xray/reaper.js";
@@ -43,6 +45,7 @@ const STARTUP_DEFER_MS = 3000;
 // Survive Next.js hot reload
 const g = global.__appSingleton ??= {
   signalHandlersRegistered: false,
+  bootCriticalStarted: false,
   isShuttingDown: false,
   watchdogInterval: null,
   networkMonitorInterval: null,
@@ -58,38 +61,58 @@ const g = global.__appSingleton ??= {
 // Ctrl+C forever — bounded wait, then exit.
 const SHUTDOWN_TIMEOUT_MS = 5000;
 
+/**
+ * Register the app-wide shutdown handler (idempotent). Called from BOTH
+ * instrumentation.register() at server start and initializeApp() — the
+ * layout path can no longer be the only registrant, because headless/API-only
+ * boots never render the root layout and used to end up with NO signal
+ * handler at all (audit F3): `systemctl stop` then killed Node with the
+ * default disposition, skipping the xray stop and DNS cleanup entirely.
+ */
+export function registerShutdownHandlers() {
+  if (g.signalHandlersRegistered) return;
+  g.signalHandlersRegistered = true;
+
+  const shutdown = () => {
+    // Double-SIGINT: the user insists — exit immediately.
+    if (g.isShuttingDown) process.exit(0);
+    g.isShuttingDown = true;
+    const finish = () => process.exit(0);
+    // X3: the old handler called process.exit() BEFORE the dynamic
+    // import() of the xray stopper resolved, leaking a detached xray on
+    // every Ctrl+C. Await the managed stop, bounded by a hard timeout.
+    Promise.race([
+      (async () => {
+        try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
+        try { killAllBridges(); } catch { /* best effort */ }
+        killCloudflared();
+        try {
+          const { stopXrayService } = await import("@/lib/xray/manager.js");
+          await stopXrayService().catch(() => {});
+        } catch { /* manager unavailable — nothing to stop */ }
+        // v0.6.71 (audit F4/F5/F9): the detached sidecars and browser-engine
+        // children had NO shutdown coverage — every exit leaked them until a
+        // later boot reaped them (or never). Best-effort, bounded by the race.
+        try { stopDS2API(); } catch { /* best effort */ }
+        try { stopHeadroomProxy(); } catch { /* best effort */ }
+        try { (await import("open-sse/services/browserPool.js")).shutdownPool("app-shutdown").catch(() => {}); } catch { /* best effort */ }
+        try { (await import("open-sse/services/obscura.js")).killSharedObscuraServer(); } catch { /* best effort */ }
+        try { (await import("open-sse/services/virtualDisplay.js")).stopVirtualDisplay(); } catch { /* best effort */ }
+        try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
+      })(),
+      new Promise((r) => setTimeout(r, SHUTDOWN_TIMEOUT_MS)),
+    ]).then(finish, finish);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+  process.on("exit", () => { try { removeAllDNSEntriesSync(); } catch { /* ignore */ } });
+}
+
 export async function initializeApp() {
   try {
     // Register cleanup + exit-respawn callback immediately so signals and
     // unexpected cloudflared exits are handled even during the deferred window.
-    if (!g.signalHandlersRegistered) {
-      const shutdown = () => {
-        // Double-SIGINT: the user insists — exit immediately.
-        if (g.isShuttingDown) process.exit(0);
-        g.isShuttingDown = true;
-        const finish = () => process.exit(0);
-        // X3: the old handler called process.exit() BEFORE the dynamic
-        // import() of the xray stopper resolved, leaking a detached xray on
-        // every Ctrl+C. Await the managed stop, bounded by a hard timeout.
-        Promise.race([
-          (async () => {
-            try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
-            try { killAllBridges(); } catch { /* best effort */ }
-            killCloudflared();
-            try {
-              const { stopXrayService } = await import("@/lib/xray/manager.js");
-              await stopXrayService().catch(() => {});
-            } catch { /* manager unavailable — nothing to stop */ }
-            try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
-          })(),
-          new Promise((r) => setTimeout(r, SHUTDOWN_TIMEOUT_MS)),
-        ]).then(finish, finish);
-      };
-      process.on("SIGINT", shutdown);
-      process.on("SIGTERM", shutdown);
-      process.on("exit", () => { try { removeAllDNSEntriesSync(); } catch { /* ignore */ } });
-      g.signalHandlersRegistered = true;
-    }
+    registerShutdownHandlers();
 
     setTunnelUnexpectedExitCallback(() => {
       safeRestartTunnel("unexpected-exit").catch(() => {});
@@ -104,23 +127,22 @@ export async function initializeApp() {
   }
 }
 
-async function runHeavyStartup() {
+/**
+ * The must-run-every-boot core (audit F2): stale-state reaping, connection
+ * cleanup and every auto-resume/auto-start. Fired from
+ * instrumentation.register() at SERVER START so headless/API-only boots (no
+ * page ever renders the root layout) get it too — until v0.6.71 the
+ * layout-driven runHeavyStartup was the only caller, which is why a rebooted
+ * headless box never restarted its proxy, tunnels or DS2API.
+ *
+ * Single-flight via the global singleton: the runHeavyStartup copy becomes a
+ * no-op after the first run. Every task here is individually idempotent as
+ * well (already-running early-returns, once-per-process flags).
+ */
+export async function runBootCriticalTasks() {
+  if (g.bootCriticalStarted) return;
+  g.bootCriticalStarted = true;
   const settings = await getSettings();
-
-  // FIRST, before anything that can hang (provider cleanup, mitm, tunnel):
-  // a managed xray orphaned by a previous app instance (crash, kill, npm -g
-  // upgrade) survives detached while holding the SOCKS/HTTP ports, and the
-  // start path then sees it as "already running" — auto-start and manual
-  // start both early-return with the proxy wedged. Kill it before any start
-  // attempt so the ports are free (runs regardless of xrayAutoStart; an
-  // orphan is xray running even when the user disabled it).
-  try {
-    const { reapOrphanedManagedXray } = await import("@/lib/xray/process.js");
-    const reaped = await reapOrphanedManagedXray();
-    if (reaped.killed) console.log(`[InitApp] Reaped orphaned managed xray (pid ${reaped.pid}) from a previous instance`);
-  } catch (e) {
-    console.warn(`[InitApp] Managed-xray orphan reap failed (non-fatal): ${e?.message || e}`);
-  }
 
   await cleanupProviderConnections();
 
@@ -163,10 +185,44 @@ async function runHeavyStartup() {
   // and only run quota auto-ping when a connection actually enables it.
   configureTunnelMonitoring(settings);
 
+  // Structural twins of the managed-xray orphan bug (audit F4/F5): reap
+  // sidecars left by a PREVIOUS instance BEFORE the auto-starts below can
+  // "adopt" them forever (stale binary/env/config never takes effect again).
+  try {
+    const reapedDs2api = await reapOrphanedManagedDS2API();
+    if (reapedDs2api.killed) console.log(`[InitApp] Reaped orphaned DS2API (pid ${reapedDs2api.pid}) from a previous instance`);
+  } catch (e) {
+    console.warn(`[InitApp] DS2API orphan reap failed (non-fatal): ${e?.message || e}`);
+  }
+
   // Fork: auto-start the managed DS2API sidecar (preserved from fork v0.5.32).
   // Unconditional like the original — DS2API is opt-in via its own install/start
   // state, not via a global settings flag.
   autoStartDs2api();
+
+  try {
+    const reapedHeadroom = await reapOrphanedManagedHeadroom();
+    if (reapedHeadroom.killed) console.log(`[InitApp] Reaped orphaned headroom proxy (pid ${reapedHeadroom.pid}) from a previous instance`);
+  } catch (e) {
+    console.warn(`[InitApp] Headroom orphan reap failed (non-fatal): ${e?.message || e}`);
+  }
+  autoStartHeadroom(settings);
+
+  // v2go/xray proxy: auto-start the local xray client if the user enabled it.
+  // (The managed-xray ORPHAN reap already ran in instrumentation.register()
+  // before anything here, so the ports are free for this start.)
+  if (settings.xrayEnabled && settings.xrayAutoStart) {
+    autoStartXray();
+  }
+}
+
+async function runHeavyStartup() {
+  // The must-run boot core already ran from instrumentation at server start
+  // (audit F2); this layout-driven call is a defensive no-op afterwards but
+  // still covers shapes where instrumentation somehow didn't register.
+  await runBootCriticalTasks();
+
+  const settings = await getSettings();
 
   if (hasQuotaAutoPingEnabled(settings)) {
     import("@/shared/services/quotaAutoPing")
@@ -195,15 +251,10 @@ async function runHeavyStartup() {
     .catch((e) => console.log("[BackgroundTokenRefresh] scheduler start failed:", e.message));
 
   // v2go/xray proxy: always start the subscription sync scheduler (keeps the
-  // config catalog fresh even when the proxy itself is off), and auto-start
-  // the local xray client if the user enabled it.
+  // config catalog fresh even when the proxy itself is off).
   import("@/lib/xray/sync.js")
     .then(({ startSyncScheduler }) => startSyncScheduler())
     .catch((e) => console.log("[XraySync] scheduler start failed:", e.message));
-
-  if (settings.xrayEnabled && settings.xrayAutoStart) {
-    autoStartXray();
-  }
 }
 
 // Cheap local check: keeps the scheduler module (and its provider graph) unloaded
@@ -275,6 +326,26 @@ async function autoStartDs2api() {
     console.log(`[InitApp] DS2API auto-started (pid ${result.pid}, injection: ${inj})`);
   } catch (err) {
     console.log("[InitApp] DS2API auto-start failed:", err.message);
+  }
+}
+
+// Auto-start the managed headroom compression proxy on boot when the user
+// enabled it (Token Saver). Mirrors autoStartDs2api: only acts when the
+// binary is installed; never throws.
+async function autoStartHeadroom(settings) {
+  try {
+    if (!settings?.headroomEnabled) return;
+    const { findHeadroomBinary } = await import("@/lib/headroom/detect.js");
+    if (!findHeadroomBinary()) {
+      console.log("[InitApp] Headroom enabled but binary not installed, skipping auto-start");
+      return;
+    }
+    const { startHeadroomProxy } = await import("@/lib/headroom/process.js");
+    console.log("[InitApp] Headroom was enabled, auto-starting...");
+    const result = await startHeadroomProxy();
+    console.log(`[InitApp] Headroom auto-started (pid ${result.pid}${result.alreadyRunning ? ", already running" : ""})`);
+  } catch (err) {
+    console.log("[InitApp] Headroom auto-start failed:", err.message);
   }
 }
 

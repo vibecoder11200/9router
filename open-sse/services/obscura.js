@@ -13,6 +13,8 @@
 // module is also disabled entirely when NINEROUTER_BROWSER_POOL=off.
 
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import { loadRuntimeDep } from "./lazyRuntime.js";
 import { createServer } from "node:net";
 
@@ -42,14 +44,15 @@ function findFreePort() {
 async function obscuraBinaryPath() {
   const bin = process.env.OBSCURA_BIN;
   if (bin) return bin;
-  const { resolve } = await import("node:path");
-  const { existsSync, accessSync, constants } = await import("node:fs");
+  // Static builtin imports: destructured `await import("node:path")` lost the
+  // named exports under the published chunks' CJS interop (v0.6.66 class),
+  // leaving `resolve` undefined and silently killing the obscura engine.
   const dirs = (process.env.PATH || "").split(":");
   for (const dir of dirs) {
-    const candidate = resolve(dir, "obscura");
+    const candidate = path.resolve(dir, "obscura");
     try {
-      accessSync(candidate, constants.X_OK);
-      if (existsSync(candidate)) return candidate;
+      fs.accessSync(candidate, fs.constants.X_OK);
+      if (fs.existsSync(candidate)) return candidate;
     } catch {
       /* not executable here — keep looking */
     }

@@ -302,6 +302,16 @@ async function terminateAllDrainingInstances() {
   for (const pid of [...drainingInstances.keys()]) {
     await terminateDrainingInstance(pid);
   }
+  // File-registered retirees that were never scheduled in memory: either the
+  // crash-safety registration from a switch that died mid-flight (F1) or a
+  // leftover from a previous app instance. A full stop must reap both, or a
+  // SIGTERM during a switch window still leaks the old instance.
+  for (const entry of getDrainingPids()) {
+    const pid = Number(entry?.pid);
+    if (!Number.isFinite(pid) || drainingInstances.has(pid)) continue;
+    try { await terminateXrayPid(pid); } catch { /* already dead */ }
+    removeDrainingPid(pid);
+  }
 }
 
 /**
@@ -601,6 +611,16 @@ export async function doSwitchConfig(configId, opts = {}) {
   try {
     const configPath = writeConfig(v.outbound, { socksPort: newSocksPort, httpPort: newHttpPort });
     handle = await spawnNextManagedXray({ configPath });
+    // Crash-safety (audit F1): once the candidate takes over the PID file
+    // below, the OLD instance is tracked by nothing until promotion finishes
+    // several seconds later — a crash / kill -9 / SIGTERM inside that window
+    // orphaned it holding the configured 10808/10809 pair with a cmdline the
+    // temp-probe reaper does not match, wedging the next start on a port
+    // conflict. Register it in the draining FILE up front: the boot reaper
+    // kills file-registered retirees, promotion's scheduleDrain() is
+    // idempotent over the same entry, and every failure path below removes
+    // it again because prev stays the active instance.
+    if (prevPid && prevPid !== handle.pid) addDrainingPid(prevPid);
     // The new instance owns the PID file from here; restored below on failure.
     setManagedPid(handle.pid);
 
@@ -669,6 +689,10 @@ export async function doSwitchConfig(configId, opts = {}) {
     allocatedTempSocksPorts.delete(newSocksPort);
     allocatedTempSocksPorts.delete(newHttpPort);
     setManagedPid(prevPid);
+    // prev is the ACTIVE instance again — undo the crash-safety drain
+    // registration from the top of the try, or the boot reaper would kill
+    // the live proxy after a rollback + restart.
+    if (prevPid) removeDrainingPid(prevPid);
     if (prevPid) {
       setStatus(prevSnapshot.status === "stopped" ? "stopped" : "running", {
         pid: prevPid,

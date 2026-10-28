@@ -91,4 +91,30 @@ describe("reapOrphanedManagedXray (boot-time orphan reaper)", () => {
     expect(result.killed).toBe(false);
     expect(result.reason).toBe("not_running");
   });
+
+  it("does NOT kill an UNPROVABLE pid — kill-safety beats un-wedging (F7)", async () => {
+    fakeAliveKill();
+    const { probeProcess } = await import("../../src/lib/processGuard.js");
+    probeProcess.mockReturnValueOnce("unknown"); // probe tool failed, pid alive
+    // A pid DIFFERENT from FAKE_PID: the "spares our own pid" test above ran
+    // setManagedPid(FAKE_PID), which pins lastSpawnedPid for the whole module.
+    writeFakePidFile(4194309);
+    const result = await processModule.reapOrphanedManagedXray();
+    expect(result.killed).toBe(false);
+    expect(result.reason).toBe("unverified");
+    // Untouched: no kill was delivered (spy swallows signals, so assert the
+    // reason + the pid file surviving instead).
+    expect(fs.existsSync(pidPath())).toBe(true);
+  });
+
+  it("clears the pid file when the probe proves the process is gone (recycled pid)", async () => {
+    fakeAliveKill();
+    const { probeProcess } = await import("../../src/lib/processGuard.js");
+    probeProcess.mockReturnValueOnce("gone");
+    writeFakePidFile(4194309);
+    const result = await processModule.reapOrphanedManagedXray();
+    expect(result.killed).toBe(false);
+    expect(result.reason).toBe("not_running");
+    expect(fs.existsSync(pidPath())).toBe(false);
+  });
 });

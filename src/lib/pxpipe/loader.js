@@ -1,6 +1,12 @@
 import { pathToFileURL } from "url";
 import { getInstallInfo, libraryEntry } from "./install.js";
 
+// Bundle-proof dynamic import. This module runs inside the webpack server
+// chunks, where `import(<file URL>)` is exactly the form the CLI-build
+// bundler mangled into "Cannot find module 'file:///...'" (v0.6.67). Route
+// through the Function-form escape hatch proven by lazyRuntime.js.
+const nativeImport = new Function("u", "return import(u);");
+
 // Module cache: pxpipe is loaded once per process ("started") and dropped on
 // "stop". In library mode start/stop govern the in-process module, not a daemon.
 let cached = null; // { module, version, loadedAt }
@@ -26,7 +32,7 @@ async function doLoad() {
   }
   // Cache-bust per version so Repair/upgrade takes effect without a server restart.
   const url = `${pathToFileURL(libraryEntry()).href}?v=${encodeURIComponent(info.version || "0")}`;
-  const mod = await import(/* webpackIgnore: true */ url);
+  const mod = await nativeImport(url);
   if (typeof mod.transformAnthropicMessages !== "function") {
     throw new Error("installed pxpipe package does not export transformAnthropicMessages");
   }

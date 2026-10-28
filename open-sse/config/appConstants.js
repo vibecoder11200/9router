@@ -1,4 +1,6 @@
 import { platform, arch, hostname } from "os";
+import fs from "fs";
+import path from "path";
 import { PROVIDERS, PROVIDER_OAUTH } from "./providers.js";
 import { ANTIGRAVITY_IDE_USER_AGENT } from "../providers/shared.js";
 import { createRequire } from "module";
@@ -215,10 +217,21 @@ function getAppPackageVersion() {
   if (_appVersion) return _appVersion;
   try {
     const require = createRequire(import.meta.url);
-    _appVersion = require("../../package.json").version || "0.0.0";
+    _appVersion = require("../../package.json").version || null;
   } catch {
-    _appVersion = process.env.npm_package_version || "0.0.0";
+    /* bundled: import.meta.url is frozen — fall through */
   }
+  if (!_appVersion) {
+    try {
+      // Both published shapes run with cwd at the app root that owns
+      // package.json (standalone root / cli build root) — read it directly
+      // so the Kimi version header stops reporting "0.0.0" in production.
+      _appVersion = JSON.parse(fs.readFileSync(path.join(process.cwd(), "package.json"), "utf8")).version || null;
+    } catch {
+      /* cwd without a package.json */
+    }
+  }
+  _appVersion = _appVersion || process.env.npm_package_version || "0.0.0";
   return _appVersion;
 }
 

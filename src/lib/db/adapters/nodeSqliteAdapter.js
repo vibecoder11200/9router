@@ -15,8 +15,13 @@ export async function createNodeSqliteAdapter(filePath) {
     return origEmit.call(process, name, data, ...rest);
   };
 
-  // Dynamic import — fails on Node < 22.5 → driver.js falls back to sql.js
-  const sqlite = await import("node:sqlite");
+  // Dynamic import — fails on Node < 22.5 → driver.js falls back to sql.js.
+  // Namespace guard: published chunks have exposed `.default`-only namespaces
+  // for node:* builtins before (the v0.6.66 bug class) — without this the
+  // adapter would throw and silently degrade every install to the pure-JS
+  // sql.js tier with no error anywhere.
+  const sqliteMod = await import("node:sqlite");
+  const sqlite = sqliteMod.DatabaseSync ? sqliteMod : sqliteMod.default;
   const Database = sqlite.DatabaseSync;
   const db = new Database(filePath);
 
