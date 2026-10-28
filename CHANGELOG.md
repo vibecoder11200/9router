@@ -1,3 +1,17 @@
+# v0.6.72 (2026-10-28)
+
+Two follow-ups to v0.6.71, both closing commitments made in [#14](https://github.com/vibecoder11200/9router/issues/14) and in the v0.6.71 post-migration audit.
+
+## Fixes
+- **`opencode-zen` session prefix minted from `Date.now()` (issue #14 sibling path):** the zen executor still derived its session time field deterministically from the SHA digest — stable per conversation, but decoding to a random point in the 2^36 ms mask window, so non-opencode clients on the zen provider hit the same 403 `FreeTierError` the issue diagnosed. It now mints `ses_${descendingTimeHex(Date.now(), 1)}…` like the main executor and keeps per-conversation stability via a TTL-evicted memo (`translatedZenSessions`, mirroring `translatedOpencodeSessions`), so retries reuse one upstream session instead of minting new ones (the 429 `FreeUsageLimitError` trigger). The semantic time-window test now covers BOTH translators — the old zen path would fail it.
+- **SIGTERM-race in the shutdown handler (found live on a headless box):** the v0.6.71 handler ran all cleanup inside an async IIFE whose FIRST step was `await import("…/manager.js")`. Next.js registers its own SIGTERM handler whose graceful-exit path calls `process.exit()` — on an idle headless server it wins the race and the async cleanup never runs (observed: SIGTERM to next-server exited the app with xray still alive and the pid file intact). The critical stops now run SYNCHRONOUSLY in the handler before any await — `stopXray()` (signal + pid-file clear), DNS-entry removal, MCP bridges, cloudflared, DS2API, headroom — because a synchronously-sent signal cannot be un-sent by a later `process.exit()`. The draining sweep + browser-engine cleanup stay async best-effort, bounded by the 5s hard timeout; the boot reaper remains the last line of defense.
+
+## Tests
+- `opencode-session`: time-window assertion extended to both translators; zen memo stability + per-conversation isolation added.
+- `boot-critical-startup`: new regression test invoking the actual SIGTERM handler and asserting `stopXray` fires synchronously (zero awaits in between), the async tail settles, and exit happens exactly once.
+
+
+
 # v0.6.71 (2026-10-28)
 
 Root-cause fixes for every finding of the full post-migration audit (3 upstream migrations v0.6.62→v0.6.70 + the production incidents behind v0.6.65–v0.6.70). Full audit report: `plans/reports/Audit-261028-post-migration-full-scan.md`. One class per family of shipped bug:

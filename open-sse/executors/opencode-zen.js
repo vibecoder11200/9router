@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { DefaultExecutor } from "./default.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 import { isMuseSparkModel, isOpencodeFreeTierModel } from "../providers/models/helpers.js";
+import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
 import {
   normalizeResponsesInput,
   clampResponsesCallId,
@@ -46,7 +47,6 @@ function unstableRandom() {
 // Upstream decodes it and rejects a non-small counter with 403 FreeTierError
 // (live probes: counter 0–16 pass, >=100 fail), so the counter must stay real.
 const SESSION_PREFIX_MASK = (1n << 48n) - 1n;
-const SESSION_TIME_MASK = (1n << 36n) - 1n;
 
 function descendingTimeHex(time, counterValue) {
   return (~(BigInt(time) * 0x1000n + BigInt(counterValue)) & SESSION_PREFIX_MASK)
@@ -69,22 +69,44 @@ export function generateRequestId(timestamp = Date.now()) {
   return `msg_${time}${unstableRandom()}`;
 }
 
+// Mint with the current time and memoize per conversation, mirroring the
+// sibling opencode executor (live probes 2026-10-26 there: Date.now()-minted
+// prefixes passed the free-tier gate 10/10, digest-derived ones 1/10). TTL
+// eviction like the other session stores.
+const translatedZenSessions = new Map();
+const MAX_TRANSLATED_SESSIONS = 5000;
+const translatedZenSessionCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of translatedZenSessions) {
+    if (now - entry.lastUsed > MEMORY_CONFIG.sessionTtlMs) {
+      translatedZenSessions.delete(key);
+    }
+  }
+}, MEMORY_CONFIG.sessionCleanupIntervalMs);
+if (translatedZenSessionCleanup.unref) translatedZenSessionCleanup.unref();
+
 export function translateSessionId(sessionId, clientTool = "") {
   if (typeof sessionId === "string" && OPENCODE_SESSION_RE.test(sessionId.trim())) {
     return sessionId.trim();
   }
-  const digest = crypto
-    .createHash("sha256")
-    .update(`opencode\0${clientTool || "generic"}\0${sessionId || ""}`)
-    .digest();
-  // Deterministic time field from the digest, counter pinned to 1 (what the CLI sends).
-  const time = BigInt(`0x${digest.subarray(0, 5).toString("hex")}`) & SESSION_TIME_MASK;
-  const timeHex = descendingTimeHex(time, 1);
-  let randomPart = "";
-  for (let i = 6; i < 20; i++) {
-    randomPart += BASE62_CHARS[digest[i] % 62];
+  // The free-tier gate decodes the 12-hex prefix as an inverted millisecond
+  // timestamp and refuses sessions minted far from now. This zen variant used
+  // to derive the time field deterministically from the digest — stable per
+  // conversation, but decoding to a random point in the 2^36 ms mask window,
+  // so non-opencode clients got 403 FreeTierError (issue #14). Mint with the
+  // current time and keep the mapping stable via the memo: valid AND stable.
+  const key = `${clientTool || "generic"}\0${sessionId || ""}`;
+  const existing = translatedZenSessions.get(key);
+  if (existing) {
+    existing.lastUsed = Date.now();
+    return existing.sessionId;
   }
-  return `ses_${timeHex}${randomPart}`;
+  const translated = `ses_${descendingTimeHex(Date.now(), 1)}${unstableRandom()}`;
+  if (translatedZenSessions.size >= MAX_TRANSLATED_SESSIONS) {
+    translatedZenSessions.delete(translatedZenSessions.keys().next().value);
+  }
+  translatedZenSessions.set(key, { sessionId: translated, lastUsed: Date.now() });
+  return translated;
 }
 
 function toolNameOf(tool) {

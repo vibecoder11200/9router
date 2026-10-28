@@ -21,6 +21,7 @@ import { reapOrphanedManagedDS2API, stopDS2API } from "@/lib/ds2api/process";
 import { reapOrphanedManagedHeadroom, stopHeadroomProxy } from "@/lib/headroom/process";
 import { DEFAULT_DS2API_URL, isLoopbackDS2APIUrl } from "@/lib/ds2api/detect";
 import { killAllBridges } from "@/lib/mcp/stdioSseBridge";
+import { stopXray } from "@/lib/xray/process.js";
 import { reapOrphanedTempProbes } from "@/lib/xray/reaper.js";
 
 // Inject correct paths and DB hooks into manager.js (CJS) from ESM context
@@ -77,31 +78,43 @@ export function registerShutdownHandlers() {
     // Double-SIGINT: the user insists — exit immediately.
     if (g.isShuttingDown) process.exit(0);
     g.isShuttingDown = true;
-    const finish = () => process.exit(0);
-    // X3: the old handler called process.exit() BEFORE the dynamic
-    // import() of the xray stopper resolved, leaking a detached xray on
-    // every Ctrl+C. Await the managed stop, bounded by a hard timeout.
-    Promise.race([
-      (async () => {
-        try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
-        try { killAllBridges(); } catch { /* best effort */ }
-        killCloudflared();
-        try {
-          const { stopXrayService } = await import("@/lib/xray/manager.js");
-          await stopXrayService().catch(() => {});
-        } catch { /* manager unavailable — nothing to stop */ }
-        // v0.6.71 (audit F4/F5/F9): the detached sidecars and browser-engine
-        // children had NO shutdown coverage — every exit leaked them until a
-        // later boot reaped them (or never). Best-effort, bounded by the race.
-        try { stopDS2API(); } catch { /* best effort */ }
-        try { stopHeadroomProxy(); } catch { /* best effort */ }
-        try { (await import("open-sse/services/browserPool.js")).shutdownPool("app-shutdown").catch(() => {}); } catch { /* best effort */ }
-        try { (await import("open-sse/services/obscura.js")).killSharedObscuraServer(); } catch { /* best effort */ }
-        try { (await import("open-sse/services/virtualDisplay.js")).stopVirtualDisplay(); } catch { /* best effort */ }
-        try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
-      })(),
-      new Promise((r) => setTimeout(r, SHUTDOWN_TIMEOUT_MS)),
-    ]).then(finish, finish);
+    // CRITICAL stops run SYNCHRONOUSLY, before any await (SIGTERM-race fix,
+    // v0.6.72): Next.js registers its own SIGTERM handler whose graceful-exit
+    // path can call process.exit() while our async cleanup is still awaiting
+    // its first dynamic import — on a headless box the old order never
+    // reached stopXrayService at all (xray survived SIGTERM with the pid file
+    // intact). Signals sent synchronously cannot be un-sent by a later
+    // process.exit; everything past the first await is best-effort.
+    try { stopXray(); } catch { /* best effort */ }
+    try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
+    try { killAllBridges(); } catch { /* best effort */ }
+    killCloudflared();
+    try { stopDS2API(); } catch { /* best effort */ }
+    try { stopHeadroomProxy(); } catch { /* best effort */ }
+    // Best-effort remainder, bounded by the hard timeout (X3): the draining
+    // sweep (stopXray above already handled the active pid + its pid file),
+    // the browser-engine children, and a final DNS pass.
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      process.exit(0);
+    };
+    const timeout = setTimeout(finish, SHUTDOWN_TIMEOUT_MS);
+    timeout.unref?.();
+    (async () => {
+      try {
+        const { stopXrayService } = await import("@/lib/xray/manager.js");
+        await stopXrayService().catch(() => {});
+      } catch { /* manager unavailable — nothing more to stop */ }
+      // v0.6.71 (audit F9): the browser-engine children have no other
+      // shutdown coverage — best-effort, bounded by the race.
+      try { (await import("open-sse/services/browserPool.js")).shutdownPool("app-shutdown").catch(() => {}); } catch { /* best effort */ }
+      try { (await import("open-sse/services/obscura.js")).killSharedObscuraServer(); } catch { /* best effort */ }
+      try { (await import("open-sse/services/virtualDisplay.js")).stopVirtualDisplay(); } catch { /* best effort */ }
+      try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
+    })().then(finish, finish);
   };
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);

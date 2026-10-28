@@ -89,18 +89,23 @@ describe("OpenCode Free Session ID Format", () => {
 
   // Upstream also decodes the prefix timestamp and refuses a session minted in
   // the future or before the free-tier window (live probes 2026-10-26: a
-  // Date.now() session passed 10/10, digest-derived ones 1/10).
+  // Date.now() session passed 10/10, digest-derived ones 1/10). Both the main
+  // and the zen translator must mint at the current time — zen derived its
+  // time field from the digest until v0.6.72 (issue #14), which decoded to a
+  // random point in the 2^36 ms mask window.
   it("mints translated sessions at the current time instead of from a digest", () => {
     // The 48-bit prefix carries 36 bits of milliseconds plus a 12-bit counter,
     // so the decoded time is the mint time modulo 2^36.
     const TIME_MASK = (1n << 36n) - 1n;
     const timeOf = (id) => Number((~BigInt(`0x${id.slice(4, 16)}`) & ((1n << 48n) - 1n)) >> 12n);
-    const before = Date.now();
-    const translated = translateSessionId(`fresh-${before}`, "claude");
-    const after = Date.now();
+    for (const translate of [translateSessionId, translateZenSessionId]) {
+      const before = Date.now();
+      const translated = translate(`fresh-${before}-${translate.name}`, "claude");
+      const after = Date.now();
 
-    expect(timeOf(translated)).toBeGreaterThanOrEqual(Number(BigInt(before) & TIME_MASK));
-    expect(timeOf(translated)).toBeLessThanOrEqual(Number(BigInt(after) & TIME_MASK));
+      expect(timeOf(translated)).toBeGreaterThanOrEqual(Number(BigInt(before) & TIME_MASK));
+      expect(timeOf(translated)).toBeLessThanOrEqual(Number(BigInt(after) & TIME_MASK));
+    }
   });
 
   it("reuses the memoized session for one conversation", () => {
@@ -109,6 +114,10 @@ describe("OpenCode Free Session ID Format", () => {
     expect(translateSessionId(raw, "claude")).toBe(first);
     // A different conversation still gets its own session.
     expect(translateSessionId(`${raw}-other`, "claude")).not.toBe(first);
+    // The zen translator memoizes independently per conversation too.
+    const zenFirst = translateZenSessionId("zen:conversation-a", "claude");
+    expect(translateZenSessionId("zen:conversation-a", "claude")).toBe(zenFirst);
+    expect(translateZenSessionId("zen:conversation-b", "claude")).not.toBe(zenFirst);
   });
 
   it("preserves already-valid OpenCode sessions without re-hashing", () => {

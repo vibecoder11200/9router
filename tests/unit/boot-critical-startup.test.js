@@ -59,9 +59,16 @@ vi.mock("@/lib/ds2api/detect", () => ({
   isLoopbackDS2APIUrl: vi.fn(() => true),
 }));
 vi.mock("@/lib/mcp/stdioSseBridge", () => ({ killAllBridges: vi.fn() }));
+vi.mock("@/lib/xray/process.js", () => ({ stopXray: vi.fn(() => ({ stopped: false, reason: "not_running" })) }));
+vi.mock("open-sse/services/browserPool.js", () => ({ shutdownPool: vi.fn(async () => {}) }));
+vi.mock("open-sse/services/obscura.js", () => ({ killSharedObscuraServer: vi.fn() }));
+vi.mock("open-sse/services/virtualDisplay.js", () => ({ stopVirtualDisplay: vi.fn() }));
 vi.mock("@/lib/xray/reaper.js", () => ({ reapOrphanedTempProbes: vi.fn(async () => ({ unlinked: 0, killed: 0, drainedKilled: 0 })) }));
 vi.mock("@/lib/xray/installer.js", () => ({ isXrayInstalled: vi.fn(() => true) }));
-vi.mock("@/lib/xray/manager.js", () => ({ startXrayService: vi.fn(async () => ({ pid: 424243, configId: "cfg" })) }));
+vi.mock("@/lib/xray/manager.js", () => ({
+  startXrayService: vi.fn(async () => ({ pid: 424243, configId: "cfg" })),
+  stopXrayService: vi.fn(async () => ({ stopped: false, reason: "not_running" })),
+}));
 
 beforeEach(() => {
   // The module keeps its singleton on global.__appSingleton — reset it (and
@@ -136,5 +143,35 @@ describe("registerShutdownHandlers (F3: signal handlers must exist on headless b
     const signals = onSpy.mock.calls.map(([event]) => event).sort();
     expect(signals).toEqual(["SIGINT", "SIGTERM", "exit"]);
     onSpy.mockRestore();
+  });
+
+  // v0.6.72 SIGTERM-race regression: Next's own SIGTERM handler can call
+  // process.exit() while our async cleanup is still awaiting its first
+  // dynamic import. The xray stop must therefore run SYNCHRONOUSLY inside
+  // the handler — before any await — or it never runs on a headless box.
+  it("stops xray synchronously in the SIGTERM handler, before the async tail", async () => {
+    const onSpy = vi.spyOn(process, "on").mockImplementation(() => process);
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined);
+
+    const mod = await importModule();
+    mod.registerShutdownHandlers();
+    const handler = onSpy.mock.calls.find(([event]) => event === "SIGTERM")[1];
+    onSpy.mockRestore();
+
+    handler();
+
+    // Synchronous section: no awaits have run yet, and the stop already fired.
+    const xrayProcess = await import("@/lib/xray/process.js");
+    expect(xrayProcess.stopXray).toHaveBeenCalledTimes(1);
+    const tunnelMocks = await import("@/lib/tunnel");
+    expect(tunnelMocks.killCloudflared).toHaveBeenCalledTimes(1);
+
+    // Async best-effort tail settles afterwards (bounded), then exits once.
+    await new Promise((r) => setTimeout(r, 30));
+    const manager = await import("@/lib/xray/manager.js");
+    expect(manager.stopXrayService).toHaveBeenCalledTimes(1);
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
   });
 });
