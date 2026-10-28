@@ -519,7 +519,11 @@ function parseHysteria2(link) {
   const vcn = first(params, "vcn");
   if (vcn) tlsSettings.verifyPeerCertByName = vcn;
 
-  const hySettings = { auth };
+  // Xray-core gates the "hysteria" network on version == 2 (the hy2 protocol);
+  // without the field the binary rejects the whole config at load time
+  // ("infra/conf: Failed to build Hysteria config. > version != 2"), so every
+  // spawn-mode probe of the node fails before any byte is tunnelled.
+  const hySettings = { auth, version: 2 };
   const obfs = first(params, "obfs");
   const obfsPass = first(params, "obfs-password");
   if (obfs && obfsPass) {

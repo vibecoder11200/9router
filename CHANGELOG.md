@@ -1,3 +1,17 @@
+# v0.6.73 (2026-10-28)
+
+The 2026-10-28 model-filter mass-prune incident (351 configs hard-deleted in one run, 0 passes, everything "failing fast") — root-caused to a binary × config-shape mismatch, not to v0.6.72 and not to any cache.
+
+## Fixes
+- **Hysteria2 shim now carries `version: 2`:** Xray-core gates the `"hysteria"` network on `version == 2` at config-load time. Binary 26.3.27 rejects the shim's `hysteriaSettings` without the field (`infra/conf: version != 2`), so every temp test xray for a hy2 node died before opening its SOCKS port — every hy2 probe failed in ~1s with "SOCKS port did not open for temp model test" (74 of 874 active configs on the incident box; 100% of one subscription's hy2 pool). Verified empirically against the production binary: the same config without `version` never opens the SOCKS port; with `version: 2` it starts immediately.
+- **Spawn-side filter failures never prune:** "SOCKS port did not open", binary missing, unrenderable link, no provider credentials — all of these mean OUR test instance never ran, so no verdict about the node was produced. They are now flagged `spawnFailed`: the prune policy refuses to delete (`reason: "spawn_failed"`), the fail-cache stays unpolluted, and unlike `infraError` they do NOT abort the run (one unspawnable config is not systemic). This was the exact hole the incident fell through: connection-level failures were prunable by design, and from the policy's seat a spawn failure looked like one.
+- **Mass-prune canary:** a prune pass that has tested ≥10 configs, passed none and stacked ≥10 consecutive prunable failures suspends pruning for the rest of the run (`pruneSuspended` in the run summary; remaining configs are still probed and recorded, just never deleted). Upstream-rejected (429/403) and spawn-side failures don't count towards the streak — they signal provider conditions, not dead nodes. Second mass-prune incident to date (108 earlier, 351 now); this caps the blast radius at 9.
+
+## Tests
+- `xray-parser`: new Hysteria2 block — `hysteriaSettings.version === 2` load gate, obfs passthrough alongside version, missing-auth rejection.
+- `xray-filter-prune-policy`: spawn-failure refusal + a full canary suite (quiet on interleaved passes, trip-and-latch at the threshold, 429/spawn failures never trip, streak reset on a pass).
+- Suite: 4624 passed / 51 failed — identical to the pre-change baseline (49 known + 2 under-load xai flakes); all 31 xray test files green.
+
 # v0.6.72 (2026-10-28)
 
 Two follow-ups to v0.6.71, both closing commitments made in [#14](https://github.com/vibecoder11200/9router/issues/14) and in the v0.6.71 post-migration audit.

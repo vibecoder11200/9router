@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // upstream condition is transient (shared free-tier quota resets). Only
 // connection-level failures (no response at all) prove the config dead.
 
-const { shouldPruneFilterResult } = await import("../../src/lib/xray/filterPrunePolicy.js");
+const { createPruneCanary, shouldPruneFilterResult } = await import("../../src/lib/xray/filterPrunePolicy.js");
 
 const base = { configId: "cfg-1" };
 
@@ -72,5 +72,63 @@ describe("xray model-filter prune policy", () => {
     );
     expect(decision.prune).toBe(false);
     expect(decision.reason).toBe("infra_error");
+  });
+
+  // 2026-10-28 incident shape: Xray 26.3.27 rejected the hysteria2 shim
+  // config at load time ("version != 2"), so every temp test xray died
+  // before opening its SOCKS port and 351 healthy configs were hard-deleted
+  // as "connection-level dead". A spawn-side failure is OUR failure to run
+  // the test, not a verdict about the node.
+  it("refuses to prune when our test instance never spawned (SOCKS port did not open)", () => {
+    const decision = shouldPruneFilterResult(
+      { ok: false, spawnFailed: true, status: null, error: "SOCKS port did not open for temp model test" },
+      { prune: true, ...base },
+    );
+    expect(decision.prune).toBe(false);
+    expect(decision.reason).toBe("spawn_failed");
+  });
+});
+
+describe("xray model-filter prune canary", () => {
+  const dead = { ok: false, status: 0, error: "connect ETIMEDOUT" };
+  const quota429 = { ok: false, tunnelOk: true, status: 429, error: "FreeUsageLimitError" };
+  const spawnFail = { ok: false, spawnFailed: true, error: "SOCKS port did not open" };
+  const alive = { ok: true, status: 200 };
+
+  it("stays quiet while failures interleave with passes (normal cleanup)", () => {
+    const canary = createPruneCanary();
+    for (let i = 0; i < 30; i++) {
+      canary.record(i % 2 === 0 ? dead : alive);
+      expect(canary.shouldSuspend()).toBe(false);
+    }
+  });
+
+  it("trips after a zero-pass streak of prunable failures and latches", () => {
+    const canary = createPruneCanary();
+    for (let i = 0; i < 9; i++) {
+      canary.record(dead);
+      expect(canary.shouldSuspend()).toBe(false);
+    }
+    canary.record(dead); // 10th: tested>=10, passed==0, streak>=10
+    expect(canary.shouldSuspend()).toBe(true);
+    expect(canary.suspended).toBe(true);
+    // Latched: even a later pass must not re-arm pruning mid-run.
+    canary.record(alive);
+    expect(canary.shouldSuspend()).toBe(true);
+  });
+
+  it("does not trip when the failures are upstream-rejected or spawn-side", () => {
+    const canary = createPruneCanary();
+    for (let i = 0; i < 50; i++) canary.record(i % 2 === 0 ? quota429 : spawnFail);
+    expect(canary.shouldSuspend()).toBe(false);
+  });
+
+  it("resets the streak on a pass, so a mixed run never trips", () => {
+    const canary = createPruneCanary();
+    for (let round = 0; round < 5; round++) {
+      for (let i = 0; i < 9; i++) canary.record(dead);
+      canary.record(alive); // streak back to 0 before the 10th dead
+    }
+    expect(canary.shouldSuspend()).toBe(false);
   });
 });

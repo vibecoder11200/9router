@@ -42,7 +42,7 @@ import {
 } from "./process.js";
 import { testProxy, testProxyLatency, isSocksPortOpen, testProxyExitIpWithUri } from "./tester.js";
 import { startFilterXray, stopFilterXray, probeConfigViaApi } from "./apiFilter.js";
-import { shouldPruneFilterResult } from "./filterPrunePolicy.js";
+import { createPruneCanary, shouldPruneFilterResult } from "./filterPrunePolicy.js";
 import {
   getSelectedXrayConfig,
   getXrayConfigById,
@@ -1219,8 +1219,23 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
   // breaks the worker loops and surfaces in the run summary.
   let infraAbort = null;
 
+  // Mass-prune canary: once a run shows zero passes and a stack of prunable
+  // failures (see createPruneCanary), pruning is suspended for its remainder.
+  const pruneCanary = createPruneCanary();
+  let canaryWarned = false;
+
   const maybePruneConfig = async (config, result) => {
-    const decision = shouldPruneFilterResult(result, { prune, runningActiveConfigId, configId: config.id });
+    // record + gate must stay in one synchronous block — workers interleave
+    // at awaits, and the canary's counters are only consistent between them.
+    pruneCanary.record(result);
+    const pruneEffective = prune && !pruneCanary.shouldSuspend();
+    if (prune && !canaryWarned && pruneCanary.suspended) {
+      canaryWarned = true;
+      console.warn(
+        "[Xray] model filter prune suspended: zero passes with a consecutive prunable-failure streak — treating the rest of the run as anomalous, configs are kept",
+      );
+    }
+    const decision = shouldPruneFilterResult(result, { prune: pruneEffective, runningActiveConfigId, configId: config.id });
     if (!decision.prune) {
       // Only the active-config case sets pruneSkipped (which also suppresses
       // recordCache — correct there: the running config's own result is
@@ -1246,9 +1261,10 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
   // cache-stats snapshot reflects this run's writes.
   const recordCache = async (config, result) => {
     if (result.pruned === true || result.pruneSkipped) return;
-    // An infra failure never tested the node — a cached fail row would be a
-    // lie about this config; leave it untested for the next healthy run.
-    if (result.infraError) return;
+    // An infra or spawn failure never tested the node — a cached fail row
+    // would be a lie about this config; leave it untested for the next
+    // healthy run.
+    if (result.infraError || result.spawnFailed) return;
     try {
       await upsertModelFilterResult({
         configId: config.id,
@@ -1300,6 +1316,15 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
       await recordCache(config, result);
       onProgress?.(result);
     } catch (error) {
+      // Error codes thrown before/while spawning OUR test instance (model or
+      // config lookup, binary missing, link the shim can't render, SOCKS
+      // port never opening, no provider credentials): the probe produced no
+      // verdict about the node. Flagged so the prune policy refuses to
+      // delete and the cache stays unpolluted — but unlike infraError it
+      // must NOT abort the run (one unspawnable config is not systemic).
+      const spawnFailed = [
+        "BAD_REQUEST", "NOT_FOUND", "BAD_MODEL", "NOT_INSTALLED", "BAD_CONFIG", "STARTUP_FAILED", "NO_CREDENTIALS",
+      ].includes(error.code);
       let failed = {
         configId: config.id,
         name: config.name,
@@ -1309,6 +1334,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
         latencyMs: -1,
         status: null,
         error: error.message,
+        ...(spawnFailed ? { spawnFailed: true } : {}),
       };
       await updateXrayTestResult(config.id, { ok: false }).catch(() => {});
       failed = await maybePruneConfig(config, failed);
@@ -1374,6 +1400,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
     failed: results.filter((r) => !r.ok).length,
     pruned: results.filter((r) => r.pruned === true).length,
     pruneSkipped: results.filter((r) => r.pruneSkipped).length,
+    pruneSuspended: pruneCanary.suspended === true,
     cached: cachedCount,
     cancelled,
     abortedReason: infraAbort,
@@ -1456,6 +1483,7 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
         failed: result.failed,
         pruned: result.pruned,
         cached: result.cached,
+        pruneSuspended: result.pruneSuspended === true,
         trafficWaiters: 0,
         error: null,
       });

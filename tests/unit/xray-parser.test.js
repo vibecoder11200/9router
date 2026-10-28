@@ -236,6 +236,37 @@ describe("convertLink: Trojan", () => {
   });
 });
 
+// ─── hysteria2 (trojan + network:"hysteria" shim) ─────────────────────────
+
+describe("convertLink: Hysteria2", () => {
+  // Xray-core gates the hysteria network on version == 2 at config-load
+  // time ("infra/conf: version != 2", verified live against binary
+  // 26.3.27): a config without the field makes every spawn-mode probe of
+  // the node fail before any byte is tunnelled.
+  it("emits hysteriaSettings.version 2 (binary load gate)", () => {
+    const ob = convertLink("hysteria2://letmein@example.com:443?sni=example.com&insecure=0#hy2 node");
+    expect(ob.protocol).toBe("trojan");
+    expect(ob.streamSettings.network).toBe("hysteria");
+    expect(ob.streamSettings.hysteriaSettings).toEqual({ auth: "letmein", version: 2 });
+    expect(ob.streamSettings.tlsSettings).toEqual({ serverName: "example.com" });
+  });
+
+  it("carries obfs through alongside version when present", () => {
+    const ob = convertLink("hysteria2://letmein@example.com:443?obfs=salamander&obfs-password=obpass#hy2");
+    expect(ob.streamSettings.hysteriaSettings).toEqual({
+      auth: "letmein",
+      obfs: "salamander",
+      obfsPassword: "obpass",
+      version: 2,
+    });
+  });
+
+  it("throws on missing auth", () => {
+    expect(() => convertLink("hysteria2@example.com:443")).toThrow();
+    expect(() => convertLink("hysteria2://@example.com:443")).toThrow(/missing auth/);
+  });
+});
+
 // ─── garbage rejection ────────────────────────────────────────────────────
 
 describe("convertLink: rejects garbage", () => {
