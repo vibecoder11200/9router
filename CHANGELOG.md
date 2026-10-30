@@ -1,3 +1,27 @@
+# v0.6.74 (2026-10-30)
+
+Upstream decolua/9router v0.5.112 migration (range `e70ea24d^..1fe586bb`, 14 commits, 45 files) + 3 fork fixes found during verification.
+
+## Upstream v0.5.112 (ported)
+- **New provider: Nace Drex (System One lane)** — registry `nace.js`, renumbered upstream p153 → fork **p152** (fork's runcrate owns p151).
+- **New feature: MiniMax Code desktop lease auth** — `minimaxCodeLease.js` named-pipe broker to the desktop app, OAuth `mcode-lease` action route, `MinimaxLeaseButton` + "Desktop Lease" auth type in the provider page.
+- **CommandCode headers aligned with official CLI 1.88.0** — shared `commandCodeHeaders.js` used by executor, usage service, translator and the validate route (validate keeps the fork's 30s AbortSignal).
+- **CodeBuddy plugin request/conversation id headers** on both -cn/-intl lanes (golden header snapshot re-stamped).
+- **Codex GPT-6.1 Terra** (registry + capabilities contextWindow 500k + pricing + `[1m]` siblings untouched).
+- **GitHub Copilot: Claude 5.5 thinking rules on dotted model ids**; **NVIDIA NIM reasoning alias normalization**; **Gemini protobuf type predicates on schema items/properties**; **non-streaming responses now reject SSE-format errors**; **bulk-add treats `LLM|id|secret` as an opaque token**; **DeepSeek PoW hash ported to the noble-hashes implementation** (542→136 lines, no new deps).
+- **lazyRuntime (upstream e70ea24d "Fix OpenCode")** ported by intent into the fork's bundler-proof architecture: npm install anchored by a runtime `package.json` (`9router-runtime`) so it can't adopt a parent install root, and partially-extracted installs are wiped and retried once. The fork KEEPS its `new Function` native-import + manifest entry resolution — upstream's `import("node:module")` createRequire path is deliberately NOT taken (that's the bundler-hazard family the fork escaped in v0.6.65–v0.6.67).
+- **Dockerfile: wreq-js + playwright-core bundled into the runner** (upstream #5245 pattern, pinned to the fork's `LAZY_DEP_VERSIONS` ranges) — previously the image relied on an on-demand npm install at first OpenCode Free use.
+
+## Fork fixes shipped alongside
+- **`security=false` links parse again** (workers-generator links emit `security=false/0/off/no` to mean "no TLS"; Xray rejected the raw string at config load — `Unknown security "false"`) — normalized to `none` in `buildStreamSettings`, keeping `tls`/`reality` untouched.
+- **Port picking survives Windows port-exclusion ranges** — Hyper-V/WSL dynamic exclusions can swallow the whole 531xx switch range (observed live: 53105–53204 fully excluded, every bind EACCES, netstat silent). `pickFreePort` now falls back to an OS-assigned ephemeral port instead of failing the switch/temp-spawn with "No free SOCKS port available".
+- **Migration conflicts resolved by hand (4):** registry renumber (above), capabilities codex Terra entry alongside the fork's `gpt-6.1-sol` floor, ConnectionRow keeps the fork's Managed auth icon AND gains upstream's Desktop Lease badge, validate route keeps the fork's 30s abort + upstream's shared headers.
+
+## Tests
+- 8 new upstream suites ported green (nace, minimax-lease, commandcode-headers, codebuddy-channel-headers, nonstream-sse-error, gemini-schema-array-items-predicate, github-claude-5-5-thinking, bulk-add-names) — 114 tests.
+- Full suite: failing set byte-identical to the known-fails baseline after the two fixes above; golden header snapshot re-stamped (codebuddy headers, version bump).
+- v2go/xray area: untouched by the upstream range (0 of 45 files); fork's 44 parser tests incl. all v2go fixtures green.
+
 # v0.6.73 (2026-10-28)
 
 The 2026-10-28 model-filter mass-prune incident (351 configs hard-deleted in one run, 0 passes, everything "failing fast") — root-caused to a binary × config-shape mismatch, not to v0.6.72 and not to any cache.

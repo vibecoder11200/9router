@@ -169,7 +169,14 @@ export function getProtocol(link) {
  */
 function buildStreamSettings(params) {
   let network = params.get("type") || "tcp";
-  const security = params.get("security") || "none";
+  // Some link generators emit security=false/0/off/no to mean "no TLS" —
+  // passed through raw, Xray rejects the whole config at load time
+  // (infra/conf: Unknown security "false"). Normalize the falsy family to
+  // the real "none" keyword.
+  const rawSecurity = (params.get("security") || "").trim();
+  const security = ["", "false", "0", "off", "no", "False", "FALSE"].includes(rawSecurity)
+    ? "none"
+    : rawSecurity || "none";
 
   const stream = { network, security };
 

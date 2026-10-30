@@ -223,6 +223,16 @@ function tcpPortAvailable(port) {
   });
 }
 
+/** Ask the OS for one free port (bind 0, read back the assignment). */
+function osAssignedFreePort() {
+  return new Promise((resolve) => {
+    const srv = net.createServer();
+    srv.once("error", () => resolve(null));
+    srv.once("listening", () => srv.close(() => resolve(srv.address()?.port ?? null)));
+    srv.listen(0, "127.0.0.1");
+  });
+}
+
 /**
  * Pick a free port from [base, base+span): not currently reserved in the
  * in-process registry AND actually bindable (pre-flight EADDRINUSE check —
@@ -239,7 +249,15 @@ async function pickFreePort({ base, span, attempts = 25 }) {
     if (await tcpPortAvailable(port)) return port;
     allocatedTempSocksPorts.delete(port);
   }
-  return null;
+  // Windows can exclude whole ranges from ephemeral use (Hyper-V/WSL dynamic
+  // port exclusions — observed live: 53105-53204 swallowed the ENTIRE switch
+  // range while netstat showed nothing, making every bind fail with EACCES).
+  // Fall back to an OS-assigned port so a switch / temp spawn still works;
+  // the tiny reservation race after close beats a hard failure on a healthy
+  // machine whose preferred range happens to be excluded.
+  const ephemeral = await osAssignedFreePort();
+  if (ephemeral) allocatedTempSocksPorts.add(ephemeral);
+  return ephemeral;
 }
 
 /**

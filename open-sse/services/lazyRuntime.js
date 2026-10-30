@@ -32,6 +32,13 @@ function isModuleMissing(error) {
 function npmInstall(pkg, version) {
   const cwd = getRuntimeDir();
   fs.mkdirSync(cwd, { recursive: true });
+  // Anchor npm to the runtime dir so it can't adopt a parent package.json as
+  // the install root (upstream e70ea24d) — without an anchor manifest here,
+  // npm may hoist the install into an ancestor's node_modules.
+  const manifest = path.join(cwd, "package.json");
+  if (!fs.existsSync(manifest)) {
+    fs.writeFileSync(manifest, JSON.stringify({ name: "9router-runtime", private: true }, null, 2));
+  }
   const npm = process.platform === "win32" ? "npm.cmd" : "npm";
   const args = ["install", "--no-audit", "--no-fund", "--prefer-online", `${pkg}@${version}`];
   return new Promise((resolve) => {
@@ -41,6 +48,18 @@ function npmInstall(pkg, version) {
     child.on("error", (error) => resolve({ ok: false, stderr: String(error.message || error) }));
     child.on("close", (status) => resolve({ ok: status === 0, stderr }));
   });
+}
+
+async function installIntoRuntime(pkg, version) {
+  const dir = getRuntimeDir();
+  const res = await npmInstall(pkg, version);
+  if (!res.ok) {
+    const reason = (res.stderr.match(/npm ERR! ?(.+)/) || [])[1] || res.stderr.split("\n").filter(Boolean).pop() || "unknown npm error";
+    throw new Error(
+      `${pkg} is missing and the on-demand install failed (${String(reason).slice(0, 160)}) — ` +
+      `install it manually: cd "${dir}" && npm install ${pkg}@${version}`
+    );
+  }
 }
 
 const inflight = new Map();
@@ -104,16 +123,18 @@ async function load(pkg) {
   }
   // 3) Download on demand, then import from the runtime dir.
   const version = LAZY_DEP_VERSIONS[pkg] || "latest";
-  const dir = getRuntimeDir();
-  const res = await npmInstall(pkg, version);
-  if (!res.ok) {
-    const reason = (res.stderr.match(/npm ERR! ?(.+)/) || [])[1] || res.stderr.split("\n").filter(Boolean).pop() || "unknown npm error";
-    throw new Error(
-      `${pkg} is missing and the on-demand install failed (${String(reason).slice(0, 160)}) — ` +
-      `install it manually: cd "${dir}" && npm install ${pkg}@${version}`
-    );
+  const runtimeImport = () => nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href);
+  await installIntoRuntime(pkg, version);
+  try {
+    return await runtimeImport();
+  } catch (error) {
+    // npm exits 0 even on partially-extracted installs; wipe and retry once
+    // (upstream e70ea24d) before surfacing the failure to the caller.
+    if (!isModuleMissing(error)) throw error;
+    fs.rmSync(path.join(getRuntimeDir(), "node_modules", pkg), { recursive: true, force: true });
+    await installIntoRuntime(pkg, version);
+    return runtimeImport();
   }
-  return nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href);
 }
 
 export function loadRuntimeDep(pkg) {

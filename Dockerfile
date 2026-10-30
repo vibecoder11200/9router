@@ -33,6 +33,24 @@ COPY . ./
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
+# wreq-js + playwright-core are lazy runtime deps (open-sse/services/lazyRuntime.js
+# resolves them from app node_modules first). Next standalone tracing omits them,
+# so without this bundle the OpenCode Free lane fails at runtime and falls back to
+# an on-demand npm install inside the container (upstream issue #5245). Install
+# them with their transitive deps in an isolated dir, pinned to the same ranges
+# as LAZY_DEP_VERSIONS, so the runner can copy the whole tree in one go.
+RUN --mount=type=cache,target=/root/.npm \
+    mkdir -p /opt/lazy-runtime && cd /opt/lazy-runtime && \
+    npm init -y >/dev/null && \
+    npm install --no-save \
+      --registry="${NPM_REGISTRY}" \
+      --fetch-retries=5 \
+      --fetch-retry-factor=2 \
+      --fetch-retry-mintimeout=10000 \
+      --fetch-retry-maxtimeout=120000 \
+      --fetch-timeout=300000 \
+      wreq-js@^3.2.0 playwright-core@^1.62.1
+
 FROM ${NODE_IMAGE} AS runner
 ARG ALPINE_MIRROR
 ARG APP_VERSION
@@ -70,6 +88,9 @@ COPY --from=builder /app/node_modules/sql.js ./node_modules/sql.js
 COPY --from=builder /app/node_modules/undici ./node_modules/undici
 # node-machine-id is createRequire-loaded at runtime; tracing omits it.
 COPY --from=builder /app/node_modules/node-machine-id ./node_modules/node-machine-id
+# wreq-js + playwright-core (and their deps) are lazy-loaded at runtime and
+# omitted by tracing — see the /opt/lazy-runtime note in the builder stage.
+COPY --from=builder /opt/lazy-runtime/node_modules/. ./node_modules/
 
 RUN mkdir -p /app/data && chown -R node:node /app && \
   mkdir -p /app/data-home && chown node:node /app/data-home && \

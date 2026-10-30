@@ -163,6 +163,8 @@ import p134 from "./orcarouter.js";
 import p135 from "./totu-ai.js";
 // Upstream v0.5.111 provider (runcrate), renumbered from upstream's p152 → p151.
 import p151 from "./runcrate.js";
+// Upstream v0.5.112 provider (nace), renumbered from upstream's p153 → p152.
+import p152 from "./nace.js";
 export default [
   p0,
   p1,
@@ -315,4 +317,5 @@ export default [
   p149,
   p150,
   p151,
+  p152,
 ];

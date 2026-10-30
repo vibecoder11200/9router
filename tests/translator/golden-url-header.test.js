@@ -23,8 +23,18 @@ const SPECIALIZED = new Set([
   "xiaomi-tokenplan", "mimo-free",
 ]);
 
-// Per-process / per-request values: kimi's random device name, minimax's session UUID.
-const VOLATILE_HEADERS = new Set(["x-msh-device-name", "x-mavis-session-id"]);
+// Per-process / per-request values: kimi's random device name, minimax's session
+// UUID, codebuddy's per-request plugin ids (upstream v0.5.112 codebuddyHeaders
+// hook mints fresh randomUUID()s on every call — pinned raw they'd fail every
+// later run in a different process).
+const VOLATILE_HEADERS = new Set([
+  "x-msh-device-name",
+  "x-mavis-session-id",
+  "x-request-id",
+  "x-conversation-id",
+  "x-conversation-request-id",
+  "x-conversation-message-id",
+]);
 
 // Sanitize header: khử token + field thời gian động (kimi X-Msh-Device-Id) để snapshot ổn định.
 function sanitize(headers) {

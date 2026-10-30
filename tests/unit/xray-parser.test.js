@@ -221,6 +221,22 @@ describe("convertLink: Trojan", () => {
     expect(ob.settings.servers[0].password).toBe("pass");
   });
 
+  // Real subscription shape (Mokafela via Cloudflare-workers generators):
+  // security=false means "no TLS" but Xray rejects the literal string at
+  // config load ("Unknown security \"false\"") — the whole temp-test spawn
+  // died on it. Must normalize to the real "none" keyword.
+  it("normalizes security=false to none (workers-generator links)", () => {
+    const ob = convertLink("vless://1cbe9e8a-8e2f-4a1e-9a2f-0e6f9a3b7c11@host.com:8880?security=false&fp=chrome&type=ws&host=worker.example&path=%2Fws");
+    expect(ob.streamSettings.security).toBe("none");
+    for (const raw of ["0", "off", "no", ""]) {
+      const ob2 = convertLink(`vless://1cbe9e8a-8e2f-4a1e-9a2f-0e6f9a3b7c11@host.com:443?type=tcp&security=${raw}`);
+      expect(ob2.streamSettings.security).toBe("none");
+    }
+    // The real keywords still pass through untouched.
+    expect(convertLink("vless://1cbe9e8a-8e2f-4a1e-9a2f-0e6f9a3b7c11@host.com:443?type=tcp&security=tls&sni=host.com").streamSettings.security).toBe("tls");
+    expect(convertLink("vless://1cbe9e8a-8e2f-4a1e-9a2f-0e6f9a3b7c11@host.com:443?type=tcp&security=reality").streamSettings.security).toBe("reality");
+  });
+
   it("parses trojan-tls fixture", () => {
     const ob = convertLink(FIXTURES["trojan-tls"]);
     expect(ob.settings.servers[0]).toEqual({
