@@ -1,6 +1,6 @@
-# v0.6.75 (2026-10-30)
+# v0.6.75 (2026-11-02)
 
-OpenCode free-lane transport hardening, ported from the community's evidence base (upstream #5325/#5275/#5319, OmniRoute #17869) after live A/B experiments on the production box.
+OpenCode free-lane transport hardening, ported from the community's evidence base (upstream #5325/#5275/#5319, OmniRoute #17869) after live A/B experiments on the production box. Also ships `6848c5c9` (fix(genspark): guard frozen `import.meta.url` `__dirname` — Linux-built bundle 500s Windows routes).
 
 ## Fixes
 - **TLS transport rides a REAL browser profile, resolved at runtime** (OmniRoute #17869): the free gate refuses pinned-cipher impersonations — extension order, supported groups and signature algorithms also count (upstream #5325: every impersonated profile refused while Bun itself passed). `opencodeTlsClient` now defaults to the newest `chrome_*` profile in the installed wreq-js catalog (`getProfiles()`), so the fingerprint tracks whatever the installed wreq-js ships. `OPENCODE_TLS_PROFILE=chrome_142` pins one, `legacy` restores the old cipher-list behavior (also the fallback when no catalog is readable).
