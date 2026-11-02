@@ -12,7 +12,7 @@ import {
   shortenResponsesToolName,
   ensureResponsesReasoningHeadroom,
 } from "../translator/formats/responsesApi.js";
-import { recordRenamedToolNames } from "../utils/opencodeFingerprint.js";
+import { maskTerminalToolNames, recordRenamedToolNames } from "../utils/opencodeFingerprint.js";
 
 const SESSION_HEADER = "x-opencode-session";
 const SESSION_FIELD = "_opencodeZenSession";
@@ -118,6 +118,12 @@ function toolNameOf(tool) {
 
 function ensureChatFingerprintTools(body) {
   if (!body || typeof body !== "object") return;
+  // The free-tier gate 429s any DECLARED tool name containing "terminal"
+  // (name-only check, upstream #5319) — alias it away; the response-side
+  // rename map restores the caller's spelling on tool_calls.
+  const masked = maskTerminalToolNames(body.tools);
+  body.tools = masked.tools;
+  recordRenamedToolNames(body, masked.map);
   const present = new Set();
   if (Array.isArray(body.tools)) {
     for (const tool of body.tools) {
@@ -143,6 +149,10 @@ function ensureChatFingerprintTools(body) {
 
 function ensureResponsesFingerprintTools(body) {
   if (!body || typeof body !== "object") return;
+  // Same name-only "terminal" gate as the chat shape (upstream #5319).
+  const masked = maskTerminalToolNames(body.tools);
+  body.tools = masked.tools;
+  recordRenamedToolNames(body, masked.map);
   const present = new Set();
   if (Array.isArray(body.tools)) {
     for (const tool of body.tools) {

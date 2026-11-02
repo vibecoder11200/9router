@@ -374,3 +374,57 @@ describe("fingerprintToolKey", () => {
     expect(fingerprintToolKey(null)).toBe("");
   });
 });
+
+// Upstream #5319: the free-tier gate 429 FreeUsageLimitError's any DECLARED
+// tool name containing "terminal" (case-insensitive substring) — a name-only
+// check over tools[]; history tool_calls are never inspected. Renaming the
+// declaration alone turns the identical request green.
+describe("maskTerminalToolNames (upstream #5319)", () => {
+  it("aliases away every case-insensitive terminal substring", () => {
+    const body = { tools: chat(["terminal", "Terminal", "terminals", "my_terminal_thing", "bash"]) };
+    const map = applyFingerprintTools(body, false);
+    const sent = namesOf(body.tools).filter((n) => OPENCODE_FINGERPRINT_TOOLS.includes(n) === false);
+    expect(sent).toEqual(["term", "term_t", "terms", "my_term_thing", "bash"]);
+    expect(map.get("term")).toBe("terminal");
+    expect(map.get("term_t")).toBe("Terminal");
+    expect(map.get("terms")).toBe("terminals");
+    expect(map.get("my_term_thing")).toBe("my_terminal_thing");
+  });
+
+  it("never produces an alias that still contains terminal or collides", () => {
+    const body = { tools: chat(["terminal", "term", "term_t"]) };
+    const map = applyFingerprintTools(body, false);
+    for (const tool of body.tools) {
+      const name = tool.name ?? tool.function?.name;
+      expect(/terminal/i.test(name)).toBe(false);
+    }
+    const sent = namesOf(body.tools).filter((n) => OPENCODE_FINGERPRINT_TOOLS.includes(n) === false);
+    expect(new Set(sent).size).toBe(sent.length);
+    // Every masked alias maps back to the caller's original spelling.
+    expect(map.get("term_t_t")).toBe("terminal");
+  });
+
+  it("round-trips a model tool_call back to the caller's original name", () => {
+    const body = { tools: chat(["run_terminal_command"]) };
+    const map = applyFingerprintTools(body, false);
+    const restored = restoreToolNames(
+      { choices: [{ message: { tool_calls: [{ id: "1", type: "function", function: { name: "run_term_command", arguments: "{}" } }] } }] },
+      map,
+    );
+    expect(restored.choices[0].message.tool_calls[0].function.name).toBe("run_terminal_command");
+  });
+
+  it("retargets an explicit tool_choice that named a masked tool", () => {
+    const body = { tools: flat(["terminal"]), tool_choice: { type: "function", function: { name: "terminal" } } };
+    const map = applyFingerprintTools(body, true);
+    expect(body.tool_choice.function.name).toBe("term");
+    expect(map.get("term")).toBe("terminal");
+  });
+
+  it("leaves clean tool sets byte-identical (no phantom renames)", () => {
+    const body = { tools: flat(CC_TOOLS) };
+    const map = applyFingerprintTools(body, true);
+    expect(map.size).toBe(0);
+    expect(namesOf(body.tools)).toEqual([...CC_TOOLS, ...OPENCODE_FINGERPRINT_TOOLS]);
+  });
+});

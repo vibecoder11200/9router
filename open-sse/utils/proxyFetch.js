@@ -324,6 +324,15 @@ async function fetchWithTlsFallback(url, options, proxyUrl) {
     // Protocol adapters may need Node's HTTP/1 transport on the direct path.
     // Keep proxy/no-proxy resolution and strict-proxy enforcement here.
     if (!proxyUrl && options.directFetch) return await options.directFetch(url, options);
+    // A transport that opts in via `directFetchProxyBridge` also carries the
+    // connection proxy WITH it (wreq sessions are proxy-pinned) — the opencode
+    // free lane must keep its impersonated ClientHello even when routed
+    // through a proxy (upstream #5275: the proxy path silently degraded to
+    // native fetch and hit the TLS gate). 2-arg directFetch implementations
+    // (codex STT) never set the flag and keep today's dispatcher path.
+    if (!insecure && proxyUrl && options.directFetch && options.directFetchProxyBridge === true) {
+      return await options.directFetch(url, options, { proxyUrl });
+    }
     if (!proxyUrl) {
       if (!insecure) return originalFetch(url, options);
       const dispatcher = await getDirectInsecureDispatcher();

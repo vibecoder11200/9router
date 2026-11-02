@@ -149,8 +149,11 @@ export class BaseExecutor {
           body: bodyStr,
           signal: mergedSignal,
           // Protocol adapters that need their own transport (opencode's TLS
-          // fingerprint) override the direct path; proxies still take priority.
-          ...(directFetch ? { directFetch } : {}),
+          // fingerprint) override the direct path; proxies still take priority
+          // unless the adapter opts into carrying the proxy along.
+          ...(directFetch
+            ? { directFetch, directFetchProxyBridge: directFetch.proxyBridge === true }
+            : {}),
         }, proxyOptions);
         clearTimeout(connectTimer);
         const ct = response.headers?.get?.("content-type") || "";

@@ -1,20 +1,28 @@
 // TLS-impersonating HTTP client for opencode.ai's free tier.
 //
-// The free gate keys on the TLS ClientHello, not on headers: a request that
-// passes from the OpenCode CLI is refused with 429 FreeUsageLimitError when the
-// same body/headers ride Node's OpenSSL fingerprint, and passes again once the
-// cipher list matches. Measured 2026-10-26 on one process, one egress IP, three
-// transports: node fetch/https/http2 all 429, Bun's BoringSSL fetch 200.
-// JA4's cipher hash identifies the list (Bun: 5b57614c22b0), so the match is on
-// the cipher-list hash and nothing else — reordering the same list still passes.
+// The free gate keys on the TLS ClientHello, not on headers. A pinned cipher
+// list alone is NOT sufficient: upstream #5325 measured every impersonated
+// profile refused while Bun's own fetch passed — extension order, supported
+// groups and signature algorithms also count. OmniRoute's production answer
+// (#17869) is to ride a REAL browser profile from the installed wreq-js
+// catalog, resolved at request time instead of frozen literals, so the
+// fingerprint tracks whatever the newest wreq-js ships. That is the default
+// here: the newest `chrome_*` profile in the installed catalog.
+//
+// wreq sessions are proxy-PINNED at creation ("Session proxy cannot be
+// changed after creation"), so proxied egress (the model filter, per-connection
+// proxies) needs one session per (profile, proxy) — served by a small LRU pool
+// below. `OPENCODE_TLS_PROFILE` overrides resolution: an exact profile name
+// ("chrome_142"), or "legacy" for the old pinned-cipher behavior.
 //
 // wreq-js is an optional dependency; when absent the caller keeps its native
 // fetch and stays subject to the gate rather than failing the request here.
 
 import { loadRuntimeDep } from "./lazyRuntime.js";
 
-// BoringSSL/Chrome-family cipher list the upstream accepts, in the order Bun
-// sends it. Only the list's hash is compared, so this must stay verbatim.
+// BoringSSL/Chrome-family cipher list the upstream accepted in the
+// cipher-list-only era. Kept as the "legacy" fallback for wreq builds without
+// a profile catalog. Only the list's hash was compared, so it stays verbatim.
 const OPENCODE_CIPHER_LIST = [
   "TLS_AES_128_GCM_SHA256",
   "TLS_AES_256_GCM_SHA384",
@@ -36,8 +44,11 @@ const OPENCODE_CIPHER_LIST = [
 ].join(":");
 
 const DEFAULT_TIMEOUT_MS = 120000;
-
-let sessionPromise = null;
+// One wreq session per (profile, proxy). The model filter walks hundreds of
+// proxies with a handful of workers, so cap the pool and evict least-recently
+// used; idle sessions are swept on acquire.
+const MAX_TLS_SESSIONS = 24;
+const SESSION_IDLE_MS = 5 * 60 * 1000;
 
 export class OpencodeTlsUnavailableError extends Error {
   constructor(message) {
@@ -46,42 +57,141 @@ export class OpencodeTlsUnavailableError extends Error {
   }
 }
 
-async function loadSession() {
-  if (!sessionPromise) {
-    sessionPromise = (async () => {
-      const wreq = await loadRuntimeDep("wreq-js");
+/** Newest `chrome_*` in the catalog — pure so tests can pin the ordering. */
+export function resolveNewestChromeProfile(profiles) {
+  const chrome = (Array.isArray(profiles) ? profiles : [])
+    .filter((p) => /^chrome_\d+$/.test(p))
+    .sort((a, b) => parseInt(b.slice(7), 10) - parseInt(a.slice(7), 10));
+  return chrome[0] || null;
+}
+
+/**
+ * Emulation choice for this process: an exact profile name via
+ * OPENCODE_TLS_PROFILE, "legacy"/"off" for the pinned cipher list, otherwise
+ * the newest chrome profile the installed wreq-js ships. Returns null for
+ * legacy. A catalog that cannot be read degrades to legacy instead of
+ * failing the module load.
+ */
+function resolveOpencodeEmulationProfile(wreq) {
+  const override = String(process.env.OPENCODE_TLS_PROFILE || "").trim().toLowerCase();
+  if (/^(legacy|off|none)$/.test(override)) return null;
+  try {
+    const profiles = typeof wreq.getProfiles === "function" ? wreq.getProfiles() : [];
+    if (override && override !== "auto") {
+      return profiles.includes(override) ? override : null;
+    }
+    // Default and OPENCODE_TLS_PROFILE=auto: newest chrome the catalog ships.
+    return resolveNewestChromeProfile(profiles);
+  } catch {
+    return null;
+  }
+}
+
+// key -> { session, promise, lastUsedAt }
+const sessionPool = new Map();
+let resolvedProfile; // undefined = not resolved yet, null = legacy, string = profile
+let resolvedProfileLogged = false;
+let wreqPromise = null;
+
+function loadWreq() {
+  // Cached across resets — the module never changes under us.
+  if (!wreqPromise) {
+    wreqPromise = loadRuntimeDep("wreq-js").then((wreq) => {
       if (typeof wreq.createSession !== "function") {
         throw new Error("wreq-js runtime is missing createSession");
       }
-      return wreq.createSession({
-        emulation: { tlsOptions: { cipherList: OPENCODE_CIPHER_LIST } },
-      });
-    })().catch((error) => {
-      sessionPromise = null;
-      throw error;
+      return wreq;
     });
+    wreqPromise.catch(() => { wreqPromise = null; });
   }
-  return sessionPromise;
+  return wreqPromise;
 }
 
-/** Drop the cached session so the next call builds a fresh one. */
+function ensureResolvedProfile(wreq) {
+  if (resolvedProfile !== undefined) return;
+  resolvedProfile = resolveOpencodeEmulationProfile(wreq);
+  if (!resolvedProfileLogged) {
+    resolvedProfileLogged = true;
+    console.log(
+      `[OpenCodeTLS] emulation: ${resolvedProfile || "legacy cipher list"} (OPENCODE_TLS_PROFILE=${process.env.OPENCODE_TLS_PROFILE || "auto"})`,
+    );
+  }
+}
+
+function sessionKey(profile, proxyUrl) {
+  return `${profile || "legacy"}|${proxyUrl || "direct"}`;
+}
+
+function closeEntry(entry) {
+  entry?.promise?.then((session) => session.close?.()).catch(() => {});
+}
+
+function sweepIdlePool() {
+  const now = Date.now();
+  for (const [key, entry] of sessionPool) {
+    if (now - entry.lastUsedAt > SESSION_IDLE_MS) {
+      sessionPool.delete(key);
+      closeEntry(entry);
+    }
+  }
+}
+
+async function loadSession(proxyUrl) {
+  sweepIdlePool();
+  const wreq = await loadWreq();
+  // Resolve BEFORE keying — the pool key must be stable across the first and
+  // every later call, so the same proxy reuses its session.
+  ensureResolvedProfile(wreq);
+  const key = sessionKey(resolvedProfile, proxyUrl);
+  const cached = sessionPool.get(key);
+  if (cached) {
+    cached.lastUsedAt = Date.now();
+    return cached.promise;
+  }
+
+  const entry = { promise: null, lastUsedAt: Date.now() };
+  entry.promise = (async () => {
+    const proxy = proxyUrl ? { proxy: proxyUrl } : {};
+    return resolvedProfile
+      ? wreq.createSession({ browser: resolvedProfile, os: process.platform === "win32" ? "windows" : "linux", ...proxy })
+      : wreq.createSession({ emulation: { tlsOptions: { cipherList: OPENCODE_CIPHER_LIST } }, ...proxy });
+  })().catch((error) => {
+    sessionPool.delete(key);
+    throw error;
+  });
+
+  sessionPool.set(key, entry);
+  // LRU cap — evict the least recently used entries (Map preserves insert
+  // order; re-acquired entries re-set below to refresh their position).
+  while (sessionPool.size > MAX_TLS_SESSIONS) {
+    const oldest = sessionPool.keys().next().value;
+    const evicted = sessionPool.get(oldest);
+    sessionPool.delete(oldest);
+    closeEntry(evicted);
+  }
+  return entry.promise;
+}
+
+/** Drop every cached session so the next call builds fresh ones. */
 export function resetOpencodeTlsSession() {
-  const pending = sessionPromise;
-  sessionPromise = null;
-  pending?.then((session) => session.close?.()).catch(() => {});
+  const entries = [...sessionPool.values()];
+  sessionPool.clear();
+  resolvedProfile = undefined;
+  for (const entry of entries) closeEntry(entry);
 }
 
 /**
  * Fetch through the impersonated-TLS session. Returns a native Response so
  * downstream `.body` / `.text()` / `.json()` consumers keep working unchanged.
  *
- * Streaming is preserved: the response body is handed over as the live
- * ReadableStream, never buffered.
+ * `proxyUrl` pins the session's egress proxy (wreq sessions are created with
+ * their proxy — it cannot be changed afterwards). Streaming is preserved: the
+ * response body is handed over as the live ReadableStream, never buffered.
  */
-export async function opencodeTlsFetch(url, init = {}, { signal, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export async function opencodeTlsFetch(url, init = {}, { signal, timeoutMs = DEFAULT_TIMEOUT_MS, proxyUrl = null } = {}) {
   let session;
   try {
-    session = await loadSession();
+    session = await loadSession(proxyUrl);
   } catch (error) {
     throw new OpencodeTlsUnavailableError(
       `wreq-js unavailable (${error instanceof Error ? error.message : "unknown"}) — install the optional wreq-js dependency to reach the OpenCode free tier`
@@ -105,4 +215,12 @@ export async function opencodeTlsFetch(url, init = {}, { signal, timeoutMs = DEF
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
-export const __test__ = { OPENCODE_CIPHER_LIST };
+export const __test__ = {
+  OPENCODE_CIPHER_LIST,
+  sessionPool,
+  sessionKey,
+  resolveOpencodeEmulationProfile,
+  __setResolvedProfile(value) {
+    resolvedProfile = value;
+  },
+};

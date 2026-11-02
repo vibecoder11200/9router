@@ -1,3 +1,17 @@
+# v0.6.75 (2026-10-30)
+
+OpenCode free-lane transport hardening, ported from the community's evidence base (upstream #5325/#5275/#5319, OmniRoute #17869) after live A/B experiments on the production box.
+
+## Fixes
+- **TLS transport rides a REAL browser profile, resolved at runtime** (OmniRoute #17869): the free gate refuses pinned-cipher impersonations — extension order, supported groups and signature algorithms also count (upstream #5325: every impersonated profile refused while Bun itself passed). `opencodeTlsClient` now defaults to the newest `chrome_*` profile in the installed wreq-js catalog (`getProfiles()`), so the fingerprint tracks whatever the installed wreq-js ships. `OPENCODE_TLS_PROFILE=chrome_142` pins one, `legacy` restores the old cipher-list behavior (also the fallback when no catalog is readable).
+- **Proxied free-lane requests keep the impersonated ClientHello** (upstream #5275): they used to silently degrade to native fetch through the proxy dispatcher and hit the TLS gate. `proxyAwareFetch` now hands the connection proxy to a `directFetch` that opts in via `proxyBridge` — wreq sessions are proxy-PINNED at creation ("Session proxy cannot be changed after creation", measured live), so the client keeps a small LRU pool (24 sessions, 5-min idle sweep) keyed by (profile, proxy). Non-bridging directFetch consumers (codex STT) are untouched — the flag is opt-in and byte-identical behavior without it. This also fixes the xray **model filter's** free-lane probes, which always egress through a proxy.
+- **Declared tool names containing "terminal" are masked on both free lanes** (upstream #5319): the gate 429s any `tools[]` name with that substring (case-insensitive, name-only — history is never inspected). Both the chat/responses shapes of the opencode and zen executors alias the substring away and the existing response-side rename map restores the caller's spelling on `tool_calls` (incl. `tool_choice` retargeting).
+- Dashboard free-lane connection test without spending quota: already shipped in an earlier migration (#5149) — verified present, no change.
+
+## Verification
+- Live A/B on the production box pinned the mechanics: wreq rejects per-request proxy changes (sessions are proxy-pinned), the newest shipped profile is `chrome_149`, and cipher-list vs browser-profile both still 429 from quota-walled IPs — the quota wall masks the TLS layer until an un-flagged IP window opens, so the transport fix is validated structurally (session/proxy/pool wiring covered by tests) rather than by a green request.
+- New `opencode-tls-profile` suite (resolution, override, legacy fallback, proxy pinning, pool reuse/LRU/reset, bridge opt-in, non-bridging isolation) + terminal-mask block in `opencode-fingerprint` (aliasing, collisions, tool_choice retarget, response round-trip, clean-set no-op). 82/82 green; full-suite failing set byte-identical to the known-fails baseline.
+
 # v0.6.74 (2026-10-30)
 
 Upstream decolua/9router v0.5.112 migration (range `e70ea24d^..1fe586bb`, 14 commits, 45 files) + 3 fork fixes found during verification.

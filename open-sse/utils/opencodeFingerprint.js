@@ -23,6 +23,10 @@ import path from "node:path";
 /** Names required by the upstream free-tier gate. */
 export const OPENCODE_FINGERPRINT_TOOLS = ["read", "shell"];
 
+// Upstream 429 FreeUsageLimitError's any DECLARED tool name containing this
+// substring (case-insensitive) — a name-only gate over tools[] (upstream #5319).
+const TERMINAL_TOOL_NAME_RE = /terminal/gi;
+
 // Verbatim from the OpenCode v2.0.26 CLI. Upstream compares description and
 // parameters, so do not reword or reformat these.
 const FINGERPRINT_TOOL_DEFINITIONS = {
@@ -380,6 +384,33 @@ export function applyEnvFingerprint(body, flat, { claude = false } = {}) {
 }
 
 /**
+ * Alias away the "terminal" substring from declared tool names. Upstream
+ * 429 FreeUsageLimitError's any request whose tools[] declares a name
+ * CONTAINING "terminal" (case-insensitive substring) — a name-only gate:
+ * history tool_calls are never inspected, and renaming the declaration alone
+ * turns the identical request green (upstream #5319). The response-side
+ * rename map restores the caller's spelling on tool_calls.
+ *
+ * @param {Array} tools
+ * @returns {{ tools: Array, map: Map<string,string> }} map: sent name -> original name
+ */
+export function maskTerminalToolNames(tools) {
+  const map = new Map();
+  if (!Array.isArray(tools) || tools.length === 0) return { tools, map };
+  const taken = new Set(tools.map(toolNameOf).filter(Boolean));
+  const out = tools.map((tool) => {
+    const name = toolNameOf(tool);
+    if (!name || !TERMINAL_TOOL_NAME_RE.test(name)) return tool;
+    let alias = name.replace(TERMINAL_TOOL_NAME_RE, "term");
+    while (TERMINAL_TOOL_NAME_RE.test(alias) || taken.has(alias)) alias = `${alias}_t`;
+    taken.add(alias);
+    map.set(alias, name);
+    return withToolName(tool, alias);
+  });
+  return { tools: out, map };
+}
+
+/**
  * Full request-side pass: normalize caller tools that collide with a
  * fingerprint name, append OpenCode's definitions for any that are missing, and
  * tell the model the appended ones are off-limits.
@@ -391,11 +422,14 @@ export function applyEnvFingerprint(body, flat, { claude = false } = {}) {
 export function applyFingerprintTools(body, flat, { claude = false } = {}) {
   if (!body || typeof body !== "object") return new Map();
 
+  const masked = maskTerminalToolNames(body.tools);
+  body.tools = masked.tools;
   const { tools, map } = concealFingerprintToolNames(body.tools);
   body.tools = Array.isArray(tools) ? tools : [];
+  const renamed = masked.map.size ? new Map([...masked.map, ...map]) : map;
   const appended = appendMissingFingerprintTools(body.tools, flat);
-  retargetToolChoice(body, map);
-  aliasHistoryToolCalls(body, map);
+  retargetToolChoice(body, renamed);
+  aliasHistoryToolCalls(body, renamed);
   if (appended.length) noteUnavailableTools(body, flat, appended, claude);
 
   // The `<env>` marker is required on every free-lane request, with or without tools.
@@ -405,8 +439,8 @@ export function applyFingerprintTools(body, flat, { claude = false } = {}) {
   // answers tool_choice "none" with 403 FreeTierError.
   if (!body.tool_choice && flat) body.tool_choice = "auto";
 
-  recordRenamedToolNames(body, map);
-  return map;
+  recordRenamedToolNames(body, renamed);
+  return renamed;
 }
 
 /** Store the rename map for `body`, merging with any earlier map (e.g. length
