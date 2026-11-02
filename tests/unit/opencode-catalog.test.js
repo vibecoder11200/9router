@@ -140,11 +140,15 @@ describe("opencode api.json catalog", () => {
     // Before any sync: pinned fallback, never a stale hardcoded release.
     expect(getOpencodeCliUserAgent()).toBe(OPENCODE_UA_FALLBACK);
 
-    // Refresh resolves api.json and the npm version in parallel.
+    // Refresh resolves api.json and the npm version in parallel. The version
+    // feed is the v2 CLI package @opencode/cli (bin "opencode") — NOT the
+    // legacy opencode-ai package, whose `latest` still tracks the retired
+    // 1.x line.
     let npmPayload = { version: "9.9.9" };
     globalThis.fetch = vi.fn((url) => {
       const target = String(url);
       if (target.includes("registry.npmjs.org")) {
+        expect(target).toContain("@opencode/cli");
         return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(npmPayload) });
       }
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(API_JSON) });
@@ -158,5 +162,33 @@ describe("opencode api.json catalog", () => {
     await __refreshOpencodeCatalogForTests();
     await new Promise((r) => setTimeout(r, 0));
     expect(getOpencodeCliUserAgent()).toBe("opencode/latest/9.9.9/cli");
+  });
+
+  it("rejects pre-v2 npm versions — a 1.x build must never ride the v2 UA shape", async () => {
+    // Belt and braces for a feed mix-up (the legacy opencode-ai package's
+    // `latest` was 1.19.5 with no 2.x ever published there, live 2026-11-02).
+    globalThis.fetch = vi.fn((url) => {
+      if (String(url).includes("registry.npmjs.org")) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ version: "1.19.5" }) });
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(API_JSON) });
+    });
+    await ensureOpencodeCatalog();
+    await new Promise((r) => setTimeout(r, 0));
+    // A 1.x version inside the v2 UA shape is what the free-tier gate
+    // rejects — the pinned v2 fallback must stay.
+    expect(getOpencodeCliUserAgent()).toBe(OPENCODE_UA_FALLBACK);
+
+    // The real @opencode/cli feed carries the v2 line (2.2.5 live
+    // 2026-11-02) — a 2.x version resumes the live UA.
+    globalThis.fetch = vi.fn((url) => {
+      if (String(url).includes("registry.npmjs.org")) {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ version: "2.2.5" }) });
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(API_JSON) });
+    });
+    await __refreshOpencodeCatalogForTests();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(getOpencodeCliUserAgent()).toBe("opencode/latest/2.2.5/cli");
   });
 });

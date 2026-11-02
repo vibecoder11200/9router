@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runModelFilterJob } from "@/lib/xray/manager";
+import { runModelFilterJob, isModelFilterRunning, getModelFilterStatus } from "@/lib/xray/manager";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +18,19 @@ export async function POST(request) {
     const prune = body.prune === true;
     const forceRetest = body.forceRetest === true;
 
-    const result = await runModelFilterJob({ model, limit, all, prune, timeoutMs, concurrency, pauseOnTraffic, quietMs, source: "manual", forceRetest });
-    return NextResponse.json({ success: true, ...result });
+    // Fire-and-forget: a run spans minutes (dozens of nodes × probe timeouts
+    // + traffic pauses), and holding this HTTP request open for the whole job
+    // gets it killed mid-flight by the transport (408s in the wild) while the
+    // job keeps running server-side — the browser then reports a failure for
+    // a run that is actually still going. Start the job and answer with the
+    // current status immediately; the dashboard already polls
+    // /api/xray/status for progress and completion.
+    if (isModelFilterRunning()) {
+      return NextResponse.json({ success: true, skipped: true, reason: "already_running", ...getModelFilterStatus() });
+    }
+    runModelFilterJob({ model, limit, all, prune, timeoutMs, concurrency, pauseOnTraffic, quietMs, source: "manual", forceRetest })
+      .catch(() => { /* the job records its own error into getModelFilterStatus() */ });
+    return NextResponse.json({ success: true, started: true, ...getModelFilterStatus() });
   } catch (error) {
     const status =
       ["BAD_REQUEST", "BAD_MODEL", "NO_CREDENTIALS", "NOT_INSTALLED"].includes(error.code)

@@ -14,6 +14,7 @@ import {
   generateSessionId,
   translateSessionId,
   stableSessionId,
+  evictStableSessionForRotation,
 } from "../../open-sse/executors/opencode.js";
 import {
   generateSessionId as generateZenSessionId,
@@ -298,6 +299,47 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
     const first = stableSessionId({ connectionId: "direct-conn" });
     expect(stableSessionId({ connectionId: "direct-conn" })).toBe(first);
     expect(first).toMatch(OPENCODE_SESSION_RE);
+  });
+
+  it("scopes the stable session to the resolved exit — one session never hops proxy IPs", () => {
+    // Same noAuth virtual connection, but the xray model-filter / a rotating
+    // pool overrides providerSpecificData per request with a different exit.
+    const direct = { id: "noauth", providerSpecificData: { connectionProxyEnabled: false } };
+    const viaNodeA = {
+      id: "noauth",
+      providerSpecificData: { connectionProxyEnabled: true, connectionProxyUrl: "socks5://127.0.0.1:51001" },
+    };
+    const viaNodeB = {
+      id: "noauth",
+      providerSpecificData: { connectionProxyEnabled: true, connectionProxyUrl: "socks5://127.0.0.1:51002" },
+    };
+
+    const directSession = stableSessionId(direct);
+    expect(stableSessionId(direct)).toBe(directSession);
+    expect(stableSessionId(viaNodeA)).toMatch(OPENCODE_SESSION_RE);
+    expect(stableSessionId(viaNodeA)).not.toBe(directSession);
+    expect(stableSessionId(viaNodeB)).not.toBe(stableSessionId(viaNodeA));
+    // The same exit keeps its own long-lived session across requests.
+    const nodeASession = stableSessionId(viaNodeA);
+    expect(stableSessionId(viaNodeA)).toBe(nodeASession);
+  });
+
+  it("rotates a 429-flagged stable session via evictStableSessionForRotation", () => {
+    const credentials = { id: "noauth", providerSpecificData: { connectionProxyEnabled: false } };
+    const first = stableSessionId(credentials);
+    expect(stableSessionId(credentials)).toBe(first);
+
+    // A 429 FreeUsageLimitError observed on the wire → the identity's session
+    // is evicted so the next request mints a fresh one instead of sticking
+    // to the flagged id for the whole 2h idle TTL.
+    expect(evictStableSessionForRotation(credentials)).toBe(true);
+    const second = stableSessionId(credentials);
+    expect(second).toMatch(OPENCODE_SESSION_RE);
+    expect(second).not.toBe(first);
+    // Eviction always removes whatever session the identity currently holds
+    // (rate limiting lives in the executor's rotate check, not here).
+    expect(evictStableSessionForRotation(credentials)).toBe(true);
+    expect(stableSessionId(credentials)).not.toBe(second);
   });
 
   it("keeps the standalone buildHeaders session stable across calls", () => {

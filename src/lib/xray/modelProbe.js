@@ -1,3 +1,19 @@
+import { FREE_PROVIDERS } from "@/shared/constants/providers.js";
+
+/**
+ * True for no-auth free-lane providers (e.g. OpenCode Free, "Bearer public").
+ * Every chat-shaped probe against them spends REAL free-tier quota, and all
+ * probes share the process-wide stable session (noAuth virtual connection),
+ * hopping it across every tested exit IP — the exact pattern the upstream
+ * gate flags, which then 429s the user's own traffic (same policy as the
+ * dashboard Test button, upstream PR #5193 / issue #5149). Filter probes
+ * against such providers must judge nodes by tunnel connectivity instead of
+ * a chat completion.
+ */
+export function isNoAuthFreeChatProvider(providerId) {
+  return FREE_PROVIDERS?.[providerId]?.noAuth === true;
+}
+
 /**
  * Shared request payload for the Model Proxy Filter probes (spawn-mode
  * testSingleConfigWithModel and api-mode probeModelViaChatCore).

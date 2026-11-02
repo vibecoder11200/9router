@@ -78,7 +78,7 @@ import {
   getLiveTrafficQuietForMs,
   waitForLiveTrafficQuiet,
 } from "./modelFilterTraffic.js";
-import { buildModelProbeBody, withProbeTimeout } from "./modelProbe.js";
+import { buildModelProbeBody, withProbeTimeout, isNoAuthFreeChatProvider } from "./modelProbe.js";
 import { createSerialized } from "@/lib/serialize.js";
 import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
 
@@ -900,9 +900,27 @@ export async function testSingleConfigWithModel(configId, { model: modelStr, tim
     throw e;
   }
 
-  const temp = await spawnTempConfig(config, timeoutMs);
-  const startedAt = Date.now();
-  try {
+    const temp = await spawnTempConfig(config, timeoutMs);
+    const startedAt = Date.now();
+    // Free lane (noAuth, e.g. OpenCode Free): a chat probe spends real
+    // free-tier quota AND rides the process-wide stable session across this
+    // node's exit IP — the session-hopping pattern the upstream gate flags,
+    // after which the user's own traffic 429s. Judge the node by tunnel
+    // connectivity + exit IP only (same policy as the dashboard Test button).
+    if (isNoAuthFreeChatProvider(modelInfo.provider)) {
+      const health = await testProxy(temp.socksPort, Math.min(timeoutMs, 8000)).catch(() => ({ ok: false, exitIp: "" }));
+      const latencyMs = Date.now() - startedAt;
+      await updateXrayTestResult(config.id, health.ok ? health : { ok: false });
+      return {
+        ok: health.ok === true,
+        latencyMs,
+        status: health.ok ? 200 : 0,
+        exitIp: health.exitIp || "",
+        error: health.ok ? null : "Free-lane model — tunnel connectivity check failed (chat probe skipped)",
+        chatProbeSkipped: true,
+      };
+    }
+    try {
     const baseCredentials = await getProviderCredentials(modelInfo.provider, new Set(), modelInfo.model);
     if (!baseCredentials || baseCredentials.allRateLimited) {
       const e = new Error(`No active credentials for provider: ${modelInfo.provider}`);
@@ -1050,6 +1068,7 @@ function makeApiProbeFn(apiHandle, modelInfo, modelStr, timeoutMs) {
   };
 }
 export { makeApiProbeFn as _makeApiProbeFn }; // for tests
+export { probeModelViaChatCore as _probeModelViaChatCoreForTests }; // for tests
 
 /**
  * Probe the model endpoint through a given SOCKS URI by invoking handleChatCore
@@ -1058,6 +1077,22 @@ export { makeApiProbeFn as _makeApiProbeFn }; // for tests
  * Returns { ok, status, error }.
  */
 async function probeModelViaChatCore(modelInfo, socksUri, timeoutMs) {
+  // Free lane (noAuth, e.g. OpenCode Free): never send a chat completion —
+  // it burns real free-tier quota and hops the shared stable session across
+  // this worker's exit IP, which the upstream gate flags (then the user's
+  // own requests 429 FreeUsageLimitError). Fall back to a plain exit-IP
+  // fetch through the same SOCKS: ok = the node actually routes traffic.
+  if (isNoAuthFreeChatProvider(modelInfo.provider)) {
+    const startedAt = Date.now();
+    const exitIp = await withProbeTimeout(
+      testProxyExitIpWithUri(socksUri, Math.min(timeoutMs, 10000)),
+      timeoutMs,
+      "api-free-lane",
+    ).catch(() => "");
+    return exitIp
+      ? { ok: true, status: 200, error: null, chatProbeSkipped: true, _ttft: Date.now() - startedAt }
+      : { ok: false, status: 0, error: "Free-lane model — tunnel connectivity check failed (chat probe skipped)" };
+  }
   const baseCredentials = await getProviderCredentials(modelInfo.provider, new Set(), modelInfo.model);
   if (!baseCredentials || baseCredentials.allRateLimited) {
     return { ok: false, status: 503, error: "No active credentials for provider" };

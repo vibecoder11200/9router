@@ -22,11 +22,19 @@ const CATALOG_TIMEOUT_MS = 10_000;
 // opencode/<channel>/<version>/<client> — the v1 "opencode/<version>" form
 // with a runtime suffix is answered with 403 FreeTierError since 2026-10-14.
 // The CLI version drifts constantly (multiple releases per week), so it is
-// resolved live from the npm registry — the same feed the CLI's own update
-// check hits. FALLBACK (channel "latest", client "cli") covers the window
-// before the first version resolves.
-const CLI_VERSION_URL = "https://registry.npmjs.org/opencode-ai/latest";
+// resolved live from npm — the same feed the CLI's own update check hits.
+// FALLBACK (channel "latest", client "cli") covers the window before the
+// first version resolves.
+//
+// The v2 CLI ships as @opencode/cli (bin "opencode", github.com/anomalyco/
+// opencode). The legacy `opencode-ai` package still publishes the retired
+// 1.x CLI line under `latest` (live 2026-11-02: 1.19.5, no 2.x exists there
+// at all) — a 1.x version inside the v2 UA shape is what the free-tier gate
+// rejects, so only v2+ versions are accepted; anything older keeps the
+// pinned fallback UA.
+const CLI_VERSION_URL = "https://registry.npmjs.org/@opencode/cli/latest";
 export const OPENCODE_UA_FALLBACK = "opencode/latest/2.0.26/cli";
+const CLI_MIN_MAJOR = 2;
 
 // null = never resolved → getOpencodeCliUserAgent() returns the pinned fallback.
 let responsesIds = null;
@@ -90,7 +98,13 @@ async function fetchCatalog() {
 
 // Best-effort CLI version lookup for the zen User-Agent. Runs alongside the
 // api.json refresh but never blocks it: a slow/failing npm fetch keeps the
-// last known version (or the pinned fallback).
+// last known version (or the pinned fallback). See the CLI_VERSION_URL note
+// above for why pre-v2 versions are refused.
+function isV2Version(version) {
+  const m = String(version).match(/^(\d+)\./);
+  return !!m && Number(m[1]) >= CLI_MIN_MAJOR;
+}
+
 async function fetchCliVersion() {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), CATALOG_TIMEOUT_MS);
@@ -99,6 +113,10 @@ async function fetchCliVersion() {
     if (!res.ok) throw new Error(`npm latest HTTP ${res.status}`);
     const version = (await res.json())?.version;
     if (typeof version === "string" && /^\d+\.\d+\.\d+/.test(version)) {
+      if (!isV2Version(version)) {
+        dbg("OPENCODE", `npm latest ${version} is pre-v2 — keeping pinned UA ${OPENCODE_UA_FALLBACK}`);
+        return;
+      }
       cliVersion = version;
       dbg("OPENCODE", `cli UA version synced: opencode/${version}`);
     }

@@ -164,6 +164,8 @@ export default function XrayProxyPage() {
   const [deletedConfigs, setDeletedConfigs] = useState([]);
   const notify = useNotificationStore();
   const pollRef = useRef(null);
+  // Previous model-filter status for the completion watcher (running → done).
+  const prevFilterStatusRef = useRef(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -315,6 +317,32 @@ export default function XrayProxyPage() {
     if (status?.modelFilter?.status !== "running") {
       setStopRequested(false);
     }
+  }, [status?.modelFilter?.status]);
+
+  // Model-filter completion watcher: the POST route only STARTS the job, so
+  // busy and the final toast are driven from the polled status. Only a
+  // running → not-running transition toasts, so page loads with an idle
+  // filter never fire.
+  useEffect(() => {
+    const mf = status?.modelFilter;
+    if (!mf?.status) return;
+    const prev = prevFilterStatusRef.current;
+    prevFilterStatusRef.current = mf.status;
+    if (mf.status !== "running") setModelFilterBusy(false);
+    if (prev === "running" && mf.status !== "running") {
+      if (mf.status === "cancelled") {
+        notify.info(`Filter stopped: ${mf.passed}/${mf.tested} tested before stop. Re-run to resume from where it stopped.`);
+      } else if (mf.status === "error") {
+        notify.error(`Model filter failed: ${mf.error || "unknown error"}`);
+      } else {
+        const cachedNote = mf.cached ? ` · ${mf.cached} cached` : "";
+        notify.success(`Model filter done: ${mf.passed}/${mf.tested} usable${mf.pruned ? ` · removed ${mf.pruned}` : ""}${cachedNote}`);
+      }
+      fetchConfigs();
+      fetchStatus();
+    }
+    // mf counts are read from the freshest status snapshot at transition time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.modelFilter?.status]);
 
   const api = async (path, method = "POST", body) => {
@@ -632,27 +660,26 @@ export default function XrayProxyPage() {
             all: modelFilter.all === true,
             prune: modelFilter.prune === true,
             concurrency: Number(modelFilter.concurrency) || 2,
-            pauseOnTraffic: modelFilter.pauseOnTraffic === true,
+            pauseOnTraffic: modelFilter.pauseOnTraffic !== false,
             quietMs: Number(modelFilter.quietMs) || 15000,
             forceRetest,
           }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-        setModelFilterResult(data);
-        const cachedNote = data.cached ? ` · ${data.cached} cached` : "";
-        if (data.cancelled) {
-          notify.info(`Filter stopped: ${data.passed}/${data.tested} tested before stop. Re-run to resume from where it stopped.`);
-        } else if (data.skipped) {
+        // The route starts the job and returns immediately (a run spans
+        // minutes; the old await-until-done got the request 408-killed
+        // mid-job). Completion is observed by the status-poll effect below,
+        // which also clears busy and shows the final toast.
+        if (data.skipped) {
           notify.info("A filter run is already in progress.");
+          setModelFilterBusy(false);
         } else {
-          notify.success(`Model filter done: ${data.passed}/${data.tested} usable${data.pruned ? ` · removed ${data.pruned}` : ""}${cachedNote}`);
+          setModelFilterResult(data);
+          notify.info("Filter started — progress updates every few seconds.");
         }
-        await fetchConfigs();
-        await fetchStatus();
       } catch (e) {
-        notify.error(`Model filter failed: ${e.message}`);
-      } finally {
+        notify.error(`Model filter failed to start: ${e.message}`);
         setModelFilterBusy(false);
       }
     };

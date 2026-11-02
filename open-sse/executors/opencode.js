@@ -142,6 +142,7 @@ const stableSessionCleanup = setInterval(() => {
   for (const [key, entry] of stableOpencodeSessions) {
     if (now - entry.lastUsed > MEMORY_CONFIG.sessionTtlMs) {
       stableOpencodeSessions.delete(key);
+      sessionRotatedAt.delete(key);
     }
   }
 }, MEMORY_CONFIG.sessionCleanupIntervalMs);
@@ -149,14 +150,27 @@ if (stableSessionCleanup.unref) stableSessionCleanup.unref();
 
 function identityKey(credentials) {
   const connectionId = credentials?.connectionId || credentials?.id;
-  if (connectionId) return `opencode:conn:${String(connectionId).slice(0, 128)}`;
   const raw = credentials?.rawHeaders || {};
   const auth = raw.authorization || raw.Authorization || raw["x-api-key"] || raw["X-Api-Key"] || "";
-  if (auth) {
+  let base;
+  if (connectionId) base = `opencode:conn:${String(connectionId).slice(0, 128)}`;
+  else if (auth) {
     const digest = crypto.createHash("sha256").update(String(auth)).digest("hex").slice(0, 32);
-    return `opencode:auth:${digest}`;
-  }
-  return "opencode:default";
+    base = `opencode:auth:${digest}`;
+  } else base = "opencode:default";
+  // A stable session must never hop exit IPs: the server-side free-tier
+  // accounting keys on the session, and one session seen from many IPs
+  // (rotating proxy pool, xray model-filter probes) reads as account
+  // sharing and burns the session for every request behind this identity.
+  // Key the session by the resolved exit too, so each exit keeps its own
+  // long-lived session exactly like a real single-IP CLI client.
+  const psd = credentials?.providerSpecificData || {};
+  const exit = String(
+    psd.connectionProxyUrl || psd.connectionProxyEntryId || psd.connectionProxyPoolId || "",
+  ).trim();
+  if (!exit || exit === base) return base;
+  const exitDigest = crypto.createHash("sha256").update(exit).digest("hex").slice(0, 16);
+  return `${base}:exit:${exitDigest}`;
 }
 
 export function stableSessionId(credentials) {
@@ -174,6 +188,28 @@ export function stableSessionId(credentials) {
   }
   stableOpencodeSessions.set(key, { sessionId, lastUsed: Date.now() });
   return sessionId;
+}
+
+// 429 FreeUsageLimitError can stick to a specific session id (the gate counts
+// per session and a flagged one keeps answering 429 long after its quota
+// window, e.g. after a session accidentally hopped exit IPs). Rotate the
+// identity's session once a 429 is seen so the next request mints a fresh
+// one. Cooldown: while the whole exit IP is quota-capped every new session
+// 429s too, and re-minting on every request would itself look abusive — one
+// rotation per identity per 10 minutes.
+const SESSION_ROTATE_COOLDOWN_MS = 10 * 60 * 1000;
+const sessionRotatedAt = new Map();
+
+export function evictStableSessionForRotation(credentials) {
+  const key = identityKey(credentials);
+  sessionRotatedAt.set(key, Date.now());
+  return stableOpencodeSessions.delete(key);
+}
+
+function shouldRotateStableSession(credentials) {
+  const key = identityKey(credentials);
+  const last = sessionRotatedAt.get(key) || 0;
+  return Date.now() - last >= SESSION_ROTATE_COOLDOWN_MS;
 }
 
 function bodyHasSessionHints(body) {
@@ -446,11 +482,21 @@ export class OpenCodeExecutor extends BaseExecutor {
   // instead of erroring here.
   async execute(args) {
     const credentials = this.prepareRequestCredentials(args);
-    const freeLaneFetch = (url, options, ctx) => opencodeTlsFetch(url, {
-      method: options.method,
-      headers: options.headers,
-      body: options.body,
-    }, { signal: options.signal, proxyUrl: ctx?.proxyUrl || null });
+    const freeLaneFetch = async (url, options, ctx) => {
+      const res = await opencodeTlsFetch(url, {
+        method: options.method,
+        headers: options.headers,
+        body: options.body,
+      }, { signal: options.signal, proxyUrl: ctx?.proxyUrl || null });
+      // 429 FreeUsageLimitError can be pinned to THIS session id (per-session
+      // accounting, see stableSessionId). Rotate it (cooldown-limited) so the
+      // identity recovers instead of 429ing until the 2h idle TTL — the flag
+      // outlives any single quota window once a session hopped exit IPs.
+      if (res && res.status === 429 && shouldRotateStableSession(credentials)) {
+        evictStableSessionForRotation(credentials);
+      }
+      return res;
+    };
     freeLaneFetch.proxyBridge = true;
     return super.execute({
       ...args,
