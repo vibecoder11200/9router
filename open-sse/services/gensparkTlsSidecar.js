@@ -31,7 +31,16 @@ import https from "node:https";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Webpack freezes `import.meta.url` to the BUILD machine's absolute file URL
+// (see deepseek-pow.js — same lesson). When the CLI bundle is built on Linux
+// (file:///root/9router/…) and run on Windows, fileURLToPath throws
+// ERR_INVALID_FILE_URL_PATH at module load and 500s every route whose chunk
+// pulls this module in (/api/providers/suggested-models et al). Bundled
+// deployments resolve the script via the cwd/HOME candidates below anyway.
+let __dirname = null;
+try {
+  __dirname = path.dirname(fileURLToPath(import.meta.url));
+} catch { /* cross-platform bundle: frozen import.meta.url isn't a valid path here */ }
 // Static `node:fs` import — this module is compiled into the hot chat chunk,
 // and a module-scope `createRequire(import.meta.url)("node:fs")` is the exact
 // shape the webpack minifier folded to `(void 0)` in published chunk 5895
@@ -46,14 +55,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // dev tree and the deployed standalone, rather than guessing one path.
 const SIDECAR_CANDIDATES = [
   process.env.GENSPARK_SIDECAR_SCRIPT,
-  path.join(__dirname, "gensparkTlsSidecar.py"),
+  __dirname && path.join(__dirname, "gensparkTlsSidecar.py"),
   path.join("open-sse", "services", "gensparkTlsSidecar.py"),     // run from repo root
   "/root/9router/open-sse/services/gensparkTlsSidecar.py",         // documented server install
   path.join(process.env.HOME || "/root", "9router", "open-sse", "services", "gensparkTlsSidecar.py"),
 ];
 export const SIDECAR_SCRIPT =
   SIDECAR_CANDIDATES.find((p) => p && fs.existsSync(p)) ||
-  path.join(__dirname, "gensparkTlsSidecar.py");
+  (__dirname
+    ? path.join(__dirname, "gensparkTlsSidecar.py")
+    : path.join("open-sse", "services", "gensparkTlsSidecar.py"));
 
 // Server venv location (matches the deploy layout). PYTHON overrides the executable.
 // On Windows (dev machine) the venv sits under Scripts/python.exe; on POSIX it's
