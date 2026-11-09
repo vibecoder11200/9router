@@ -18,7 +18,7 @@ const SESSION_HEADER = "x-opencode-session";
 const SESSION_FIELD = "_opencodeGoSession";
 const MAX_SESSION_LENGTH = 256;
 
-const RESPONSES_BASE_URL = "https://opencode.ai/zen/go/v1/responses";
+const RESPONSES_BASE_URL = "https://opencode.ai/inference/go/openai/v1/responses";
 
 function normalizeSession(value) {
   if (typeof value !== "string") return null;

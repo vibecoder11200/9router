@@ -1,9 +1,10 @@
 /**
  * OpenCode Go usage handler
  *
- * Source of truth: GET https://opencode.ai/zen/go/v1/usage, authenticated with the
- * same sk-... key used for chat. Measured live on 2026-08-12 against a key whose
- * monthly window was depleted:
+ * Source of truth: GET https://opencode.ai/inference/go/v1/usage (moved from
+ * zen/go/v1, upstream 7ef6df56), authenticated with the same sk-... key used
+ * for chat. Measured live on 2026-08-12 against a key whose monthly window
+ * was depleted:
  *
  * {
  *   "usage": {
@@ -33,7 +34,7 @@
 import { U, parseResetTime, toFiniteNumber, fetchWithTimeout } from "./shared.js";
 
 const USAGE = U("opencode-go");
-export const OPENCODE_GO_USAGE_URL = USAGE.url || "https://opencode.ai/zen/go/v1/usage";
+export const OPENCODE_GO_USAGE_URL = USAGE.url || "https://opencode.ai/inference/go/v1/usage";
 
 // Display order for the windows the upstream is known to report. Anything else it
 // starts sending is appended after these, sorted, so a new window shows up in the
@@ -70,7 +71,7 @@ function isBlocked(status, percentUsed) {
  * `remaining` as a percentage, never an absolute count (same trap documented on
  * the Qoder and Grok handlers). `remainingPercentage` is set for the same reason.
  *
- * @param {object} payload - Parsed JSON body of GET /zen/go/v1/usage
+ * @param {object} payload - Parsed JSON body of GET /inference/go/v1/usage
  * @returns {{ quotas: object, limitReached: boolean }|null} null when unparsable
  */
 export function parseOpenCodeGoUsage(payload) {

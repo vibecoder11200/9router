@@ -9,6 +9,17 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+// Token refresh egress goes through proxyAwareFetch → undici.fetch (v0.5.116),
+// so the mock must ride undici.fetch too.
+const undiciFetchState = vi.hoisted(() => ({ impl: null }));
+vi.mock("undici", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    fetch: (...args) => undiciFetchState.impl(...args),
+  };
+});
+
 const originalFetch = global.fetch;
 
 describe("Codex Refresh Token", () => {
@@ -28,6 +39,7 @@ describe("Codex Refresh Token", () => {
       json: () => Promise.resolve(payload),
     });
     global.fetch = fetchMock;
+    undiciFetchState.impl = fetchMock;
     return fetchMock;
   }
 

@@ -448,6 +448,8 @@ export async function POST(request) {
           // Probe /usage rather than a chat completion: a key whose plan window is
           // spent still answers 200 here but 401 on chat, so the old ping reported
           // a working key as invalid. It also costs no tokens.
+          // OPENCODE_GO_USAGE_URL tracks the registry (inference/go/v1 since
+          // upstream 7ef6df56).
           const res = await fetch(OPENCODE_GO_USAGE_URL, {
             headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
             signal: AbortSignal.timeout(8000),

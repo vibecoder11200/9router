@@ -1,3 +1,30 @@
+# v0.6.77 (2026-11-09)
+
+Upstream decolua/9router v0.5.112 → v0.5.116 migration (29 commits, upstream range `1fe586bb..1339107e`) ported via surgical 3-way apply; every fork mod on the 26 overlapping files preserved and hand-merged.
+
+## Upstream features
+- **Transport spine — DPI + dead keep-alive sockets**: undici 7.30.1 → **^8.12.3**; all direct-path fetches now ride a shared curved ClientHello Agent (`NINEROUTER_TLS_ECDH_CURVE`, default X25519, happy eyeballs RFC 8305) — `--dns-result-order=ipv4first` dropped from server spawns; keep-alive TTL capped at 4s (`FETCH_KEEPALIVE_TIMEOUT_MS`, upstream `Keep-Alive` headers can no longer stretch a socket to 600s); a pooled socket that dies before response headers is replayed once on a no-keep-alive dispatcher (`FETCH_FRESH_RETRY=off` disables), and executor retries force a fresh socket after 502/connect-timeout (963787f7 + 736be957). Fork's refcounted SOCKS-aware proxy cache, strictProxy alerts and proxyBridge keep working — proxied agents also gained the curved `requestTls`.
+- **CommandCode CLI v1.88.5 data-bridge alignment + credential auto-import**: header bump, `passthroughModels`, robust `openai-to-commandcode` message conversion (tool-name resolution, error-text outputs, 64k max tokens, `reasoning_effort`/envelope fields), usage `cachedTokens`, and a new `Import from CLI` button probing `~/.commandcode/auth.json` (b114fa9f).
+- **Antigravity: separate Gemini 4 Argon quota** — weekly/5h windows tracked, displayed and strike-cleared independently, with Ultra shared-pool fallback (8a833631).
+- **Codex Image: GPT Image 2.6** (`gpt-image-2.6-flare`, `gpt-image-2.6-sunburst`), native OAuth image generation for simple prompts, real upstream tool failures surfaced (783c9325 + a6d3cdbf + 896ef10c).
+- **SenseNova**: `sensenova-6.8-flash` and `glm-5.3` (b9c34543).
+- **OpenCode Go**: endpoints moved to `opencode.ai/inference/go/*` (registry, executor, validate/test routes — the fork's token-free `/usage` probes kept and re-pointed); Claude adaptive reasoning on the Messages transport (7ef6df56 + 633c82f5).
+- **Add All Active Models** now includes no-auth, alias and custom models via the new shared `selectableModels.js` picker core (69d51c0c).
+- **TTS voices without dashboard auth** for edge-tts/local-device (in-process, no self-fetch 401) (a4069daf); **Jina/Tavily honor the requested output format** (93bec5d8).
+
+## Upstream fixes
+- Thinking config kept on OpenAI tool-result turns (#5171); explicit DeepSeek thinking budgets preserved on `openai-compatible-*` nodes (#5108); Claude cache markers retained for DashScope targets (#2069); all Gemini tool results + follow-up parts preserved (#2393); concrete MIME for remote Gemini images; `tool_reference` blocks naming stripped tools dropped (z.ai 400); codebuddy-intl keeps client system prompts (WAF); kiro stops splicing unserved regions into service hostnames + `KIRO_INTEGRITY_GATE=off`; launcher startup ~2.5x faster (PID-file `stopPreviousInstance`, no machine-wide process scans); CLI tarball ships `deepseek-pow-hash.js` next to the PoW worker (#5460); tray reports when it never started; runtime installs stay local under global npm hooks (`--global=false`, #5443); lazyRuntime keeps named exports through CJS chained re-exports.
+
+## Fork-merge decisions
+- **Terminal tool-name gate (#5319), both layers**: the fork's `maskTerminalToolNames` (semantic `terminal`→`term` aliases, runs first in `applyFingerprintTools`) stays authoritative; upstream's `GATED_TOOL_NAME_RE` gate inside `concealFingerprintToolNames` (alias `run_command`) is ported as defense-in-depth — no production behavior change, upstream's new tests pass verbatim.
+- **proxyFetch hand-merge**: upstream's `rawFetch` (package's own undici), capped direct dispatchers, stale-socket replay and `forceFreshSocket` plumbing layered onto the fork's refcounted/SOCKS/single-flight proxy cache, strictProxy alert policies and `directFetchProxyBridge`; the fork's never-closed insecure singleton is subsumed by the capped insecure direct dispatcher.
+- **lazyRuntime**: fork keeps its `new Function` native import + manual exports-map walk (upstream's `createRequire` path deliberately not taken) and gains upstream's `unwrapCjsNamespace` so CJS chained re-exports (playwright-core `chromium`) keep named exports.
+- **opencode-go validation/test routes**: fork's token-free `/usage` probes kept (upstream reverted to a 1-token chat ping); URLs follow the registry's new inference endpoints.
+- **undici 8**: fork's SOCKS dispatcher uses the stable custom-connector contract — verified against 8 (full suite + build).
+
+## Verification
+- Full vitest suite vs `tests/__baseline__/known-fails.txt` (failing set byte-identical, 0 new regressions); providers baseline regenerated via `scripts/snapshot-providers.mjs`; webpack build verified with undici externalized (`serverExternalPackages`) and force-shipped via `outputFileTracingIncludes`; detect_changes() scoped to expected symbols/flows.
+
 # v0.6.76 (2026-11-02)
 
 OpenCode Free lane: kill the self-inflicted `429 FreeUsageLimitError`. Live evidence from the production box showed even a byte-faithful request (fingerprint tools + `<env>` marker + minted-now session + pinned `2.0.26` UA) is 429'd from the home IP — the fork itself was the quota burner: the xray model filter spent real free-tier completions and hopped the process-wide stable session across every tested exit IP, while the "live UA" feature read a npm package that never carried the v2 CLI. Also fixes the model-filter 408.

@@ -134,14 +134,12 @@ vi.mock("open-sse/translator/formats.js", () => ({
     CURSOR: "cursor", OLLAMA: "ollama", COMMANDCODE: "commandcode",
   },
 }));
-vi.mock("open-sse/config/runtimeConfig.js", () => ({
-  // searxng.js (keyAccess → model import chain) reads SEARXNG_URL at module scope.
-  SEARXNG_URL: "http://localhost:8888/search",
-  HTTP_STATUS: {
-    BAD_REQUEST: 400, UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404,
-    TOO_MANY_REQUESTS: 429, INTERNAL_SERVER_ERROR: 500, SERVICE_UNAVAILABLE: 503,
-  },
-}));
+vi.mock("open-sse/config/runtimeConfig.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  // Only SEARXNG_URL needs pinning (searxng.js reads it at module scope);
+  // the real config supplies everything else the chat chain imports.
+  return { ...actual, SEARXNG_URL: "http://localhost:8888/search" };
+});
 
 import { handleChat } from "@/sse/handlers/chat.js";
 import { getSpendForKey } from "@/lib/db/repos/usageRepo.js";

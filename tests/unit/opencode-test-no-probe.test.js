@@ -27,6 +27,17 @@ vi.mock("@/lib/network/proxyTest", () => ({
   testProxyUrl: mocks.testProxyUrl,
 }));
 
+// testUtils probes egress through proxyAwareFetch → undici.fetch (v0.5.116),
+// so the global.fetch mock must ride undici.fetch too.
+const undiciFetchState = vi.hoisted(() => ({ impl: null }));
+vi.mock("undici", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    fetch: (...args) => undiciFetchState.impl(...args),
+  };
+});
+
 const { testSingleConnection } = await import(
   "../../src/app/api/providers/[id]/test/testUtils.js"
 );
@@ -40,6 +51,7 @@ describe("provider test API key connection: opencode free tier probe (#5149)", (
     mocks.testProxyUrl.mockResolvedValue({ ok: true });
     mocks.updateProviderConnection.mockResolvedValue(undefined);
     global.fetch = mocks.fetchMock;
+    undiciFetchState.impl = mocks.fetchMock;
     mocks.fetchMock.mockReset();
   });
 
@@ -82,6 +94,6 @@ describe("provider test API key connection: opencode free tier probe (#5149)", (
     expect(res).toMatchObject({ valid: true, error: null });
     expect(mocks.fetchMock).toHaveBeenCalledTimes(1);
     const [url] = mocks.fetchMock.mock.calls[0];
-    expect(String(url)).toContain("https://opencode.ai/zen/go/v1/usage");
+    expect(String(url)).toContain("https://opencode.ai/inference/go/v1/usage");
   });
 });

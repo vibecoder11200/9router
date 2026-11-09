@@ -87,6 +87,9 @@ const nativeImport = new Function("u", "return import(u)");
  * proof. Covers the two pinned lazy deps (wreq-js, playwright-core), whose
  * "." export maps are simple condition objects; anything fancier falls
  * through to MODULE_NOT_FOUND and the on-demand install path below.
+ * The manual walk already prefers the "import" condition (upstream 1fe586bb
+ * f0938ea7 reaches the same ESM-first outcome via require.resolve
+ * conditions, which this fork deliberately avoids).
  */
 function resolveRuntimeEntry(pkg) {
   const root = path.join(getRuntimeDir(), "node_modules", pkg);
@@ -108,6 +111,18 @@ function resolveRuntimeEntry(pkg) {
   return entry;
 }
 
+// Importing a CJS entry via file URL bypasses the exports map, and
+// cjs-module-lexer cannot detect named exports through chained re-exports
+// (`module.exports = require('./coreBundle').inprocess.playwright`), so
+// consumers destructuring `{ chromium }` get undefined. Merge `default`'s
+// own properties as a fallback (upstream f0938ea7).
+function unwrapCjsNamespace(mod) {
+  if (mod?.default && typeof mod.default === "object") {
+    return { ...mod.default, ...mod };
+  }
+  return mod;
+}
+
 async function load(pkg) {
   // 1) Resolvable from the app install (dev machine / traced standalone).
   try {
@@ -117,13 +132,13 @@ async function load(pkg) {
   }
   // 2) Already present in the runtime dir from a previous install.
   try {
-    return await nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href);
+    return unwrapCjsNamespace(await nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href));
   } catch (error) {
     if (!isModuleMissing(error)) throw error;
   }
   // 3) Download on demand, then import from the runtime dir.
   const version = LAZY_DEP_VERSIONS[pkg] || "latest";
-  const runtimeImport = () => nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href);
+  const runtimeImport = async () => unwrapCjsNamespace(await nativeImport(pathToFileURL(resolveRuntimeEntry(pkg)).href));
   await installIntoRuntime(pkg, version);
   try {
     return await runtimeImport();

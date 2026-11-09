@@ -117,6 +117,49 @@ describe("opencodeFingerprint — request side", () => {
     expect(takeRenamedToolNames(body)).toBe(map);
   });
 
+  it("aliases a declared tool name containing \"terminal\" (free-tier gate, #5319)", () => {
+    const body = { tools: chat(["read_file", "terminal", "write_file"]) };
+    const map = applyFingerprintTools(body, false);
+    const sent = namesOf(body.tools);
+    expect(sent.some((name) => /terminal/i.test(name))).toBe(false);
+    // Fork: maskTerminalToolNames runs before conceal and keeps a semantic
+    // alias (terminal→term) instead of upstream's run_command.
+    expect(sent).toContain("term");
+    expect(map.get("term")).toBe("terminal");
+    // The caller's own names survive; only the gated one moved.
+    expect(sent).toContain("read_file");
+    expect(sent).toContain("write_file");
+  });
+
+  it("gates on the substring, so every case and prefix variant is aliased", () => {
+    const body = { tools: chat(["Terminal", "my_terminal_thing", "terminals", "shell"]) };
+    applyFingerprintTools(body, false);
+    const sent = namesOf(body.tools);
+    expect(sent.filter((name) => /terminal/i.test(name))).toEqual([]);
+    expect(sent).toContain("shell");
+  });
+
+  it("restores the gated name on the response and aliases its history calls", () => {
+    const body = {
+      tools: chat(["terminal"]),
+      tool_choice: { type: "function", function: { name: "terminal" } },
+      messages: [
+        { role: "assistant", content: "", tool_calls: [{ id: "c1", type: "function", function: { name: "terminal", arguments: "{}" } }] },
+        { role: "tool", tool_call_id: "c1", content: "ok" },
+      ],
+    };
+    const map = applyFingerprintTools(body, false);
+    // Fork alias: terminal→term (see the aliasing case above).
+    expect(body.tool_choice.function.name).toBe("term");
+    const call = body.messages.flatMap((m) => m.tool_calls ?? []).find((c) => c.id === "c1");
+    expect(call.function.name).toBe("term");
+    const restored = restoreToolNames(
+      { choices: [{ message: { tool_calls: [{ id: "c2", type: "function", function: { name: "term", arguments: "{}" } }] } }] },
+      map,
+    );
+    expect(restored.choices[0].message.tool_calls[0].function.name).toBe("terminal");
+  });
+
   it("never throws on malformed tools", () => {
     for (const tools of [null, undefined, "nope", [null, 42, []], [{}, { name: "" }]]) {
       expect(() => concealFingerprintToolNames(tools)).not.toThrow();

@@ -5,6 +5,7 @@ import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider, AI_PROVIDERS
 import { getDefaultModel } from "open-sse/config/providerModels.js";
 import { probeBedrockCredentials } from "open-sse/executors/bedrock.js";
 import { resolveOllamaLocalHost, PROVIDERS } from "open-sse/config/providers.js";
+import { proxyAwareFetch } from "open-sse/utils/proxyFetch.js";
 import { CODEX_CLI_VERSION } from "open-sse/config/appConstants.js";
 import { GROK_CLI_PAGER_USER_AGENT, GROK_CLI_VERSION } from "open-sse/config/grokCli.js";
 import {
@@ -292,7 +293,9 @@ async function refreshOAuthToken(connection) {
     }
 
     if (provider === "claude") {
-      const response = await fetch(CLAUDE_CONFIG.tokenUrl, {
+      // proxyAwareFetch, not bare fetch: the curved dispatcher is required to
+      // survive the DPI that RSTs Node's default ClientHello.
+      const response = await proxyAwareFetch(CLAUDE_CONFIG.tokenUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({
@@ -893,6 +896,8 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         // Probe /usage rather than a chat completion: a key whose plan window is
         // spent still answers 200 here but 401 on chat, so the old ping reported a
         // working key as "Invalid API key". It also costs no tokens.
+        // OPENCODE_GO_USAGE_URL tracks the registry (inference/go/v1 since
+        // upstream 7ef6df56).
         const res = await fetchWithConnectionProxy(OPENCODE_GO_USAGE_URL, {
           headers: { Authorization: `Bearer ${connection.apiKey}`, Accept: "application/json" },
         }, effectiveProxy);

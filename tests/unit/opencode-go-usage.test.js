@@ -18,6 +18,8 @@ import {
   parseOpenCodeGoUsage,
 } from "../../open-sse/services/usage/opencode-go.js";
 
+const USAGE_URL = "https://opencode.ai/inference/go/v1/usage";
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -25,7 +27,7 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-// Verbatim response from GET /zen/go/v1/usage on 2026-08-12, from a key whose
+// Verbatim response from GET /inference/go/v1/usage on 2026-08-12, from a key whose
 // monthly window was spent while the other two were untouched.
 const LIVE_PAYLOAD = {
   usage: {
@@ -40,7 +42,7 @@ describe("opencode-go registry wiring", () => {
     // Asserted on PROVIDERS rather than the exported constant: the constant has a
     // hardcoded fallback, so it would still read correct with the registry block
     // deleted, and the dashboard resolves the provider through PROVIDERS.
-    expect(PROVIDERS["opencode-go"].usage?.url).toBe("https://opencode.ai/zen/go/v1/usage");
+    expect(PROVIDERS["opencode-go"].usage?.url).toBe("https://opencode.ai/inference/go/v1/usage");
     expect(OPENCODE_GO_USAGE_URL).toBe(PROVIDERS["opencode-go"].usage.url);
   });
 
@@ -175,7 +177,7 @@ describe("getUsageForProvider(opencode-go)", () => {
     const usage = await getUsageForProvider({ provider: "opencode-go", apiKey: "sk-test" });
 
     const [url, opts] = proxyAwareFetch.mock.calls[0];
-    expect(url).toBe("https://opencode.ai/zen/go/v1/usage");
+    expect(url).toBe("https://opencode.ai/inference/go/v1/usage");
     expect(opts.headers.Authorization).toBe("Bearer sk-test");
     expect(opts.method ?? "GET").toBe("GET");
     expect(usage.message).toBeUndefined();

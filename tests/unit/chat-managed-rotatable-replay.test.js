@@ -108,16 +108,12 @@ vi.mock("open-sse/translator/formats.js", () => ({
     CURSOR: "cursor", OLLAMA: "ollama", COMMANDCODE: "commandcode",
   },
 }));
-vi.mock("open-sse/config/runtimeConfig.js", () => ({
-  // searxng.js (keyAccess → model import chain) reads SEARXNG_URL at module scope.
-  SEARXNG_URL: "http://localhost:8888/search",
-  HTTP_STATUS: {
-    BAD_REQUEST: 400, UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404,
-    METHOD_NOT_ALLOWED: 405, PAYLOAD_TOO_LARGE: 413, UNPROCESSABLE_ENTITY: 422,
-    TOO_MANY_REQUESTS: 429, INTERNAL_SERVER_ERROR: 500, BAD_GATEWAY: 502,
-    SERVICE_UNAVAILABLE: 503, GATEWAY_TIMEOUT: 504,
-  },
-}));
+vi.mock("open-sse/config/runtimeConfig.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  // Only SEARXNG_URL needs pinning (searxng.js reads it at module scope);
+  // the real config supplies everything else the chat chain imports.
+  return { ...actual, SEARXNG_URL: "http://localhost:8888/search" };
+});
 
 vi.mock("@/lib/db/repos/xrayRepo.js", () => ({
   getSelectedXrayConfig: vi.fn(async () => ({ id: "active-1", name: "Active", lastExitIp: "1.1.1.1" })),

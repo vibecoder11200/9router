@@ -4,24 +4,30 @@
 // usage is tracked (fetch receives the dispatcher when a proxy is used).
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-// proxyFetch captures globalThis.fetch at import time — install the mock
-// BEFORE the dynamic import below.
+// proxyFetch fetches through the package's own undici instance (rawFetch,
+// upstream v0.5.116) — the undici mock below is what requests hit.
 // socksDispatcher/undici are mocked so no real agents are built (undici is
 // not resolvable from src/** in this environment, and no sockets are touched).
+const { fetchMock, FakeProxyAgent, FakeDirectAgent } = vi.hoisted(() => {
+  class FakeProxyAgent {
+    constructor(opts = {}) { this.uri = opts?.uri || "fake-proxy"; }
+    close() { return Promise.resolve(); }
+  }
+  class FakeDirectAgent {
+    constructor() { this.uri = "direct"; }
+    close() { return Promise.resolve(); }
+  }
+  return { fetchMock: vi.fn(async () => new Response("ok")), FakeProxyAgent, FakeDirectAgent };
+});
 vi.mock("@/lib/network/socksDispatcher.js", () => ({
   isSocksProxyUrl: (u) => /^socks/i.test(u),
   createSocksDispatcher: () => ({ close: async () => {} }),
 }), { virtual: true });
 vi.mock("undici", () => ({
-  ProxyAgent: class FakeProxyAgent {
-    constructor() { this.uri = "fake"; }
-    close() { return Promise.resolve(); }
-  },
+  ProxyAgent: FakeProxyAgent,
+  Agent: FakeDirectAgent,
+  fetch: fetchMock,
 }), { virtual: true });
-
-const fetchMock = vi.fn(async () => new Response("ok"));
-const originalGlobalFetch = globalThis.fetch;
-globalThis.fetch = fetchMock;
 
 let proxyAwareFetch;
 let proxyFetchModule;
@@ -29,10 +35,6 @@ let proxyFetchModule;
 beforeAll(async () => {
   proxyFetchModule = await import("open-sse/utils/proxyFetch.js");
   proxyAwareFetch = proxyFetchModule.proxyAwareFetch;
-});
-
-afterAll(() => {
-  globalThis.fetch = originalGlobalFetch;
 });
 
 const ENV_KEYS = ["HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy", "NO_PROXY", "no_proxy"];
@@ -63,8 +65,9 @@ describe("strict env-proxy policy (P1/P5)", () => {
     });
     expect(res.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    // Direct call — env proxy must NOT have contributed a dispatcher.
-    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeUndefined();
+    // Direct call — the shared direct agent serves it; the env proxy must NOT
+    // have contributed a ProxyAgent dispatcher.
+    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeInstanceOf(FakeDirectAgent);
   });
 
   it("strict + healthy connection proxy → fetch goes through the dispatcher", async () => {
@@ -75,7 +78,7 @@ describe("strict env-proxy policy (P1/P5)", () => {
     });
     expect(res.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeTruthy();
+    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeInstanceOf(FakeProxyAgent);
   });
 
   it("strict + proxy fetch failure → throws (no direct fallback)", async () => {
@@ -93,7 +96,7 @@ describe("strict env-proxy policy (P1/P5)", () => {
     process.env.HTTPS_PROXY = "http://env-proxy:8080";
     await proxyAwareFetch("https://api.example.com/v1", {}, null);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeTruthy();
+    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeInstanceOf(FakeProxyAgent);
   });
 
   it("noProxy bypass is honored even under strict (explicit per-host direct)", async () => {
@@ -105,6 +108,7 @@ describe("strict env-proxy policy (P1/P5)", () => {
       strictProxy: true,
     });
     expect(res.ok).toBe(true);
-    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeUndefined();
+    // Intentional direct hop — the shared direct agent, never the proxy.
+    expect(fetchMock.mock.calls[0][1]?.dispatcher).toBeInstanceOf(FakeDirectAgent);
   });
 });

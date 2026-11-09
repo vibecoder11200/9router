@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+// Token refresh egress goes through proxyAwareFetch → undici.fetch (v0.5.116),
+// so the global.fetch mock must ride undici.fetch too.
+const undiciFetchState = vi.hoisted(() => ({ impl: null }));
+vi.mock("undici", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    fetch: (...args) => undiciFetchState.impl(...args),
+  };
+});
+
 const originalFetch = global.fetch;
 const TEST_CLIENT_ID = "00000000-0000-4000-8000-000000000000";
 const TEST_SCOPE = `api://${TEST_CLIENT_ID}/codewhisperer:conversations offline_access`;
@@ -34,6 +45,7 @@ describe("Kiro external_idp (CLIProxyAPI) import and refresh", () => {
       }),
     });
     global.fetch = fetchMock;
+    undiciFetchState.impl = fetchMock;
 
     const { refreshKiroToken } = await import("../../open-sse/services/tokenRefresh.js");
     const result = await refreshKiroToken("old-refresh-token", {
