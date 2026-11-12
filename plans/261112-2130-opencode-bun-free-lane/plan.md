@@ -1,7 +1,7 @@
 ---
 title: "OpenCode Free lane via Bun stdio sidecar (v2 gate CLI-identical traffic)"
 description: "Route the OpenCode Free (noAuth) lane through per-request Bun stdio children that replicate CLI-identical TLS + harness + tool-manifest traffic to the v2 free-tier gate, with Bun download-on-demand and fail-fast lane semantics."
-status: pending
+status: completed
 priority: P1
 effort: 24h
 branch: master
