@@ -1,6 +1,9 @@
 # v0.6.84 (2026-11-13)
 
-Hotfix for the first real deploy of the bun lane: a bare-standalone runtime spawned bun at a sidecar path that did not exist there, and bun exited 1 without our protocol header - reading as a mystery "bun child exited before headers (code 1)" on the card.
+Hotfix for the first real deploy of the bun lane: a bare-standalone runtime spawned bun at a sidecar path that did not exist there, and bun exited 1 without our protocol header - reading as a mystery "bun child exited before headers (code 1)" on the card. Plus the manual bun install path asked for during that deploy.
+
+## Features
+- **"Install bun now" button** (free-lane card, shown only when bun is missing): POSTs `/api/opencode-free-lane/prewarm` (GET-free like every mutation route) to run the digest-pinned installer up front instead of waiting for the first free-model request to download it mid-chat. Idempotent when bun is already installed, and the installer is single-flight, so a double-click or a racing first chat request shares one download. Failures surface inline on the card (`Install failed: ...`).
 
 ## Fixes
 - **Sidecar resolution hardened**: candidates now include the server-entry dir (`dirname(argv[1])` - repo root under `node custom-server.js`, `.next/standalone` under a bare standalone run) on top of the module dir and cwd; `scripts/copy-standalone-assets.mjs` now copies `opencodeBunSidecar.mjs` into the standalone output (mirroring the Docker deploy's `COPY /app/open-sse`); and when NO candidate exists the lane refuses up front with the typed unavailable error listing every path tried - never spawns bun at a missing path again.

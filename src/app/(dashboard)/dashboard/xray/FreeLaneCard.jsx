@@ -13,12 +13,14 @@
 //    exits, not just concurrency.
 
 import { useEffect, useState, useCallback } from "react";
-import { Badge, Card } from "@/shared/components";
+import { Badge, Button, Card } from "@/shared/components";
 
 const CONCURRENCY_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
 
 export default function FreeLaneCard({ settings, onSaveSetting }) {
   const [lane, setLane] = useState(null);
+  const [installing, setInstalling] = useState(false);
+  const [installError, setInstallError] = useState(null);
 
   const fetchLane = useCallback(async () => {
     try {
@@ -32,6 +34,24 @@ export default function FreeLaneCard({ settings, onSaveSetting }) {
     fetchLane();
     const t = setInterval(fetchLane, 15000);
     return () => clearInterval(t);
+  }, [fetchLane]);
+
+  // Prewarm the bun runtime via the idempotent POST route (the installer is
+  // single-flight — a double-click or a racing first chat request shares one
+  // download). Long on slow links: the button stays disabled until it settles.
+  const prewarmBun = useCallback(async () => {
+    setInstalling(true);
+    setInstallError(null);
+    try {
+      const res = await fetch("/api/opencode-free-lane/prewarm", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    } catch (e) {
+      setInstallError(e.message);
+    } finally {
+      setInstalling(false);
+      fetchLane();
+    }
   }, [fetchLane]);
 
   const engine = settings?.opencodeFreeLaneEngine || "bun";
@@ -113,7 +133,23 @@ export default function FreeLaneCard({ settings, onSaveSetting }) {
           {lane?.lastUnavailableAlertAt && (
             <Badge variant="error">unavailable alert {new Date(lane.lastUnavailableAlertAt).toLocaleTimeString()}</Badge>
           )}
+          {bunInstalled === false && (
+            <Button
+              className="text-xs"
+              disabled={installing}
+              onClick={prewarmBun}
+              title="Download and install the pinned Bun runtime now (the lane also self-installs on the first free-model request)"
+            >
+              {installing ? "Installing bun…" : "Install bun now"}
+            </Button>
+          )}
         </div>
+
+        {installError && (
+          <div className="text-xs text-red-600 dark:text-red-400 break-words">
+            Install failed: {installError}
+          </div>
+        )}
 
         {lastErr && (
           <div className="text-xs text-text-muted rounded bg-black/5 dark:bg-white/5 p-2 break-words">
