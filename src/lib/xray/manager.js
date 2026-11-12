@@ -902,6 +902,7 @@ export async function testSingleConfigWithModel(configId, { model: modelStr, tim
 
     const temp = await spawnTempConfig(config, timeoutMs);
     const startedAt = Date.now();
+    try {
     // Free lane (noAuth, e.g. OpenCode Free): a chat probe spends real
     // free-tier quota AND rides the process-wide stable session across this
     // node's exit IP — the session-hopping pattern the upstream gate flags,
@@ -920,7 +921,6 @@ export async function testSingleConfigWithModel(configId, { model: modelStr, tim
         chatProbeSkipped: true,
       };
     }
-    try {
     const baseCredentials = await getProviderCredentials(modelInfo.provider, new Set(), modelInfo.model);
     if (!baseCredentials || baseCredentials.allRateLimited) {
       const e = new Error(`No active credentials for provider: ${modelInfo.provider}`);
