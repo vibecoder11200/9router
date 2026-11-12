@@ -64,6 +64,11 @@ function sidecarCandidates() {
     sidecarDirname && path.join(sidecarDirname, SIDECAR_NAME),
     path.join("open-sse", "services", SIDECAR_NAME), // repo-root cwd
     serverEntryDirname() && path.join(serverEntryDirname(), "open-sse", "services", SIDECAR_NAME),
+    // npm CLI deploy: the server entry is <pkg>/cli.js and build-cli.js ships
+    // the sidecar at <pkg>/app/open-sse/services/. The cwd candidate usually
+    // covers that too (next-server runs with cwd <pkg>/app), but systemd/pm2-
+    // style launches may set a different cwd — resolve from the entry dir.
+    serverEntryDirname() && path.join(serverEntryDirname(), "app", "open-sse", "services", SIDECAR_NAME),
   ];
 }
 

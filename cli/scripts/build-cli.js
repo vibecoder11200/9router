@@ -179,6 +179,29 @@ function assertDeepSeekPowFiles(cliAppDir) {
   }
 }
 
+// The bun-lane sidecar is spawned by path and never bundled or traced (same
+// class as the PoW worker above). v0.6.84 fixed standalone/Docker but missed
+// this packaging path — npm CLI deploys shipped without the file and the lane
+// refused every free-lane request with `bun sidecar script not found`.
+const OPENCODE_BUN_SIDECAR = "opencodeBunSidecar.mjs";
+
+function copyOpencodeBunSidecar(appDir, cliAppDir) {
+  const src = path.join(appDir, "open-sse", "services", OPENCODE_BUN_SIDECAR);
+  if (!fs.existsSync(src)) {
+    throw new Error(`OpenCode bun-lane sidecar not found: ${src}`);
+  }
+  const destDir = path.join(cliAppDir, "open-sse", "services");
+  fs.mkdirSync(destDir, { recursive: true });
+  fs.copyFileSync(src, path.join(destDir, OPENCODE_BUN_SIDECAR));
+}
+
+function assertOpencodeBunSidecar(cliAppDir) {
+  const filePath = path.join(cliAppDir, "open-sse", "services", OPENCODE_BUN_SIDECAR);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`OpenCode bun-lane sidecar missing from the CLI bundle: ${filePath}`);
+  }
+}
+
 function buildCliPackage() {
   console.log("📦 Building 9Router CLI package with Next.js...\n");
 
@@ -257,6 +280,14 @@ function buildCliPackage() {
   copyDeepSeekPowFiles(appDir, cliAppDir);
   assertDeepSeekPowFiles(cliAppDir);
   console.log("✅ Copied DeepSeek PoW worker files\n");
+
+  // Step 3b2: OpenCode bun-lane sidecar (spawned by path, never traced — the
+  // npm CLI tarball shipped without it and the lane refused every free-lane
+  // request on v0.6.84 CLI deploys).
+  console.log("3️⃣ b2 Copying OpenCode bun-lane sidecar...");
+  copyOpencodeBunSidecar(appDir, cliAppDir);
+  assertOpencodeBunSidecar(cliAppDir);
+  console.log("✅ Copied OpenCode bun-lane sidecar\n");
 
   // Step 3c: Ensure sql.js (pure JS fallback) bundled in app/cli/app/node_modules.
   // Strip better-sqlite3 (native) — it lives in ~/.9router/runtime to avoid
@@ -382,8 +413,10 @@ function buildCliPackage() {
 
 module.exports = {
   assertDeepSeekPowFiles,
+  assertOpencodeBunSidecar,
   assertRequiredApiArtifacts,
   copyDeepSeekPowFiles,
+  copyOpencodeBunSidecar,
   copyStandaloneBuild,
   mergeServerArtifacts,
 };

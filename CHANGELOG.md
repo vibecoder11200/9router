@@ -1,3 +1,16 @@
+# v0.6.85 (2026-11-13)
+
+The v0.6.84 sidecar fix covered standalone/Docker deploys but missed the npm CLI tarball — a CLI deploy shipped without `open-sse/services/opencodeBunSidecar.mjs`, so the lane refused every free-lane request with `bun sidecar script not found`. That is what "0/2 usable" on the Model Proxy Filter really was: the real-chat probe aborts on lane-down (app-side infra) without writing results, so the usable count stayed empty.
+
+## Fixes
+- **CLI packaging ships the sidecar**: `cli/scripts/build-cli.js` now copies `open-sse/services/opencodeBunSidecar.mjs` into the bundle (`app/open-sse/services/`) with a build-time assert — the same belt-and-braces pattern as the DeepSeek PoW worker (runtime-loaded, never traced/bundled).
+- **Resolution candidate for the CLI layout**: the lane also tries `<server-entry-dir>/app/open-sse/services/` (entry = `cli.js` → `<pkg>/app/...`), covering systemd/pm2-style launches whose cwd differs from the package app dir; the cwd candidate still covers the normal launch (next-server runs with cwd = `<pkg>/app`).
+- The typed refuse's `tried:` list picks up the new candidate automatically.
+
+## Verification
+- Sidecar-resolution suite extended: the npm-CLI-layout candidate resolves and is the spawned script (no other candidate wins). 7 lane-side suites green (40 tests). `copyOpencodeBunSidecar`/`assertOpencodeBunSidecar` smoke-tested against a temp bundle dir.
+- CLI deploy sanity: after hand-placing the sidecar, a real chat request returned the upstream 429 FreeUsageLimitError instead of the lane 502 — the chain (sidecar → bun → v2 gate) is proven end-to-end; probe results pending exit-IP quota reset.
+
 # v0.6.84 (2026-11-13)
 
 Hotfix for the first real deploy of the bun lane: a bare-standalone runtime spawned bun at a sidecar path that did not exist there, and bun exited 1 without our protocol header - reading as a mystery "bun child exited before headers (code 1)" on the card. Plus the manual bun install path asked for during that deploy.
