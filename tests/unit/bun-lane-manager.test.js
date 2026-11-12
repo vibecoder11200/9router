@@ -26,6 +26,7 @@ import {
   __test__,
   getBunLaneStatus,
   opencodeFreeLaneFetch,
+  OpenCodeFreeLaneBusyError,
   OpenCodeFreeLaneUnavailableError,
   OpenCodeFreeLaneUnmappedProxyError,
 } from "../../open-sse/services/opencodeBunLane.js";
@@ -113,7 +114,9 @@ describe("opencodeBunLane semaphore", () => {
     const holders = [1, 2, 3].map(() => opencodeFreeLaneFetch(serverUrl, { method: "GET" }));
     await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(3), { timeout: 15_000 });
     const queued = opencodeFreeLaneFetch(serverUrl, { method: "GET" }, { queueTimeoutMs: 400 });
-    await expect(queued).rejects.toBeInstanceOf(OpenCodeFreeLaneUnavailableError);
+    // saturation is BUSY, not unavailable — a healthy lane under load must not
+    // page as an outage (review P2-4)
+    await expect(queued).rejects.toBeInstanceOf(OpenCodeFreeLaneBusyError);
     await expect(queued).rejects.toThrow(/queue timeout/);
     // drain the holders via their bodies (stream end frees slots)
     holders.forEach(async (p) => {
@@ -149,6 +152,37 @@ describe("opencodeBunLane semaphore", () => {
     const res = await opencodeFreeLaneFetch(serverUrl, { method: "GET" });
     await res.body.cancel();
     await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 3_000, interval: 25 });
+  });
+
+  it("abort during the header phase rejects fast as AbortError and kills the child (review P0-1)", { timeout: 20_000 }, async () => {
+    // silent upstream: headers never arrive — the pre-first-line window
+    sseServer((req, res) => {
+      req.on("close", () => res.destroy()); // never writes headers
+    });
+    const controller = new AbortController();
+    const t0 = Date.now();
+    const pending = opencodeFreeLaneFetch(serverUrl, { method: "GET" }, { signal: controller.signal, timeoutMs: 60_000 });
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(1), { timeout: 10_000 });
+    const settle = pending.then(
+      (r) => ({ kind: "resolved", status: r.status }),
+      (e) => ({ kind: "rejected", name: e.name }),
+    );
+    controller.abort();
+    const outcome = await settle;
+    const dt = Date.now() - t0;
+    expect(outcome.kind).toBe("rejected");
+    expect(outcome.name).toBe("AbortError"); // base loop rethrows — no retry of an abandoned request
+    expect(dt).toBeLessThan(5000); // bounded by the abort, not by the deadline/retry budget
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 3_000, interval: 25 });
+  });
+
+  it("pre-start abort never spawns a child", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      opencodeFreeLaneFetch(serverUrl, { method: "GET" }, { signal: controller.signal }),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(getBunLaneStatus().busy).toBe(0);
   });
 });
 

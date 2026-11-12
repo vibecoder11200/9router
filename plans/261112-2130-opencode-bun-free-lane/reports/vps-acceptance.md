@@ -68,8 +68,8 @@ download-on-demand) or pre-warmed via the installer; alerts channel configured.
 ## Replay (Mode A) on the dev machine - never the VPS
 
 - `node scripts/replay-opencode-free-lane.mjs` -> 3/3 (200 + first SSE chunk).
-- Current state: PAUSED per plan R4 after per-IP quota 429 (see
-  `reports/mode-a-replay.md`); re-run after the quota window resets.
+- Current state: GREEN 3/3 after the quota reset (2026-11-13; see
+  `reports/mode-a-replay.md`).
 
 ## Acceptance record
 

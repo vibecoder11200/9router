@@ -30,6 +30,7 @@ import {
   opencodeFreeLaneFetch,
   OpenCodeFreeLaneUnavailableError,
   OpenCodeFreeLaneUnmappedProxyError,
+  OpenCodeFreeLaneBusyError,
 } from "../services/opencodeBunLane.js";
 import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
 import { getSettings } from "@/lib/localDb.js";
@@ -431,10 +432,11 @@ function dropAdaptiveReasoningEffort(body) {
   if (body?.reasoning_effort === "auto") delete body.reasoning_effort;
 }
 
-// Fail-fast alert dedupe (plan acceptance #3): exactly ONE critical
-// OPENCODE_BUN_LANE_UNAVAILABLE per hour regardless of request volume.
+// Fail-fast alert dedupe (plan acceptance #3): exactly ONE alert per kind per
+// hour regardless of request volume — keyed PER KIND so an unmapped-proxy info
+// can never mask a genuine lane-down critical in the same window (review P1-3).
 const LANE_ALERT_DEDUPE_MS = 60 * 60 * 1000;
-let lastLaneUnavailableAlertAt = 0;
+const laneAlertState = { down: 0, unmapped: 0, busy: 0 };
 
 /**
  * The free gate keys on the TLS ClientHello (Bun's BoringSSL passes, Node's
@@ -447,11 +449,14 @@ let lastLaneUnavailableAlertAt = 0;
  * (today's exact behavior) or for responses/messages-format free models
  * (known-refused by the v2 chat-completions lane — documented R8).
  */
-async function runBunFreeLane(options, ctx, credentials) {
+async function runBunFreeLane(options, ctx, credentials, model) {
   // The snapshot endpoint is authoritative — the executor's chat-completions
   // URL is deliberately not used on this lane.
   const snapshot = getEmbeddedWireSnapshot();
-  const shaped = shapeV2FreeLaneRequestBody(JSON.parse(options.body), snapshot);
+  // The harness system text carries `- Name:` / `- Model ID:` lines — render
+  // them with the real model so the wire matches the CLI/fixture composition
+  // (P0-proven), not empty fields (review P2-1).
+  const shaped = shapeV2FreeLaneRequestBody(JSON.parse(options.body), snapshot, { modelId: model });
   const headers = mintV2IdentityHeaders(snapshot, credentials?.[SESSION_FIELD]);
   return opencodeFreeLaneFetch(snapshot.endpoint, {
     method: "POST",
@@ -462,40 +467,59 @@ async function runBunFreeLane(options, ctx, credentials) {
 
 function surfaceLaneUnavailable(laneError) {
   const unmapped = laneError instanceof OpenCodeFreeLaneUnmappedProxyError;
+  const busy = laneError instanceof OpenCodeFreeLaneBusyError;
+  // info for a healthy-but-saturated lane and an unmapped proxy — neither is
+  // a lane outage; critical only for a genuine bun runtime/lane failure.
+  const kind = busy ? "busy" : unmapped ? "unmapped" : "down";
   const now = Date.now();
-  if (now - lastLaneUnavailableAlertAt > LANE_ALERT_DEDUPE_MS) {
-    lastLaneUnavailableAlertAt = now;
+  if (now - laneAlertState[kind] > LANE_ALERT_DEDUPE_MS) {
+    laneAlertState[kind] = now;
     emitAlert(EVENT_TYPES.OPENCODE_BUN_LANE_UNAVAILABLE, {
-      severity: unmapped ? SEVERITY.INFO : SEVERITY.CRITICAL,
-      title: unmapped ? "OpenCode free lane proxy unmapped" : "OpenCode free lane unavailable",
-      body: unmapped
-        ? "The pool binding's socks proxy has no verifiable xray HTTP inbound — bind a fork xray pool or remove the pool binding."
-        : "The Bun lane failed its bounded retry; requests fail fast with 503 until it recovers.",
-      details: { reason: laneError?.code, unmapped },
+      severity: kind === "down" ? SEVERITY.CRITICAL : SEVERITY.INFO,
+      title: kind === "down"
+        ? "OpenCode free lane unavailable"
+        : kind === "busy"
+          ? "OpenCode free lane saturated"
+          : "OpenCode free lane proxy unmapped",
+      body: kind === "down"
+        ? "The Bun lane failed its bounded retry; requests fail fast with 503 until it recovers."
+        : kind === "busy"
+          ? "All 3 lane children are busy and the waiter queue timed out — healthy lane under load; requests fail fast with 503."
+          : "The pool binding's socks proxy has no verifiable xray HTTP inbound — bind a fork xray pool or remove the pool binding.",
+      details: { reason: laneError?.code, kind },
       dedupKey: "opencode-bun-lane",
     });
   }
   const err = new Error(
-    unmapped
-      ? "OpenCode free lane: proxy pool not mappable to the Bun lane (bind a fork xray pool or remove the pool binding)"
-      : "OpenCode free lane unavailable (bun runtime/lane failure)",
+    kind === "down"
+      ? "OpenCode free lane unavailable (bun runtime/lane failure)"
+      : kind === "busy"
+        ? "OpenCode free lane saturated (max 3 concurrent children; queue timeout)"
+        : "OpenCode free lane: proxy pool not mappable to the Bun lane (bind a fork xray pool or remove the pool binding)",
   );
   err.code = "OPENCODE_FREE_LANE_UNAVAILABLE";
   err.statusCode = 503;
+  // Non-retriable by construction: the lane already spent its bounded retry.
+  // Without this the base loop maps the throw to the 502 retry config and
+  // multiplies both the latency and the child spawns (review P1-2).
+  err.noRetry = true;
   return err;
 }
 
-// Test-only: reset the lane-alert dedupe window (module-level state).
+// Test-only: reset the lane-alert dedupe windows (module-level state).
 export const __test__ = {
   resetLaneAlertDedupe() {
-    lastLaneUnavailableAlertAt = 0;
+    laneAlertState.down = 0;
+    laneAlertState.unmapped = 0;
+    laneAlertState.busy = 0;
   },
 };
 
 // Read-only observability hook for GET /api/opencode-free-lane — when the
-// lane last raised the unavailable alert (null = never).
+// lane last raised ANY unavailable-class alert (null = never).
 export function getLaneUnavailableAlertAt() {
-  return lastLaneUnavailableAlertAt ? new Date(lastLaneUnavailableAlertAt).toISOString() : null;
+  const latest = Math.max(laneAlertState.down, laneAlertState.unmapped, laneAlertState.busy);
+  return latest ? new Date(latest).toISOString() : null;
 }
 
 /** Engine setting per request ("bun" default | "legacy" kill-switch). */
@@ -598,7 +622,7 @@ export class OpenCodeExecutor extends BaseExecutor {
       const engine = await getFreeLaneEngine();
       if (engine !== "legacy" && model && !isResponsesModel(model) && !isMessagesModel(model)) {
         try {
-          const res = await runBunFreeLane(options, ctx, credentials);
+          const res = await runBunFreeLane(options, ctx, credentials, model);
           // 429 rotation hook (see legacy branch): a real bun-lane 429 means
           // THIS exit identity's quota is spent — rotate exactly as before.
           if (res && res.status === 429 && shouldRotateStableSession(credentials)) {
@@ -606,7 +630,7 @@ export class OpenCodeExecutor extends BaseExecutor {
           }
           return res;
         } catch (e) {
-          if (e instanceof OpenCodeFreeLaneUnavailableError || e instanceof OpenCodeFreeLaneUnmappedProxyError) {
+          if (e instanceof OpenCodeFreeLaneUnavailableError || e instanceof OpenCodeFreeLaneUnmappedProxyError || e instanceof OpenCodeFreeLaneBusyError) {
             throw surfaceLaneUnavailable(e); // fail-fast — NO legacy serving
           }
           throw e;

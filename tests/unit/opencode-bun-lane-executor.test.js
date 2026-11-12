@@ -109,10 +109,13 @@ describe("opencode executor — bun free lane integration", () => {
     laneFetchMock.mockRejectedValue(new OpenCodeFreeLaneUnavailableError("bun gone"));
 
     const directFetch = await captureDirectFetch(chatArgs());
-    await expect(directFetch()).rejects.toMatchObject({
+    const surfaced = await directFetch().catch((e) => e);
+    expect(surfaced).toMatchObject({
       code: "OPENCODE_FREE_LANE_UNAVAILABLE",
       statusCode: 503,
+      noRetry: true, // the base retry loop must not multiply lane failures
     });
+    expect(surfaced.message).toContain("free lane unavailable");
     expect(tlsFetchMock).not.toHaveBeenCalled();
     expect(emitAlertMock).toHaveBeenCalledTimes(1);
     const [eventType, payload] = emitAlertMock.mock.calls[0];

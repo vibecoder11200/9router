@@ -188,7 +188,9 @@ export class BaseExecutor {
 
         // Map network/fetch exceptions to 502 retry config; force a fresh socket on retry
         // so a silently-dropped keep-alive socket is never reused from the pool.
-        if (await tryRetry(urlIndex, HTTP_STATUS.BAD_GATEWAY, `network "${error.message}"`)) {
+        // Typed errors marked noRetry already spent their own bounded retry —
+        // re-running them multiplies latency and side effects for nothing.
+        if (error.noRetry !== true && await tryRetry(urlIndex, HTTP_STATUS.BAD_GATEWAY, `network "${error.message}"`)) {
           forceFreshSocketByUrl[urlIndex] = true;
           urlIndex--;
           continue;

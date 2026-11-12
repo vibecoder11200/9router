@@ -46,9 +46,16 @@ quota-safe abort proof).
 - scripts/lib/alias-loader.mjs (new): ESM resolve hook mapping @/ and open-sse/ aliases
   so dev scripts can import app modules under plain node.
 
+## Clean 3/3 after quota reset (2026-11-13)
+
+The R4 pause resolved as predicted: re-running the harness after the per-IP
+quota window reset returned **3/3 PASS** (exit 0) - HTTP 200 + first SSE chunk
+on every run (1607ms / 3700ms / 1075ms), fresh session per run, cancel per run,
+snapshot 2.2.7 throughout. This validates the exit-before-flush fix live and
+closes the Mode A gate. Quota cost: 3 completions.
+
 ## Gate status
 
-- Mode A: **PAUSED per R4** - last observed state 2/3-with-fixes + quota 429 stop.
-  Re-verify 3/3 after the per-IP quota window resets.
+- Mode A: **GREEN - 3/3 clean** after the quota reset (above); the earlier R4 pause was per-IP quota exhaustion from replay cadence, confirmed not wire drift.
 - No STOP condition on wire drift: snapshot clientVersion 2.2.7 matched the gate
   (200s + real completions throughout).

@@ -70,6 +70,16 @@ export class OpenCodeFreeLaneUnmappedProxyError extends Error {
   }
 }
 
+// Semaphore saturation (>3 concurrent free streams): a healthy-but-busy lane
+// must NOT page as "lane unavailable" — distinct code, info severity upstream.
+export class OpenCodeFreeLaneBusyError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "OpenCodeFreeLaneBusyError";
+    this.code = "OPENCODE_BUN_LANE_BUSY";
+  }
+}
+
 // ── Lane semaphore: ≤3 concurrent children; waiters queue with a timeout ────
 
 const laneState = {
@@ -91,7 +101,7 @@ function acquireSlot(queueTimeoutMs) {
       // resolve is a wrapper closure, not the promise executor's resolve)
       const i = laneState.waiters.indexOf(waiter);
       if (i >= 0) laneState.waiters.splice(i, 1);
-      reject(new OpenCodeFreeLaneUnavailableError(
+      reject(new OpenCodeFreeLaneBusyError(
         `bun lane queue timeout after ${queueTimeoutMs}ms (max ${MAX_CONCURRENCY} concurrent children)`,
       ));
     }, queueTimeoutMs);
@@ -176,7 +186,10 @@ function spawnChild({ bunPath, url, method, headers, body, timeoutMs, proxy, idl
  */
 function readFirstLine(child, { deadlineMs }) {
   return new Promise((resolve, reject) => {
-    let buf = "";
+    // Raw-byte accumulation: the header window may already carry the start of
+    // the SSE body, and re-decoding/re-encoding across chunk boundaries would
+    // corrupt a multibyte character split mid-sequence — bytes stay verbatim.
+    let chunks = [];
     let settled = false;
     const finish = (fn, arg) => {
       if (settled) return;
@@ -190,11 +203,13 @@ function readFirstLine(child, { deadlineMs }) {
     if (deadline.unref) deadline.unref();
 
     child.stdout.on("data", (chunk) => {
-      buf += chunk.toString("utf8");
-      const nl = buf.indexOf("\n");
+      chunks.push(Buffer.from(chunk));
+      const joined = Buffer.concat(chunks);
+      const nl = joined.indexOf(0x0a); // first newline, byte-wise
       if (nl < 0) return;
-      const line = buf.slice(0, nl);
-      finish(resolve, { headerLine: line, restBuffer: Buffer.from(buf.slice(nl + 1), "utf8") });
+      const line = joined.slice(0, nl).toString("utf8");
+      const restBuffer = joined.slice(nl + 1);
+      finish(resolve, { headerLine: line, restBuffer });
     });
     child.on("error", (e) => finish(reject, e));
     child.on("exit", (code) => {
@@ -302,6 +317,12 @@ async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstL
   await acquireSlot(queueTimeoutMs);
   let child = null;
   let handedOff = false; // response handed to the caller (child still streaming)
+  let released = false;
+  const releaseOnce = () => {
+    if (released) return;
+    released = true;
+    releaseSlot();
+  };
   try {
     const bunPath = await resolveBunPath();
     child = spawnChild({
@@ -314,32 +335,45 @@ async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstL
       proxy,
       idleTimeoutMs: timeoutMs,
     });
-    const first = await readFirstLine(child, { deadlineMs: firstLineDeadlineMs });
+    // exit AND error both release — attached BEFORE any await so a child that
+    // dies during the header phase (abort kill, crash) still frees its slot:
+    // its exit event fires before the finally block would ever attach.
+    child.on("exit", releaseOnce);
+    child.on("error", releaseOnce);
+    // Quota-safety: abort kills the child IMMEDIATELY — including during the
+    // header phase (the most likely cancel moment). Wiring it only after
+    // handoff left a pre-first-line abort ignored, and the lane would then
+    // retry an already-abandoned request (review P0-1). The listener stays
+    // live after handoff — abort mid-stream keeps killing the child.
+    if (signal) {
+      if (signal.aborted) killChild(child);
+      else signal.addEventListener("abort", () => killChild(child), { once: true });
+    }
+    let first;
+    try {
+      first = await readFirstLine(child, { deadlineMs: firstLineDeadlineMs });
+    } catch (e) {
+      if (signal?.aborted && e.name !== "AbortError") {
+        // the abort kill landed before headers — surface as AbortError so the
+        // base retry loop rethrows instead of retrying an abandoned request
+        const abortErr = new Error("aborted while awaiting bun child headers");
+        abortErr.name = "AbortError";
+        throw abortErr;
+      }
+      throw e;
+    }
     const header = JSON.parse(first.headerLine);
     if (header.error) {
       throw new Error(`bun child error before headers: ${header.error}`);
     }
     handedOff = true;
-    if (signal) {
-      if (signal.aborted) killChild(child);
-      else signal.addEventListener("abort", () => killChild(child), { once: true });
-    }
     return buildLaneResponse({ child, first });
   } finally {
-    if (child) {
-      let released = false;
-      const releaseOnce = () => {
-        if (released) return;
-        released = true;
-        releaseSlot();
-      };
-      // exit AND error both release (a spawn error never emits exit)
-      child.on("exit", releaseOnce);
-      child.on("error", releaseOnce);
+    if (!child) {
+      releaseOnce();
+    } else {
       if (child.exitCode !== null) releaseOnce(); // already exited
       if (!handedOff) killChild(child); // failure → kill → exit → release
-    } else {
-      releaseSlot();
     }
   }
 }
@@ -355,12 +389,25 @@ async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstL
  */
 export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
   const { signal, timeoutMs = DEFAULT_TIMEOUT_MS, proxyUrl = null, queueTimeoutMs = QUEUE_TIMEOUT_MS } = opts;
+  if (signal?.aborted) {
+    // never spend a child (or a proxy verification) on an already-abandoned call
+    const abortErr = new Error("bun lane request aborted before start");
+    abortErr.name = "AbortError";
+    throw abortErr;
+  }
   const proxy = await mapProxy(proxyUrl); // typed unmapped-proxy error — no slot consumed
   try {
     return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: timeoutMs, signal });
   } catch (e) {
-    if (e instanceof OpenCodeFreeLaneUnavailableError) throw e; // queue timeout: fail-fast, no retry
+    if (e.name === "AbortError") throw e; // aborted: do NOT retry, never spawn a second child
+    if (e instanceof OpenCodeFreeLaneBusyError) throw e; // healthy-but-saturated: fail-fast, no retry
+    if (e instanceof OpenCodeFreeLaneUnavailableError) throw e; // queue/typed: fail-fast, no retry
     if (e instanceof OpenCodeFreeLaneUnmappedProxyError) throw e;
+    if (signal?.aborted) {
+      const abortErr = new Error("aborted during bun lane attempt");
+      abortErr.name = "AbortError";
+      throw abortErr;
+    }
     recordLaneError(e);
     dbg("[opencodeBunLane] first attempt failed — one bounded retry:", e?.message || e);
     // Fail-fast: ONE bounded retry (first-line deadline compressed into the
@@ -368,7 +415,8 @@ export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
     try {
       return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: RETRY_BUDGET_MS, signal });
     } catch (e2) {
-      if (e2 instanceof OpenCodeFreeLaneUnavailableError || e2 instanceof OpenCodeFreeLaneUnmappedProxyError) throw e2;
+      if (e2.name === "AbortError") throw e2;
+      if (e2 instanceof OpenCodeFreeLaneBusyError || e2 instanceof OpenCodeFreeLaneUnavailableError || e2 instanceof OpenCodeFreeLaneUnmappedProxyError) throw e2;
       const wrapper = new OpenCodeFreeLaneUnavailableError(`bun lane failed twice (first: ${e?.message || e}; retry: ${e2?.message || e2})`);
       recordLaneError(wrapper);
       throw wrapper;

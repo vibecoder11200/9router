@@ -462,11 +462,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
       streamController.handleError(error);
       return createErrorResult(499, "Request aborted");
     }
-    const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
+    // Typed executor errors carry their own statusCode (e.g. the OpenCode
+    // free lane's fail-fast 503) — honor it instead of blanket 502.
+    const errStatus = error.statusCode || HTTP_STATUS.BAD_GATEWAY;
+    const errMsg = formatProviderError(error, provider, model, errStatus);
     if (log?.errorLine) {
       log.errorLine(reqTag, "✗", `ERROR 502 · ${provider}/${model} · ${Date.now() - requestStartTime}ms\n    ${errMsg}${error.stack ? `\n    ${error.stack}` : ""}`);
     }
-    const errResult = createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+    const errResult = createErrorResult(errStatus, errMsg);
     // Proxy-side infra failure (strict pool refused/died): carry the marker
     // so the chat loop skips the account WITHOUT a model-lock or breaker
     // failure — the pool is down, not the account.

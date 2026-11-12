@@ -251,8 +251,8 @@ describe("xray model-filter probe — free lane skip + opt-in chat probe", () =>
     expect(result.status).toBe(503);
     expect(String(result.error)).toContain("free lane unavailable");
     expect(isProbeInfraError(result.error)).toBe(true);
-    // fail-fast per execute: 2 lane attempts per base attempt; the base loop
-    // maps the typed 503 throw to 502 retry (3 retries = 4 executes) → 8 spawns
-    expect(spawnCalls.length).toBe(8);
+    // fail-fast end-to-end: the lane spends its 2 bounded attempts, then the
+    // surfaced error carries noRetry — the base loop does NOT retry it
+    expect(spawnCalls.length).toBe(2);
   });
 });

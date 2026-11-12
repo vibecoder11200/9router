@@ -98,6 +98,11 @@ export function renderSystemText(snapshot, env = {}) {
  * 32000 default.
  */
 export function shapeV2FreeLaneRequestBody(body, snapshot, env = {}) {
+  // Caller sampling/tool-choice/reasoning params (temperature, top_p,
+  // tool_choice, reasoning, ...) are deliberately NOT forwarded: the v2 gate
+  // expects CLI-identical bodies, and the CLI sends none of them. Callers get
+  // CLI defaults silently — the only caller input honored is model, messages,
+  // tools, and the completion cap.
   const toolsByName = new Map(snapshot.tools.map((t) => [t.function?.name, t]));
   for (const t of body.tools || []) {
     const name = t?.function?.name;

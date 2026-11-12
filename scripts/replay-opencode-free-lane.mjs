@@ -53,6 +53,7 @@ for (let i = 1; i <= RUNS; i++) {
   const shaped = shapeV2FreeLaneRequestBody(
     { model: fixture.model, messages: [{ role: "user", content: fixture.userMessage }], stream: true },
     snapshot,
+    { modelId: fixture.model }, // harness text renders real - Name:/- Model ID: (P0 composition)
   );
   const headers = mintV2IdentityHeaders(snapshot, sessionId);
   const t0 = Date.now();
