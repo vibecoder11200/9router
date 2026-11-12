@@ -104,9 +104,6 @@ describe("opencode executor — bun free lane integration", () => {
   });
 
   it("fail-fast: lane unavailable → typed 503, ONE critical alert, legacy NOT called", async () => {
-    laneFetchMock.mockRejectedValue(
-      new (class extends Error { constructor() { super("boom"); this.code = "OPENCODE_BUN_LANE_UNAVAILABLE"; } })(),
-    );
     // real class instance for instanceof — import via the lane module
     const { OpenCodeFreeLaneUnavailableError } = await import("../../open-sse/services/opencodeBunLane.js");
     laneFetchMock.mockRejectedValue(new OpenCodeFreeLaneUnavailableError("bun gone"));

@@ -447,7 +447,9 @@ let lastLaneUnavailableAlertAt = 0;
  * (today's exact behavior) or for responses/messages-format free models
  * (known-refused by the v2 chat-completions lane — documented R8).
  */
-async function runBunFreeLane(url, options, ctx, credentials) {
+async function runBunFreeLane(options, ctx, credentials) {
+  // The snapshot endpoint is authoritative — the executor's chat-completions
+  // URL is deliberately not used on this lane.
   const snapshot = getEmbeddedWireSnapshot();
   const shaped = shapeV2FreeLaneRequestBody(JSON.parse(options.body), snapshot);
   const headers = mintV2IdentityHeaders(snapshot, credentials?.[SESSION_FIELD]);
@@ -495,7 +497,6 @@ export const __test__ = {
 export function getLaneUnavailableAlertAt() {
   return lastLaneUnavailableAlertAt ? new Date(lastLaneUnavailableAlertAt).toISOString() : null;
 }
-
 
 /** Engine setting per request ("bun" default | "legacy" kill-switch). */
 async function getFreeLaneEngine() {
@@ -597,7 +598,7 @@ export class OpenCodeExecutor extends BaseExecutor {
       const engine = await getFreeLaneEngine();
       if (engine !== "legacy" && model && !isResponsesModel(model) && !isMessagesModel(model)) {
         try {
-          const res = await runBunFreeLane(url, options, ctx, credentials);
+          const res = await runBunFreeLane(options, ctx, credentials);
           // 429 rotation hook (see legacy branch): a real bun-lane 429 means
           // THIS exit identity's quota is spent — rotate exactly as before.
           if (res && res.status === 429 && shouldRotateStableSession(credentials)) {

@@ -37,7 +37,6 @@ const state = {
   syncStarted: false,
   syncTimer: null,
   syncFetch: null, // injectable fetch for tests
-  syncInFlight: false,
 };
 
 /**
@@ -202,7 +201,6 @@ export const __test__ = {
     state.syncStarted = false;
     state.syncTimer = null;
     state.syncFetch = null;
-    state.syncInFlight = false;
   },
   injectFetch(fn) {
     state.syncFetch = fn;

@@ -38,7 +38,6 @@ try {
 } catch { /* cross-platform bundle */ }
 
 const SIDECAR_CANDIDATES = [
-  process.env.OPENCODE_BUN_SIDECAR_SCRIPT,
   sidecarDirname && path.join(sidecarDirname, "opencodeBunSidecar.mjs"),
   path.join("open-sse", "services", "opencodeBunSidecar.mjs"), // repo-root cwd
 ];
@@ -46,7 +45,7 @@ function resolveSidecarScript() {
   // env override wins verbatim — even when absent on disk (fail-fast tests)
   if (process.env.OPENCODE_BUN_SIDECAR_SCRIPT) return process.env.OPENCODE_BUN_SIDECAR_SCRIPT;
   return (
-    SIDECAR_CANDIDATES.slice(1).find((p) => p && fs.existsSync(p)) ||
+    SIDECAR_CANDIDATES.find((p) => p && fs.existsSync(p)) ||
     (sidecarDirname
       ? path.join(sidecarDirname, "opencodeBunSidecar.mjs")
       : path.join("open-sse", "services", "opencodeBunSidecar.mjs"))
@@ -175,7 +174,7 @@ function spawnChild({ bunPath, url, method, headers, body, timeoutMs, proxy, idl
  * on: child spawn error, non-protocol exit (exit 7 bad request, crash),
  * malformed first line, or the first line not arriving inside `deadlineMs`.
  */
-function readFirstLine(child, { requestJson, deadlineMs }) {
+function readFirstLine(child, { deadlineMs }) {
   return new Promise((resolve, reject) => {
     let buf = "";
     let settled = false;
@@ -205,7 +204,7 @@ function readFirstLine(child, { requestJson, deadlineMs }) {
 }
 
 // Build the native Response whose body streams the child stdout tail.
-function buildLaneResponse({ child, first, signal, abortHandlerRef }) {
+function buildLaneResponse({ child, first }) {
   const header = JSON.parse(first.headerLine);
   if (header.error) {
     const err = new Error(header.error);
@@ -215,7 +214,6 @@ function buildLaneResponse({ child, first, signal, abortHandlerRef }) {
   let remaining = first.restBuffer;
   let childEnded = false;
   let closed = false; // controller closed/cancelled — trailing stdout must not enqueue
-  let exitPromise = null;
   const stream = new ReadableStream({
     start(controller) {
       const push = (chunk) => {
@@ -270,7 +268,6 @@ function buildLaneResponse({ child, first, signal, abortHandlerRef }) {
   });
   return new Response(stream, { status: header.status, headers: new Headers(header.headers || {}) });
 }
-
 
 // ── Proxy mapping ────────────────────────────────────────────────────────────
 

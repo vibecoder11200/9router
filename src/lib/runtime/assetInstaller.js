@@ -13,7 +13,6 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
-import { createWriteStream } from "node:fs";
 
 /** Ensure a directory exists (helper for extraction targets). */
 export function ensureDir(dir) {
@@ -35,7 +34,7 @@ export async function downloadToFile(url, dest, { onProgress, signal } = {}) {
   if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}`);
   const total = Number(res.headers.get("content-length")) || 0;
   ensureDir(path.dirname(dest));
-  const ws = createWriteStream(dest);
+  const ws = fs.createWriteStream(dest);
   let received = 0;
   const reader = res.body.getReader();
   while (true) {
