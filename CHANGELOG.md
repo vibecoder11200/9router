@@ -1,3 +1,18 @@
+# v0.6.79 (2026-11-12)
+
+Follow-up to the v0.6.78 VPS-killer hotfix: the free-lane filter now measures the tunnel for real, and a periodic reaper guards against live leaks between boots.
+
+## Fixes
+- **Proxy probes no longer go direct**: `src/lib/xray/tester.js` (model-filter + per-config Test latency/exit-IP probes) and `open-sse/translator/concerns/image.js` (codex image prefetch) passed their package-undici dispatcher to the patched GLOBAL fetch, which strips the option — requests silently egressed from the host. Production evidence (2026-11-10): every free-lane filter "pass" recorded the VPS's own IP as `exitIp` (false positives for dead nodes), and the image prefetcher's SSRF validated-IP pin (DNS-rebind TOCTOU guard) was silently defeated. Both now ride the package's own undici fetch — the house pattern from `proxyTest.js` / `proxyFetch.js` `rawFetch`. Regression tests assert the patched global fetch is never called (RED on the old code via the exact production mechanism); image test mocks migrated from `globalThis.fetch` to the undici module.
+- **Deploy note**: old "pass" rows in `xrayModelFilterResults` were measured direct — clear the model-filter cache (Xray dashboard → Filter → Clear cache) after upgrading so the filter re-measures through the real tunnel.
+
+## Features
+- **Periodic temp-probe reaper**: `startPeriodicTempReaper()` sweeps orphaned temp-xray artifacts every 15 min. The boot reap only helps after a restart — which is exactly how the v0.6.76-77 leak stacked 364 zombie processes across one day without anything cleaning up. Bounded by design: skips ticks while a model-filter job runs (its probes legitimately own these artifacts), unlinks only temp files older than 10 min (a live probe holds its config for seconds), and never touches blue-green draining retirees (they may still be serving in-flight requests mid-operation). Wired into the boot-critical set behind a singleton guard; boot behavior unchanged (`fileMaxAgeMs=0`, draining included).
+
+## Verification
+- RED→GREEN: new regression tests failed on pre-fix code exactly via the production mechanism ("global fetch called 1×"), green after; boot-set test extended to assert the periodic reaper starts exactly once per process.
+- xray/image/prefetch/concern area: 377 tests green. Full unit suite failure list byte-identical to HEAD via stash-diff (remaining failures are documented Windows/baseline environment noise); impact + detect_changes LOW with zero affected execution flows.
+
 # v0.6.78 (2026-11-12)
 
 Hotfix: the free-lane (noAuth, e.g. OpenCode Free) model-filter probe leaked one temp xray process per probe — accumulated 364 leaked processes in one day and hard-locked a 1GB production VPS.
