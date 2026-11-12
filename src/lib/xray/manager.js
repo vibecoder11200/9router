@@ -555,7 +555,7 @@ export async function stopXrayService() {
   const settings = await getSettings();
   const socksPort = Number(settings.xraySocksPort) || 10808;
   await syncManagedPool(false, socksPort, null);
-  setStatus("stopped", { pid: null, activeConfigId: null, socksPort: null, lastError: null });
+  setStatus("stopped", { pid: null, activeConfigId: null, socksPort: null, httpPort: null, lastError: null });
   return result;
 }
 
@@ -842,6 +842,9 @@ async function spawnTempConfig(config, timeoutMs = 8000) {
     if (ready) {
       return {
         socksPort: tempSocks,
+        // Introspection only — the bun lane derives the http port itself
+        // (socks+1 + TCP-verify), it does not consume this value.
+        httpPort: tempHttp,
         cleanup() {
           tempHandle.kill();
           // Hold the port reservation until the listener is really gone —
