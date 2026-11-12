@@ -165,8 +165,16 @@ function identityKey(credentials) {
   // Key the session by the resolved exit too, so each exit keeps its own
   // long-lived session exactly like a real single-IP CLI client.
   const psd = credentials?.providerSpecificData || {};
+  // connectionProxyProbeTag (xray model-filter free-chat probes, api-mode):
+  // every config routes through the SAME worker SOCKS URI, so the URL alone
+  // would collapse all exits into one session — exactly the hopping pattern
+  // above. The per-config tag keeps each probed exit on its own session.
   const exit = String(
-    psd.connectionProxyUrl || psd.connectionProxyEntryId || psd.connectionProxyPoolId || "",
+    psd.connectionProxyProbeTag
+      || psd.connectionProxyUrl
+      || psd.connectionProxyEntryId
+      || psd.connectionProxyPoolId
+      || "",
   ).trim();
   if (!exit || exit === base) return base;
   const exitDigest = crypto.createHash("sha256").update(exit).digest("hex").slice(0, 16);

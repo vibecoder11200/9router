@@ -879,7 +879,7 @@ function summarizeProbeBody(text) {
  * This uses the same chatCore/executor path as normal requests, but injects a
  * temporary strict SOCKS proxy so failure cannot silently fall back to direct.
  */
-export async function testSingleConfigWithModel(configId, { model: modelStr, timeoutMs = 20000 } = {}) {
+export async function testSingleConfigWithModel(configId, { model: modelStr, timeoutMs = 20000, freeChatProbe = false } = {}) {
   if (!modelStr || typeof modelStr !== "string") {
     const e = new Error("model is required");
     e.code = "BAD_REQUEST";
@@ -908,7 +908,12 @@ export async function testSingleConfigWithModel(configId, { model: modelStr, tim
     // node's exit IP — the session-hopping pattern the upstream gate flags,
     // after which the user's own traffic 429s. Judge the node by tunnel
     // connectivity + exit IP only (same policy as the dashboard Test button).
-    if (isNoAuthFreeChatProvider(modelInfo.provider)) {
+    // Opt-in freeChatProbe (user asks for it): fall through to the real chat
+    // path below — "usable" then means the exit IP actually answers the
+    // model. The temp SOCKS port is unique per config, so each probe keeps
+    // its own stable session (no hopping); quota cost is one tiny completion
+    // per tested config.
+    if (isNoAuthFreeChatProvider(modelInfo.provider) && freeChatProbe !== true) {
       const health = await testProxy(temp.socksPort, Math.min(timeoutMs, 8000)).catch(() => ({ ok: false, exitIp: "" }));
       const latencyMs = Date.now() - startedAt;
       await updateXrayTestResult(config.id, health.ok ? health : { ok: false });
@@ -1045,7 +1050,7 @@ function normalizeModelFilterConcurrency(concurrency = 2) {
  * Returns the same shape as testSingleConfigWithModel so the rest of the
  * pipeline (cache, prune, results) is unchanged.
  */
-function makeApiProbeFn(apiHandle, modelInfo, modelStr, timeoutMs) {
+function makeApiProbeFn(apiHandle, modelInfo, modelStr, timeoutMs, freeChatProbe = false) {
   return async (config, workerIdx) => {
     if (!modelInfo?.provider || !modelInfo?.model) {
       throw new Error(`Invalid model for api probe: ${modelStr}`);
@@ -1054,7 +1059,13 @@ function makeApiProbeFn(apiHandle, modelInfo, modelStr, timeoutMs) {
       timeoutMs,
       probeExitIp: async ({ socksUri, timeoutMs: tm }) => testProxyExitIpWithUri(socksUri, tm),
       probeModel: async ({ socksUri, timeoutMs: tm }) =>
-        probeModelViaChatCore(modelInfo, socksUri, tm),
+        probeModelViaChatCore(modelInfo, socksUri, tm, {
+          freeChatProbe,
+          // api-mode routes every config through the same worker SOCKS URI;
+          // the per-config tag keeps each probe's stable session distinct so
+          // a free-lane chat probe never hops one session across exits.
+          probeTag: `xray-model-filter-api:${config.id}`,
+        }),
     });
     // Mirror spawn-mode bookkeeping (testSingleConfigWithModel): persist the
     // measured latency/exit IP on success and the failure marker otherwise, so
@@ -1076,13 +1087,15 @@ export { probeModelViaChatCore as _probeModelViaChatCoreForTests }; // for tests
  * but without spawning a temp xray (the SOCKS is already routed by api-mode).
  * Returns { ok, status, error }.
  */
-async function probeModelViaChatCore(modelInfo, socksUri, timeoutMs) {
+async function probeModelViaChatCore(modelInfo, socksUri, timeoutMs, { freeChatProbe = false, probeTag = "" } = {}) {
   // Free lane (noAuth, e.g. OpenCode Free): never send a chat completion —
   // it burns real free-tier quota and hops the shared stable session across
   // this worker's exit IP, which the upstream gate flags (then the user's
   // own requests 429 FreeUsageLimitError). Fall back to a plain exit-IP
   // fetch through the same SOCKS: ok = the node actually routes traffic.
-  if (isNoAuthFreeChatProvider(modelInfo.provider)) {
+  // Opt-in freeChatProbe (user asks for it): fall through to the real chat
+  // path — "usable" then means this exit IP actually answers the model.
+  if (isNoAuthFreeChatProvider(modelInfo.provider) && freeChatProbe !== true) {
     const startedAt = Date.now();
     const exitIp = await withProbeTimeout(
       testProxyExitIpWithUri(socksUri, Math.min(timeoutMs, 10000)),
@@ -1106,6 +1119,7 @@ async function probeModelViaChatCore(modelInfo, socksUri, timeoutMs) {
       connectionProxyUrl: socksUri,
       connectionNoProxy: "",
       connectionProxyPoolId: "xray-model-filter-api",
+      ...(probeTag ? { connectionProxyProbeTag: probeTag } : {}),
       strictProxy: true,
     },
   };
@@ -1154,7 +1168,7 @@ async function probeModelViaChatCore(modelInfo, socksUri, timeoutMs) {
   return { ok: true, status: result.response.status, error: null, _ttft: Date.now() - startedAt };
 }
 
-export async function filterConfigsByModel({ model, limit = 50, all = false, prune = false, timeoutMs = 20000, concurrency = 2, pauseOnTraffic = true, quietMs = 15000, onProgress = null, forceRetest = false } = {}) {
+export async function filterConfigsByModel({ model, limit = 50, all = false, prune = false, timeoutMs = 20000, concurrency = 2, pauseOnTraffic = true, quietMs = 15000, onProgress = null, forceRetest = false, freeChatProbe = false } = {}) {
   const configs = await getXrayConfigs({ isActive: true });
   // Resolve model info up front — api-mode needs it to build probe credentials.
   const modelInfo = await getModelInfo(model).catch(() => null);
@@ -1413,7 +1427,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
         apiPort: Number(settings.xrayFilterApiPort) || 15491,
         accountCount: Math.min(Math.max(Number(settings.xrayFilterApiAccounts) || 16, 1), Math.max(workerCount, 1)),
       });
-      probeFn = makeApiProbeFn(apiHandle, modelInfo, model, timeoutMs);
+      probeFn = makeApiProbeFn(apiHandle, modelInfo, model, timeoutMs, freeChatProbe);
       apiMode = true;
       console.log(`[Xray] model filter running in api-mode (socks=${apiHandle.socksPort} api=${apiHandle.apiPort} pid=${apiHandle.pid})`);
     } catch (e) {
@@ -1422,7 +1436,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
     }
   }
   if (!apiMode) {
-    probeFn = (config) => testSingleConfigWithModel(config.id, { model, timeoutMs });
+    probeFn = (config) => testSingleConfigWithModel(config.id, { model, timeoutMs, freeChatProbe });
   }
 
   const workers = Array.from({ length: workerCount }, async (_, workerIdx) => {
@@ -1461,7 +1475,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
   };
 }
 
-export async function runModelFilterJob({ model, limit = 50, all = false, prune = false, timeoutMs = 20000, concurrency = 2, pauseOnTraffic = true, quietMs = 15000, source = "manual", forceRetest = false, queueRerunIfBusy = false } = {}) {
+export async function runModelFilterJob({ model, limit = 50, all = false, prune = false, timeoutMs = 20000, concurrency = 2, pauseOnTraffic = true, quietMs = 15000, source = "manual", forceRetest = false, queueRerunIfBusy = false, freeChatProbe = false } = {}) {
   if (modelFilterRunning) {
     if (queueRerunIfBusy) {
       // Auto trigger lost the race: latch ONE coalesced follow-up (the running
@@ -1492,6 +1506,7 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
       concurrency: normalizedConcurrency,
       pauseOnTraffic: pauseOnTraffic === true,
       quietMs,
+      freeChatProbe: freeChatProbe === true,
       tested: 0,
       passed: 0,
       failed: 0,
@@ -1520,6 +1535,7 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
         pauseOnTraffic,
         quietMs,
         forceRetest,
+        freeChatProbe: freeChatProbe === true,
         onProgress: (result) => {
           modelFilterState.tested += 1;
           if (result.cached) modelFilterState.cached += 1;
@@ -1603,6 +1619,7 @@ export async function runModelFilterFromSettings(source = "auto-sync") {
     pauseOnTraffic: settings.xrayModelFilterPauseOnTraffic !== false,
     quietMs: Number(settings.xrayModelFilterQuietMs) || 15000,
     timeoutMs: Number(settings.xrayModelFilterTimeoutMs) || 20000,
+    freeChatProbe: settings.xrayModelFilterFreeChatProbe === true,
     source,
     // Sync-triggered runs coalesce instead of vanishing when a filter is
     // already running (manual UI runs pass no flag and only report the skip).

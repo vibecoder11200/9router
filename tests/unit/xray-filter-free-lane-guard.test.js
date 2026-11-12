@@ -1,9 +1,11 @@
 // The xray model filter must never send a chat completion against a noAuth
-// free-lane provider (OpenCode Free): every probe spends real free-tier
-// quota, and all probes share the process-wide stable session while hopping
-// it across every tested exit IP — the pattern the upstream gate flags, after
-// which the user's own traffic 429s FreeUsageLimitError. Free-lane probes
-// judge nodes by tunnel connectivity (exit-IP fetch) instead.
+// free-lane provider (OpenCode Free) UNLESS the user opted into freeChatProbe:
+// every probe spends real free-tier quota, and probes share the process-wide
+// stable session while hopping it across every tested exit IP — the pattern
+// the upstream gate flags, after which the user's own traffic 429s
+// FreeUsageLimitError. Default free-lane probes judge nodes by tunnel
+// connectivity (exit-IP fetch); with freeChatProbe the probe rides the real
+// chat path so "usable" means the exit IP truly answers the model.
 //
 // Mock surface copied from xray-filter-multi-sub-fixes.test.js.
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -147,5 +149,61 @@ describe("model-filter free-lane guard (noAuth providers)", () => {
     expect(result).toMatchObject({ ok: false, status: 503 });
     expect(getProviderCredentials).toHaveBeenCalledWith("opencode-go", expect.any(Set), "glm-5.3");
     expect(testProxyExitIpWithUri).not.toHaveBeenCalled();
+  });
+});
+
+describe("model-filter free-lane OPT-IN real chat probe (freeChatProbe)", () => {
+  const NOAUTH_CREDS = {
+    id: "noauth",
+    connectionId: "noauth",
+    accessToken: "public",
+    isActive: true,
+    providerSpecificData: {},
+  };
+
+  beforeEach(() => {
+    getProviderCredentials.mockResolvedValue(NOAUTH_CREDS);
+    handleChatCore.mockImplementation(async () => ({
+      success: true,
+      response: new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    }));
+  });
+
+  it("freeChatProbe=true rides the real chat path with a per-config session tag", async () => {
+    const result = await _probeModelViaChatCoreForTests(FREE_MODEL, SOCKS, 20000, {
+      freeChatProbe: true,
+      probeTag: "xray-model-filter-api:cfg-42",
+    });
+
+    expect(result).toMatchObject({ ok: true, status: 200, error: null });
+    expect(testProxyExitIpWithUri).not.toHaveBeenCalled();
+    expect(getProviderCredentials).toHaveBeenCalledWith("opencode", expect.any(Set), FREE_MODEL.model);
+    expect(handleChatCore).toHaveBeenCalledTimes(1);
+    const psd = handleChatCore.mock.calls[0][0].credentials.providerSpecificData;
+    expect(psd.connectionProxyUrl).toBe(SOCKS);
+    expect(psd.connectionProxyPoolId).toBe("xray-model-filter-api");
+    expect(psd.connectionProxyProbeTag).toBe("xray-model-filter-api:cfg-42");
+    expect(psd.strictProxy).toBe(true);
+  });
+
+  it("freeChatProbe=true keeps the tunnelOk shape on upstream 429 (node works, quota burned)", async () => {
+    handleChatCore.mockImplementation(async () => ({
+      success: true,
+      response: new Response(JSON.stringify({ error: { message: "FreeUsageLimitError" } }), { status: 429 }),
+    }));
+    const result = await _probeModelViaChatCoreForTests(FREE_MODEL, SOCKS, 20000, {
+      freeChatProbe: true,
+      probeTag: "xray-model-filter-api:cfg-42",
+    });
+
+    expect(result).toMatchObject({ ok: false, tunnelOk: true, status: 429 });
+    expect(String(result.error)).toMatch(/FreeUsageLimitError/);
+  });
+
+  it("freeChatProbe omitted/false keeps the connectivity-only guard (default unchanged)", async () => {
+    testProxyExitIpWithUri.mockResolvedValue("198.51.100.9");
+    const result = await _probeModelViaChatCoreForTests(FREE_MODEL, SOCKS, 20000);
+    expect(result).toMatchObject({ ok: true, chatProbeSkipped: true });
+    expect(handleChatCore).not.toHaveBeenCalled();
   });
 });

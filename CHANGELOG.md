@@ -1,3 +1,14 @@
+# v0.6.80 (2026-11-12)
+
+"Usable" for free-lane models can now mean what it says: an opt-in toggle makes the xray model filter send a REAL chat completion per tested node for noAuth free providers (OpenCode Free), instead of the v0.6.76 connectivity-only check.
+
+## Features
+- **Opt-in real-chat probe for free models** (`xrayModelFilterFreeChatProbe`, default OFF): when enabled (Xray dashboard → Model Filter → "Real chat probe for free models"), free-lane probes ride the same chat path as keyed providers (`getProviderCredentials` → `handleChatCore` with `strictProxy` through the tunnel). "Usable" then means the exit IP actually answers the model — the per-exit-IP free quota that connectivity checks cannot see (public v2go exits 429 `FreeUsageLimitError` while the tunnel itself is perfectly alive — see `plans/reports/Research-261112-opencode-free-429-per-ip-quota.md`). Upstream 429s keep the `tunnelOk` shape so prune never deletes a working node. Default behavior is unchanged; the setting costs one tiny completion of real free-tier quota per tested config.
+- **Per-config stable sessions for api-mode probes** (`connectionProxyProbeTag`): api-mode routes every config through the SAME worker SOCKS URI, so a real chat probe would have collapsed all exits into one stable session — exactly the session-hopping pattern the v0.6.76 guard exists to prevent. The executor's `identityKey` now honors a per-config probe tag (highest precedence, set only by the filter) so each probed exit keeps its own session; spawn-mode is naturally isolated via its unique temp SOCKS port.
+
+## Verification
+- `xray-filter-free-lane-guard` extended (7 tests): default guard unchanged (connectivity-only, `handleChatCore` never called), opt-in rides the chat path with the probe tag + `strictProxy` wired, 429 keeps `tunnelOk`; `opencode-session` extended for `connectionProxyProbeTag` session isolation. xray area: 243 tests green; impact LOW on both probe symbols; detect_changes high-marking comes solely from the dashboard page component gaining a checkbox.
+
 # v0.6.79 (2026-11-12)
 
 Follow-up to the v0.6.78 VPS-killer hotfix: the free-lane filter now measures the tunnel for real, and a periodic reaper guards against live leaks between boots.

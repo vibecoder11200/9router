@@ -324,6 +324,28 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
     expect(stableSessionId(viaNodeA)).toBe(nodeASession);
   });
 
+  it("honors connectionProxyProbeTag — api-mode filter probes through one SOCKS keep per-config sessions", () => {
+    // api-mode free-chat probes route every config through the SAME worker
+    // SOCKS URI; without the tag all exits would collapse into one session
+    // — the exact hopping pattern this guard exists to prevent.
+    const viaConfigA = {
+      id: "noauth",
+      providerSpecificData: {
+        connectionProxyEnabled: true,
+        connectionProxyUrl: "socks5://127.0.0.1:53080",
+        connectionProxyPoolId: "xray-model-filter-api",
+        connectionProxyProbeTag: "xray-model-filter-api:cfg-a",
+      },
+    };
+    const viaConfigB = { ...viaConfigA, providerSpecificData: { ...viaConfigA.providerSpecificData, connectionProxyProbeTag: "xray-model-filter-api:cfg-b" } };
+
+    expect(stableSessionId(viaConfigA)).toMatch(OPENCODE_SESSION_RE);
+    expect(stableSessionId(viaConfigB)).not.toBe(stableSessionId(viaConfigA));
+    // The same config keeps its own long-lived session across requests.
+    const sessionA = stableSessionId(viaConfigA);
+    expect(stableSessionId(viaConfigA)).toBe(sessionA);
+  });
+
   it("rotates a 429-flagged stable session via evictStableSessionForRotation", () => {
     const credentials = { id: "noauth", providerSpecificData: { connectionProxyEnabled: false } };
     const first = stableSessionId(credentials);

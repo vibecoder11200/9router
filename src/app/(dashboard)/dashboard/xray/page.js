@@ -138,6 +138,7 @@ export default function XrayProxyPage() {
     concurrency: 2,
     pauseOnTraffic: true,
     quietMs: 15000,
+    freeChatProbe: false,
   });
   const [modelFilterBusy, setModelFilterBusy] = useState(false);
   const [modelFilterResult, setModelFilterResult] = useState(null);
@@ -203,6 +204,7 @@ export default function XrayProxyPage() {
           xrayModelFilterConcurrency: data.xrayModelFilterConcurrency ?? 2,
           xrayModelFilterPauseOnTraffic: data.xrayModelFilterPauseOnTraffic !== false,
           xrayModelFilterQuietMs: data.xrayModelFilterQuietMs ?? 15000,
+          xrayModelFilterFreeChatProbe: data.xrayModelFilterFreeChatProbe === true,
         }));
         setModelFilter((prev) => ({
           ...prev,
@@ -213,6 +215,7 @@ export default function XrayProxyPage() {
           concurrency: data.xrayModelFilterConcurrency ?? prev.concurrency ?? 2,
           pauseOnTraffic: data.xrayModelFilterPauseOnTraffic !== false,
           quietMs: data.xrayModelFilterQuietMs ?? prev.quietMs ?? 15000,
+          freeChatProbe: data.xrayModelFilterFreeChatProbe === true,
         }));
         // Seed the custom interval inputs whenever the persisted value isn't a
         // known preset, so the "Custom…" option shows the right value/unit.
@@ -662,6 +665,7 @@ export default function XrayProxyPage() {
             concurrency: Number(modelFilter.concurrency) || 2,
             pauseOnTraffic: modelFilter.pauseOnTraffic !== false,
             quietMs: Number(modelFilter.quietMs) || 15000,
+            freeChatProbe: modelFilter.freeChatProbe === true,
             forceRetest,
           }),
         });
@@ -798,6 +802,7 @@ export default function XrayProxyPage() {
       xrayModelFilterConcurrency: Math.max(1, Math.min(Number(next.concurrency) || 2, 16)),
       xrayModelFilterPauseOnTraffic: next.pauseOnTraffic === true,
       xrayModelFilterQuietMs: Math.max(3000, Math.min(Number(next.quietMs) || 15000, 120000)),
+      xrayModelFilterFreeChatProbe: next.freeChatProbe === true,
     };
     setSettings((s) => ({ ...s, ...payload }));
     setModelFilter(next);
@@ -1241,6 +1246,14 @@ export default function XrayProxyPage() {
               onChange={(e) => saveModelFilterSettings({ pauseOnTraffic: e.target.checked })}
             />
             Pause while live traffic is active
+          </label>
+          <label className="text-sm flex items-center gap-2 h-10" title="Free models (e.g. OpenCode Free): send a real chat request per tested node instead of a connectivity check. Costs a small amount of free-tier quota per node, but 'usable' then truly means the node can chat.">
+            <input
+              type="checkbox"
+              checked={modelFilter.freeChatProbe === true}
+              onChange={(e) => saveModelFilterSettings({ freeChatProbe: e.target.checked })}
+            />
+            Real chat probe for free models
           </label>
           <span className="text-xs text-text-muted self-center">
             Recommended threads: 2. Turn pause off only when you want filtering to run continuously.

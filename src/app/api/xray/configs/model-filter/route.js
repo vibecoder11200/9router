@@ -17,6 +17,10 @@ export async function POST(request) {
     const timeoutMs = Math.max(5000, Math.min(Number(body.timeoutMs) || 20000, 60000));
     const prune = body.prune === true;
     const forceRetest = body.forceRetest === true;
+    // Opt-in: free-lane (noAuth) providers get REAL chat probes instead of
+    // connectivity-only checks. Costs one tiny completion per tested config
+    // of real free-tier quota — "usable" then means the exit IP answers.
+    const freeChatProbe = body.freeChatProbe === true;
 
     // Fire-and-forget: a run spans minutes (dozens of nodes × probe timeouts
     // + traffic pauses), and holding this HTTP request open for the whole job
@@ -28,7 +32,7 @@ export async function POST(request) {
     if (isModelFilterRunning()) {
       return NextResponse.json({ success: true, skipped: true, reason: "already_running", ...getModelFilterStatus() });
     }
-    runModelFilterJob({ model, limit, all, prune, timeoutMs, concurrency, pauseOnTraffic, quietMs, source: "manual", forceRetest })
+    runModelFilterJob({ model, limit, all, prune, timeoutMs, concurrency, pauseOnTraffic, quietMs, source: "manual", forceRetest, freeChatProbe })
       .catch(() => { /* the job records its own error into getModelFilterStatus() */ });
     return NextResponse.json({ success: true, started: true, ...getModelFilterStatus() });
   } catch (error) {
