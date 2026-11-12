@@ -111,7 +111,8 @@ graphify-out/*
 .kiro/
 9router-*
 
-# Local sensitive / temp files
+# Local sensitive / temp files (oc-capture: pre-plan capture residue, fixture already derived)
+oc-capture/
 .engine-token.txt
 cookies.txt
 .tmp-prov.json
