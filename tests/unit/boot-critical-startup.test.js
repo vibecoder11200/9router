@@ -63,7 +63,10 @@ vi.mock("@/lib/xray/process.js", () => ({ stopXray: vi.fn(() => ({ stopped: fals
 vi.mock("open-sse/services/browserPool.js", () => ({ shutdownPool: vi.fn(async () => {}) }));
 vi.mock("open-sse/services/obscura.js", () => ({ killSharedObscuraServer: vi.fn() }));
 vi.mock("open-sse/services/virtualDisplay.js", () => ({ stopVirtualDisplay: vi.fn() }));
-vi.mock("@/lib/xray/reaper.js", () => ({ reapOrphanedTempProbes: vi.fn(async () => ({ unlinked: 0, killed: 0, drainedKilled: 0 })) }));
+vi.mock("@/lib/xray/reaper.js", () => ({
+  reapOrphanedTempProbes: vi.fn(async () => ({ unlinked: 0, killed: 0, drainedKilled: 0 })),
+  startPeriodicTempReaper: vi.fn(() => ({ stop: vi.fn() })),
+}));
 vi.mock("@/lib/xray/installer.js", () => ({ isXrayInstalled: vi.fn(() => true) }));
 vi.mock("@/lib/xray/manager.js", () => ({
   startXrayService: vi.fn(async () => ({ pid: 424243, configId: "cfg" })),
@@ -99,6 +102,9 @@ describe("runBootCriticalTasks (F2: must-run-every-boot set)", () => {
 
     expect(localDb.cleanupProviderConnections).toHaveBeenCalledTimes(1);
     expect(reaper.reapOrphanedTempProbes).toHaveBeenCalledTimes(1);
+    // The between-boots periodic reaper is part of the boot set too — started
+    // exactly once per process (singleton guard), never per call.
+    expect(reaper.startPeriodicTempReaper).toHaveBeenCalledTimes(1);
     expect(ds2apiProcess.reapOrphanedManagedDS2API).toHaveBeenCalledTimes(1);
     expect(headroomProcess.reapOrphanedManagedHeadroom).toHaveBeenCalledTimes(1);
   });

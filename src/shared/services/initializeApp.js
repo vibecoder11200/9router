@@ -22,7 +22,7 @@ import { reapOrphanedManagedHeadroom, stopHeadroomProxy } from "@/lib/headroom/p
 import { DEFAULT_DS2API_URL, isLoopbackDS2APIUrl } from "@/lib/ds2api/detect";
 import { killAllBridges } from "@/lib/mcp/stdioSseBridge";
 import { stopXray } from "@/lib/xray/process.js";
-import { reapOrphanedTempProbes } from "@/lib/xray/reaper.js";
+import { reapOrphanedTempProbes, startPeriodicTempReaper } from "@/lib/xray/reaper.js";
 
 // Inject correct paths and DB hooks into manager.js (CJS) from ESM context
 (function bootstrapMitm() {
@@ -56,6 +56,7 @@ const g = global.__appSingleton ??= {
   mitmStartInProgress: false,
   tunnelAutoResumed: false,
   tailscaleAutoResumed: false,
+  periodicTempReaper: null,
 };
 
 // Hard upper bound for shutdown work (X3): a stuck managed-stop must not hang
@@ -170,6 +171,15 @@ export async function runBootCriticalTasks() {
     }
   } catch (e) {
     console.warn(`[InitApp] Reaper failed (non-fatal): ${e?.message || e}`);
+  }
+
+  // Between-boots safety net (2026-11-10 incident: a filter leak accumulated
+  // 364 zombie temp-xray processes over one day and hard-locked a 1GB VPS —
+  // the boot reap only helps after a restart). Skips ticks while a model
+  // filter is running; only sweeps stale files; never touches draining
+  // retirees. Timer is unref'd, so it never keeps the process alive.
+  if (!g.periodicTempReaper) {
+    g.periodicTempReaper = startPeriodicTempReaper();
   }
 
   // Auto-resume tunnel (once per process)
