@@ -65,14 +65,11 @@ async function main() {
   const timeoutMs = Number(req.timeoutMs) || 120_000;
   const idleTimeoutMs = Number(req.idleTimeoutMs) || timeoutMs;
 
-  // Belt: when the manager closes stdin, this child's job is over — env
-  // transport only (with stdin transport the close event means "payload
-  // delivered", not "die", and would otherwise abort mid-request).
-  if (process.env[BUNLANE_ENV_KEY]) {
-    process.stdin?.on?.("close", () => {
-      try { process.exit(EXIT_OK); } catch {}
-    });
-  }
+  // NO stdin belt: env transport closes stdin at spawn BY DESIGN (spawnChild
+  // ends stdin immediately), so a stdin-close belt would kill live streams at
+  // an arbitrary point after headers (replay proved it: 200s with empty
+  // bodies). Orphan protection = the idle/total watchdogs below + the manager
+  // releasing the slot on child exit — not a stdin sentinel.
 
   const abort = new AbortController();
   let idleTimer = null;

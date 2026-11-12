@@ -166,7 +166,7 @@ function spawnChild({ bunPath, url, method, headers, body, timeoutMs, proxy, idl
     env,
   });
   if (useStdin) child.stdin.end(requestJson);
-  else child.stdin.end(); // request via env — close stdin (child belt-exit guard)
+  else child.stdin.end(); // request via env — stdin is closed for the child's whole life
   return child;
 }
 
@@ -214,39 +214,57 @@ function buildLaneResponse({ child, first, signal, abortHandlerRef }) {
   }
   let remaining = first.restBuffer;
   let childEnded = false;
+  let closed = false; // controller closed/cancelled — trailing stdout must not enqueue
   let exitPromise = null;
   const stream = new ReadableStream({
     start(controller) {
       const push = (chunk) => {
-        if (chunk.length) controller.enqueue(chunk);
+        if (closed || !chunk.length) return;
+        try {
+          controller.enqueue(chunk);
+        } catch {
+          closed = true; // enqueue raced a close/cancel — stop pushing
+        }
       };
       if (remaining.length) push(remaining);
       child.stdout.on("data", (chunk) => push(chunk));
       child.stdout.on("end", () => {
         childEnded = true;
+        closed = true;
         try { controller.close(); } catch { /* already closed */ }
       });
       child.on("exit", (code) => {
-        if (!childEnded) {
+        if (childEnded) return;
+        if (code === 6) {
           childEnded = true;
-          if (code === 6) {
-            controller.error(new Error("bun child idle timeout"));
-          } else if (code === 5) {
-            controller.error(new Error("bun child upstream error after headers"));
-          } else {
-            try { controller.close(); } catch { /* already closed */ }
-          }
+          closed = true;
+          controller.error(new Error("bun child idle timeout"));
+        } else if (code === 5) {
+          childEnded = true;
+          closed = true;
+          controller.error(new Error("bun child upstream error after headers"));
+        } else if (code === 0) {
+          // Clean exit: do NOT close here — the exit event can beat pending
+          // pipe data (Windows), which truncated bodies (200 + empty stream).
+          // stdout 'end' below closes the stream after the last byte lands.
+        } else {
+          childEnded = true;
+          closed = true;
+          try { controller.close(); } catch { /* already closed */ }
         }
       });
       child.on("error", () => {
         if (!childEnded) {
           childEnded = true;
+          closed = true;
           try { controller.error(new Error("bun child stream error")); } catch {}
         }
       });
     },
     cancel() {
-      // consumer cancelled the response body → kill the child (quota-safe)
+      // consumer cancelled the response body → kill the child (quota-safe);
+      // trailing stdout data after the cancel must never enqueue (crash guard)
+      closed = true;
       killChild(child);
     },
   });

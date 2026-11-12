@@ -16,7 +16,7 @@
  * snapshot via scripts/extract-opencode-wire.mjs. No runtime write channel
  * exists, closing the prompt-injection supply chain (plan SEC-2).
  */
-import snapshotJson from "./opencodeWire.snapshot.json";
+import snapshotJson from "./opencodeWire.snapshot.json" with { type: "json" };
 import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
 import { dbg } from "../utils/debugLog.js";
 // Re-export the executor's session minting (do not re-implement). Function

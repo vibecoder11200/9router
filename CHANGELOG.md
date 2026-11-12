@@ -1,3 +1,23 @@
+# v0.6.81 (2026-11-13)
+
+The OpenCode Free (noAuth) lane now ships its traffic through per-request Bun stdio children replicating the v2 CLI wire exactly - the lane that the v2 free-tier gate was actively refusing (Node TLS fingerprint) becomes the primary engine, with a one-key kill-switch back to the old path.
+
+## Features
+- **Bun stdio free lane (default ON)**: chat traffic for chat-format free models routes through `opencodeFreeLaneFetch` - one short-lived `bun` child per request (`open-sse/services/opencodeBunSidecar.mjs`), stdout carrying a JSON header line then the raw SSE passthrough, abort = kill child (quota-safe by construction), semaphore <= 3 with a bounded waiter queue. Bun 1.4.0 is downloaded on demand by a digest-pinned installer (`src/lib/runtime/bunInstaller.js`, shared staging/atomic-swap/rollback helpers with the xray installer). The wire itself is CLI-identical: an embedded, minimal-and-scrubbed snapshot (`open-sse/providers/opencodeWire.snapshot.json`, P0-proven 7.7KB composition, 5/5 vs the live gate) supplies the harness system prompt, tool manifest and identity headers; the caller system message is dropped and snapshot tools win the dedupe. Request-side render hard-fails on leftover placeholders.
+- **Fail-fast, no silent fallback**: two failed lane attempts (5s budget) -> typed `OPENCODE_FREE_LANE_UNAVAILABLE` HTTP 503; a socks proxy without a verifiable xray HTTP inbound -> distinct unmapped-proxy 503 (the new `resolveXrayHttpProxyUrl` derives the paired inbound at socks+1, TCP-verifies it, negative-caches 30s). Both alert (`opencode-bun-lane-unavailable`, 1h dedupe; unmapped = info). The probe infra classifier treats lane-down as app-side infra so the model filter aborts instead of failing every node.
+- **Engine kill-switch**: settings key `opencodeFreeLaneEngine` = `bun` (default) or `legacy` restores the exact pre-bun-lane path (`opencodeTlsFetch`). The 3 responses/messages-format free models (`muse-spark-1.2/1.3-contributor-free`, `union-alpha`) stay legacy regardless - the v2 gate refuses their shaping (R8, observable via `GET /api/opencode-free-lane` `lane.modelsKnownRefused`).
+- **Observability**: `GET /api/opencode-free-lane` (read-only): engine, bun install state/version, lane occupancy + last error, snapshot `{clientVersion, sourceSha, capturedAt}`, `lastUnavailableAlertAt`, known-refused models. Snapshot sync is detect-only (24h tick pings the upstream npm metadata; drift raises `opencode-wire-drift`, never writes at runtime). Operational note: that tick reveals the install IP to opencode.ai (SEC-5) - documented in `docs/ARCHITECTURE.md`.
+
+## Fixes (found by the P7 replay against the live gate)
+- **Cancel-crash**: consumer cancel left trailing child stdout hitting a closed stream controller - uncaught crash. Guarded push + closed flag.
+- **stdin belt time bomb**: the sidecar belt-exited on stdin close; env transport closes stdin at spawn by design, so live streams could die at an arbitrary point (200s with empty bodies). Belt removed; orphan protection stays with the idle/total watchdogs.
+- **Exit-before-flush truncation**: the lane closed the stream on child exit-0, but exit can beat pending pipe data on Windows - 200 with an empty stream. Clean exits now defer closing to stdout end.
+
+## Verification
+- Lane suites 24/24 green (child protocol under real node children, manager streaming/semaphore/abort, executor integration, probe e2e with the real lane + spawn capture); all gate-named pre-existing opencode suites (`opencode-session`, `opencode-fingerprint`, `opencode-free-*`, `opencode-go-*`) green. Full suite: failure list baseline-identical to pre-feature HEAD (verified on a worktree for the 3 ambiguous files; the rest are documented Windows/env noise).
+- Mode A replay (fixture -> real lane -> live gate): 3/3 PASS on the first set (200 + first SSE chunk, paced, fresh session per run, cancel each run); two later sets surfaced the three fixes above; the final set stopped per plan R4 on a per-IP quota 429 (replay cadence, not wire drift - same IP served 200s with the identical snapshot minutes earlier). Replay paused; re-verify 3/3 after the quota window (`plans/261112-2130-opencode-bun-free-lane/reports/mode-a-replay.md`).
+- VPS live acceptance checklist: pending, not reachable from the dev machine (`plans/261112-2130-opencode-bun-free-lane/reports/vps-acceptance.md`).
+
 # v0.6.80 (2026-11-12)
 
 "Usable" for free-lane models can now mean what it says: an opt-in toggle makes the xray model filter send a REAL chat completion per tested node for noAuth free providers (OpenCode Free), instead of the v0.6.76 connectivity-only check.
