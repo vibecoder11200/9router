@@ -6,6 +6,7 @@ import { Badge, Button, Card, CardSkeleton, Input, Toggle, ConfirmModal } from "
 import { useNotificationStore } from "@/store/notificationStore";
 import SubscriptionManager from "./SubscriptionManager.jsx";
 import VersionPanel from "./VersionPanel.jsx";
+import FreeLaneCard from "./FreeLaneCard.jsx";
 
 function formatDateTime(value) {
   if (!value) return "Never";
@@ -205,6 +206,8 @@ export default function XrayProxyPage() {
           xrayModelFilterPauseOnTraffic: data.xrayModelFilterPauseOnTraffic !== false,
           xrayModelFilterQuietMs: data.xrayModelFilterQuietMs ?? 15000,
           xrayModelFilterFreeChatProbe: data.xrayModelFilterFreeChatProbe === true,
+          opencodeFreeLaneEngine: data.opencodeFreeLaneEngine || "bun",
+          opencodeFreeLaneMaxConcurrency: data.opencodeFreeLaneMaxConcurrency ?? 3,
         }));
         setModelFilter((prev) => ({
           ...prev,
@@ -1358,6 +1361,8 @@ export default function XrayProxyPage() {
           </div>
         )}
       </Card>
+
+      <FreeLaneCard settings={settings} onSaveSetting={handleSaveSetting} />
 
       {/* Server list */}
       <Card className="space-y-3">

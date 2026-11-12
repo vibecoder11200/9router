@@ -1,3 +1,13 @@
+# v0.6.83 (2026-11-13)
+
+Completes the bun-lane settings surface: the free-lane knobs get their dashboard card.
+
+## Features
+- **"OpenCode free lane" card** (Xray dashboard, between Model Filter and Servers): engine kill-switch select (`bun` / `legacy`), max-concurrent-children select (1-16 presets, unlisted persisted values still shown), and live lane status badges refreshed every 15s from `GET /api/opencode-free-lane` (bun installed/version, children busy/max, queued, unavailable-alert time, wire snapshot version, last lane error, R8 known-refused models). Operator notes are rendered inline: ~22MB steady / ~70MB spawn-peak RAM per child (keep <=5 on ~1GB VPS), changes apply to new requests without restart, and upstream per-exit-IP quota means extra concurrency shortens queues but does not buy upstream throughput.
+
+## Verification
+- Production `next build` green (156/156 pages; pre-existing unrelated traced-file warnings on oauth/tunnel routes only). Lane suites 32/32. Card fields cross-checked 1:1 against the status route payload.
+
 # v0.6.82 (2026-11-13)
 
 Follow-up to the v0.6.81 bun lane: the free-lane concurrency cap becomes a user setting instead of a hard-coded 3.
