@@ -1,3 +1,13 @@
+# v0.6.78 (2026-11-12)
+
+Hotfix: the free-lane (noAuth, e.g. OpenCode Free) model-filter probe leaked one temp xray process per probe — accumulated 364 leaked processes in one day and hard-locked a 1GB production VPS.
+
+## Fixes
+- **Free-lane filter probe leaked its temp xray** (`testSingleConfigWithModel`, `src/lib/xray/manager.js`): v0.6.76 inserted the connectivity-only early-return BETWEEN `spawnTempConfig()` and the `try/finally { temp.cleanup() }`, so every noAuth-free probe returned without killing the temp xray it had just spawned — leaking the process, its `config.json.model-test-*.json`, and the SOCKS port reservation (spawn-mode only; api-mode unaffected). The auto model filter that runs after every subscription sync then leaked one process per probed config: on an 836MB VPS with 828 active configs (`xrayModelFilterAll: true`, model `oc/deepseek-v4.1-flash-free`), four auto-filter runs on 2026-11-10 left 364 zombie xray processes (~5.5GB committed) → swap thrash → hard lockup with total SSH loss; 366 of 512 probes in the final run also failed with "Failed to spawn temp xray" (spawn EAGAIN) as the box ran out of resources mid-run. An identical earlier accumulation (260 leftovers, box reboot) is on record from 2026-11-02. The free-lane branch now sits inside the same `try/finally` so every return path cleans up; verified with an isolated process-level repro (25/25 probes leaked before, 0/0 after; normal-provider path unchanged) and the existing `xray-filter-free-lane-guard` / `xray-model-filter-*` suites (11 green).
+
+## Known issues (not in this release)
+- Free-lane filter "pass" rows can be false positives: on the server runtime the `testProxy` probes' per-request `dispatcher` (SOCKS tunnel) is dropped by the patched global fetch, so the exit-IP check goes direct and records the host's own IP (observed: all 146 passes had `exitIp` = the VPS IP, `tester.js:12-15` documents the failure mode). The filter's free-lane verdicts should be treated as unverified until this is fixed separately.
+
 # v0.6.77 (2026-11-09)
 
 Upstream decolua/9router v0.5.112 → v0.5.116 migration (29 commits, upstream range `1fe586bb..1339107e`) ported via surgical 3-way apply; every fork mod on the 26 overlapping files preserved and hand-merged.
