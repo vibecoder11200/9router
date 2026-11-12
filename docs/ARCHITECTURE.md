@@ -469,6 +469,18 @@ Default executor path:
 
 - all other providers (including compatible node providers) use `open-sse/executors/default.js`
 
+### OpenCode Free Lane (Bun stdio sidecar)
+
+The OpenCode Free (noAuth) lane routes chat traffic through per-request `bun` stdio children (`open-sse/services/opencodeBunLane.js` + `opencodeBunSidecar.mjs`) instead of Node's fetch. The v2 free-tier gate fingerprints the TLS stack — Bun's BoringSSL stack is accepted where Node's is refused (P0 A/B evidence: byte-identical replay 200 under Bun / 429 under Node) — and the request must be wire-fidelity-complete: the embedded snapshot (`open-sse/providers/opencodeWire.snapshot.json`) supplies the harness system prompt (≈7.7KB composition), tool manifest, and identity headers. The snapshot is the ONLY runtime source: embedded-only, refreshed detect-only (never writes at runtime; drift raises `OPENCODE_WIRE_DRIFT`), regenerated at release time via `scripts/extract-opencode-wire.mjs` (blocking contamination check, minimal-and-scrubbed — never personal content).
+
+- **Request shaping**: `renderSystemText` renders the snapshot's system template (hard-fails on leftover `{{` placeholders); the caller's system message is dropped, snapshot tools win the dedupe, `stream_options.include_usage` is pinned, `max_completion_tokens` defaults to 32000.
+- **Transport**: one Bun child per request; stdout carries a JSON header line then the raw SSE passthrough; abort = kill child (quota-safe by construction); semaphore ≤3 concurrent children with a bounded waiter queue (30s queue timeout → typed unavailable).
+- **Fail-fast**: two failed spawn attempts (5s retry budget) → typed `OPENCODE_FREE_LANE_UNAVAILABLE` (HTTP 503), no legacy fallback; a socks proxy with no verifiable xray HTTP inbound → unmapped-proxy 503. Both alert (`OPENCODE_BUN_LANE_UNAVAILABLE` event, 1h dedupe; unmapped = info severity).
+- **Proxy mapping**: socks5(h) loopback proxies are mapped to the paired xray HTTP inbound by `resolveXrayHttpProxyUrl` (derive socks+1 per the buildInbounds invariant, TCP-verify 200ms, 30s negative cache); unmappable → typed unmapped error. Executor→lane passes the proxy URL verbatim; the resolver, not the caller, owns mapping.
+- **Kill-switch**: settings key `opencodeFreeLaneEngine` = `bun` (default) or `legacy` restores the exact pre-bun-lane path; responses/messages-format free models (`muse-spark-1.2/1.3-contributor-free`, `union-alpha`) stay legacy regardless — the v2 gate refuses their responses/messages shaping (R8, listed by `GET /api/opencode-free-lane` `lane.modelsKnownRefused`).
+- **Probe interplay**: the xray model-filter probe skips chat probes for free-lane providers by default (tunnel + exit-IP only); opt-in `freeChatProbe` rides the temp pair's socks URL — the lane's resolver maps it. When the lane itself is down, every node would fail identically: `isProbeInfraError` classifies it as app-side infra (runner aborts, prune refuses, cache stays clean).
+- **Observability**: `GET /api/opencode-free-lane` (read-only): engine, bun install state/version, lane semaphore occupancy + last error, snapshot `{clientVersion, sourceSha, capturedAt}`, `lastUnavailableAlertAt`, `modelsKnownRefused`. Operational note: the detect-only sync pings `opencode.ai/update/api/latest/cli/npm` from the server (install IP visible to upstream) — operators decide consciously (SEC-5).
+
 ## Format Translation Coverage
 
 Detected source formats include:

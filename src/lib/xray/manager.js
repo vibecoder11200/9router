@@ -882,6 +882,15 @@ function summarizeProbeBody(text) {
  * This uses the same chatCore/executor path as normal requests, but injects a
  * temporary strict SOCKS proxy so failure cannot silently fall back to direct.
  */
+// Infra failures are app-side — every node would fail identically and the
+// probe says nothing about the config under test. The OpenCode free lane
+// surfaces its typed OPENCODE_FREE_LANE_UNAVAILABLE 503 through
+// formatProviderError as "[503]: OpenCode free lane ..." (message text — the
+// code string never reaches the probe result), so both wordings match.
+export function isProbeInfraError(errorText) {
+  return /wreq-js unavailable|playwright-core is missing|OPENCODE_FREE_LANE_UNAVAILABLE|free lane unavailable|proxy pool not mappable/i.test(String(errorText || ""));
+}
+
 export async function testSingleConfigWithModel(configId, { model: modelStr, timeoutMs = 20000, freeChatProbe = false } = {}) {
   if (!modelStr || typeof modelStr !== "string") {
     const e = new Error("model is required");
@@ -984,9 +993,10 @@ export async function testSingleConfigWithModel(configId, { model: modelStr, tim
       await updateXrayTestResult(config.id, { ok: false });
       // App-side infra failure (e.g. wreq-js failing to load) — every node
       // would fail identically; the probe says nothing about THIS config.
-      // Flagged so the runner can abort, the prune policy can refuse to
-      // delete, and the cache stays unpolluted.
-      const infraError = /wreq-js unavailable|playwright-core is missing/i.test(String(result.error || ""));
+      // The OpenCode free lane (bun runtime failure / unmapped proxy pool)
+      // surfaces as "[503]: OpenCode free lane ..." — same classification:
+      // the probe says nothing about the node, so the runner aborts.
+      const infraError = isProbeInfraError(result.error);
       return { ok: false, infraError, latencyMs, status: result.status || 502, error: result.error || "Model probe failed" };
     }
 

@@ -490,6 +490,12 @@ export const __test__ = {
   },
 };
 
+// Read-only observability hook for GET /api/opencode-free-lane — when the
+// lane last raised the unavailable alert (null = never).
+export function getLaneUnavailableAlertAt() {
+  return lastLaneUnavailableAlertAt ? new Date(lastLaneUnavailableAlertAt).toISOString() : null;
+}
+
 
 /** Engine setting per request ("bun" default | "legacy" kill-switch). */
 async function getFreeLaneEngine() {
