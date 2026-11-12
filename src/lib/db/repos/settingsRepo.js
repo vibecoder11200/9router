@@ -80,6 +80,11 @@ const DEFAULT_SETTINGS = {
   xrayAutoStart: false,
   xraySocksPort: 10808,
   xrayHttpPort: 10809,
+  // OpenCode v2 free-lane transport: "bun" (default — Bun stdio children with
+  // the CLI-identical wire snapshot; the legacy wreq-js lane is gate-refused
+  // by the v2 free-tier gate) or "legacy" kill-switch restoring the exact
+  // pre-bun-lane path.
+  opencodeFreeLaneEngine: "bun",
   xraySubscriptionUrl: "https://raw.githubusercontent.com/Danialsamadi/v2go/main/AllConfigsSub.txt",
   // Subscription auto-sync interval in minutes. 0 = manual-only (scheduler off,
   // sync runs only via the "Sync Now" button). Positive values are clamped to >= 5.

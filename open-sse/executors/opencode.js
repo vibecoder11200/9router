@@ -20,6 +20,19 @@ import {
 } from "../translator/formats/responsesApi.js";
 // Fork: live UA version + catalog-driven responses routing (providers/opencodeCatalog.js).
 import { ensureOpencodeCatalog, getOpencodeCliUserAgent, isResponsesServed } from "../providers/opencodeCatalog.js";
+// Fork: v2 free-lane wire snapshot + Bun stdio lane transport (plans/261112-2130).
+import {
+  getEmbeddedWireSnapshot,
+  shapeV2FreeLaneRequestBody,
+  mintV2IdentityHeaders,
+} from "../providers/opencodeWire.js";
+import {
+  opencodeFreeLaneFetch,
+  OpenCodeFreeLaneUnavailableError,
+  OpenCodeFreeLaneUnmappedProxyError,
+} from "../services/opencodeBunLane.js";
+import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
+import { getSettings } from "@/lib/localDb.js";
 import { getModelTargetFormat, PROVIDER_ID_TO_ALIAS } from "../config/providerModels.js";
 
 // OpenCode v2 UA shape: opencode/<channel>/<version>/<client>. Upstream rejects
@@ -418,6 +431,84 @@ function dropAdaptiveReasoningEffort(body) {
   if (body?.reasoning_effort === "auto") delete body.reasoning_effort;
 }
 
+// Fail-fast alert dedupe (plan acceptance #3): exactly ONE critical
+// OPENCODE_BUN_LANE_UNAVAILABLE per hour regardless of request volume.
+const LANE_ALERT_DEDUPE_MS = 60 * 60 * 1000;
+let lastLaneUnavailableAlertAt = 0;
+
+/**
+ * The free gate keys on the TLS ClientHello (Bun's BoringSSL passes, Node's
+ * is refused) — the v2 gate ALSO refuses the legacy wreq-js Chrome-TLS lane
+ * (plan P0 evidence), so the primary engine is the Bun stdio lane with the
+ * CLI-identical wire snapshot. Fail-fast: on lane unavailability the typed
+ * error surfaces (503) — serving a v2-gated request on the legacy lane would
+ * be a guaranteed 429 wearing a degradation alert, never a fallback. The
+ * legacy path stays reachable ONLY via opencodeFreeLaneEngine: "legacy"
+ * (today's exact behavior) or for responses/messages-format free models
+ * (known-refused by the v2 chat-completions lane — documented R8).
+ */
+async function runBunFreeLane(url, options, ctx, credentials) {
+  const snapshot = getEmbeddedWireSnapshot();
+  const shaped = shapeV2FreeLaneRequestBody(JSON.parse(options.body), snapshot);
+  const headers = mintV2IdentityHeaders(snapshot, credentials?.[SESSION_FIELD]);
+  return opencodeFreeLaneFetch(snapshot.endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(shaped),
+  }, { signal: options.signal, proxyUrl: ctx?.proxyUrl || null });
+}
+
+function surfaceLaneUnavailable(laneError) {
+  const unmapped = laneError instanceof OpenCodeFreeLaneUnmappedProxyError;
+  const now = Date.now();
+  if (now - lastLaneUnavailableAlertAt > LANE_ALERT_DEDUPE_MS) {
+    lastLaneUnavailableAlertAt = now;
+    emitAlert(EVENT_TYPES.OPENCODE_BUN_LANE_UNAVAILABLE, {
+      severity: unmapped ? SEVERITY.INFO : SEVERITY.CRITICAL,
+      title: unmapped ? "OpenCode free lane proxy unmapped" : "OpenCode free lane unavailable",
+      body: unmapped
+        ? "The pool binding's socks proxy has no verifiable xray HTTP inbound — bind a fork xray pool or remove the pool binding."
+        : "The Bun lane failed its bounded retry; requests fail fast with 503 until it recovers.",
+      details: { reason: laneError?.code, unmapped },
+      dedupKey: "opencode-bun-lane",
+    });
+  }
+  const err = new Error(
+    unmapped
+      ? "OpenCode free lane: proxy pool not mappable to the Bun lane (bind a fork xray pool or remove the pool binding)"
+      : "OpenCode free lane unavailable (bun runtime/lane failure)",
+  );
+  err.code = "OPENCODE_FREE_LANE_UNAVAILABLE";
+  err.statusCode = 503;
+  return err;
+}
+
+// Test-only: reset the lane-alert dedupe window (module-level state).
+export const __test__ = {
+  resetLaneAlertDedupe() {
+    lastLaneUnavailableAlertAt = 0;
+  },
+};
+
+
+/** Engine setting per request ("bun" default | "legacy" kill-switch). */
+async function getFreeLaneEngine() {
+  try {
+    const settings = await getSettings();
+    return settings?.opencodeFreeLaneEngine === "legacy" ? "legacy" : "bun";
+  } catch {
+    return "bun"; // settings read failure must not degrade the lane decision
+  }
+}
+
+function safeParseModel(bodyStr) {
+  try {
+    return JSON.parse(bodyStr)?.model || null;
+  } catch {
+    return null;
+  }
+}
+
 export class OpenCodeExecutor extends BaseExecutor {
   constructor() {
     super("opencode", PROVIDERS.opencode);
@@ -491,11 +582,30 @@ export class OpenCodeExecutor extends BaseExecutor {
   async execute(args) {
     const credentials = this.prepareRequestCredentials(args);
     const freeLaneFetch = async (url, options, ctx) => {
-      const res = await opencodeTlsFetch(url, {
+      const legacy = () => opencodeTlsFetch(url, {
         method: options.method,
         headers: options.headers,
         body: options.body,
       }, { signal: options.signal, proxyUrl: ctx?.proxyUrl || null });
+      const model = args?.model || (typeof options?.body === "string" ? safeParseModel(options.body) : null);
+      const engine = await getFreeLaneEngine();
+      if (engine !== "legacy" && model && !isResponsesModel(model) && !isMessagesModel(model)) {
+        try {
+          const res = await runBunFreeLane(url, options, ctx, credentials);
+          // 429 rotation hook (see legacy branch): a real bun-lane 429 means
+          // THIS exit identity's quota is spent — rotate exactly as before.
+          if (res && res.status === 429 && shouldRotateStableSession(credentials)) {
+            evictStableSessionForRotation(credentials);
+          }
+          return res;
+        } catch (e) {
+          if (e instanceof OpenCodeFreeLaneUnavailableError || e instanceof OpenCodeFreeLaneUnmappedProxyError) {
+            throw surfaceLaneUnavailable(e); // fail-fast — NO legacy serving
+          }
+          throw e;
+        }
+      }
+      const res = await legacy();
       // 429 FreeUsageLimitError can be pinned to THIS session id (per-session
       // accounting, see stableSessionId). Rotate it (cooldown-limited) so the
       // identity recovers instead of 429ing until the 2h idle TTL — the flag
