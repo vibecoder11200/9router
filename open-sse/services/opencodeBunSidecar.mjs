@@ -39,6 +39,28 @@ function emit(obj) {
   }
 }
 
+// stdout is the ONLY protocol channel — a write into a pipe whose reader died
+// (orphaned child, killed parent) must never wedge the process: race every
+// body write with a timeout; the catch path exits (hard lifetime cap backs it).
+function writeWithTimeout(value) {
+  const WRITE_TIMEOUT_MS = 10_000;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error("stdout write timeout (broken pipe)")),
+      WRITE_TIMEOUT_MS,
+    );
+    const write = IS_BUN
+      ? Bun.write(Bun.stdout, value)
+      : new Promise((res, rej) =>
+          process.stdout.write(Buffer.from(value), (err) => (err ? rej(err) : res())),
+        );
+    write.then(
+      () => { clearTimeout(timer); resolve(); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 async function readStdinAll() {
   if (IS_BUN) {
     return await new Response(Bun.stdin).text();
@@ -65,11 +87,23 @@ async function main() {
   const timeoutMs = Number(req.timeoutMs) || 120_000;
   const idleTimeoutMs = Number(req.idleTimeoutMs) || timeoutMs;
 
+  // Hard lifetime cap (orphan hygiene): defense-in-depth — if this process
+  // ever gets stuck where the watchdogs cannot rescue it — e.g. a Bun.write
+  // into a stdout pipe whose reader died (parent crash/killed mid-stream):
+  // the 120s abort fires but the stuck write never notices it. This timer
+  // calls process.exit() DIRECTLY: an async hang leaves the loop free,
+  // so timers still run; exit needs no cooperation from the stuck await.
+  const HARD_LIFETIME_MS = timeoutMs + 60_000;
+  setTimeout(() => {
+    try { process.exit(EXIT_OK); } catch {}
+  }, HARD_LIFETIME_MS);
+
   // NO stdin belt: env transport closes stdin at spawn BY DESIGN (spawnChild
   // ends stdin immediately), so a stdin-close belt would kill live streams at
   // an arbitrary point after headers (replay proved it: 200s with empty
-  // bodies). Orphan protection = the idle/total watchdogs below + the manager
-  // releasing the slot on child exit — not a stdin sentinel.
+  // bodies). Orphan protection = the idle/total watchdogs below, this hard
+  // cap, and the manager releasing the slot on child exit — not a stdin
+  // sentinel.
 
   const abort = new AbortController();
   let idleTimer = null;
@@ -117,17 +151,11 @@ async function main() {
         const { done, value } = await reader.read();
         if (done) break;
         armIdleWatchdog(); // each chunk defers the idle watchdog
-        if (IS_BUN) {
-          await Bun.write(Bun.stdout, value);
-        } else {
-          await new Promise((resolve, reject) =>
-            process.stdout.write(Buffer.from(value), (err) => (err ? reject(err) : resolve())),
-          );
-        }
+        await writeWithTimeout(value); // broken-pipe hang → 10s → exit
       }
     }
   } catch {
-    // body streaming interrupted (abort/timeout) — exit below signals why
+    // body streaming interrupted (abort/timeout/broken stdout) — exit below
   }
   clearTimeout(totalTimer);
   if (idleTimer) clearTimeout(idleTimer);
