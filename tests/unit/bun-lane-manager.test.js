@@ -224,6 +224,24 @@ describe("opencodeBunLane semaphore", () => {
   });
 });
 
+describe("opencodeBunLane pre-header diagnostics", () => {
+  it("child stderr surfaces in the lane error (silent exit-1 class)", { timeout: 30_000 }, async () => {
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const pathM = await import("node:path");
+    const crasher = pathM.join(os.tmpdir(), `bunlane-crash-${Date.now()}.mjs`);
+    fs.writeFileSync(crasher, "process.stderr.write('boom-reason-ABC123' + String.fromCharCode(10)); process.exit(1);");
+    process.env.OPENCODE_BUN_SIDECAR_SCRIPT = crasher;
+    try {
+      await expect(opencodeFreeLaneFetch(serverUrl, { method: "GET" })).rejects.toThrow(/boom-reason-ABC123/);
+      expect(getBunLaneStatus().lastError).toMatch(/boom-reason-ABC123/); // visible on the card
+    } finally {
+      fs.unlinkSync(crasher);
+      process.env.OPENCODE_BUN_SIDECAR_SCRIPT = SIDECAR;
+    }
+  });
+});
+
 describe("opencodeBunLane proxy mapping", () => {
   it("unmapped socks proxy → distinct typed error", async () => {
     const { resolveXrayHttpProxyUrl } = await import("@/lib/xray/httpProxyResolver.js");

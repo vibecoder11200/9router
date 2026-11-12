@@ -1,3 +1,14 @@
+# v0.6.84 (2026-11-13)
+
+Hotfix for the first real deploy of the bun lane: a bare-standalone runtime spawned bun at a sidecar path that did not exist there, and bun exited 1 without our protocol header - reading as a mystery "bun child exited before headers (code 1)" on the card.
+
+## Fixes
+- **Sidecar resolution hardened**: candidates now include the server-entry dir (`dirname(argv[1])` - repo root under `node custom-server.js`, `.next/standalone` under a bare standalone run) on top of the module dir and cwd; `scripts/copy-standalone-assets.mjs` now copies `opencodeBunSidecar.mjs` into the standalone output (mirroring the Docker deploy's `COPY /app/open-sse`); and when NO candidate exists the lane refuses up front with the typed unavailable error listing every path tried - never spawns bun at a missing path again.
+- **Child stderr surfaces**: a pre-header exit now carries bun's own stderr (up to ~300 chars) in the lane error and `lane.lastError` - the dashboard card shows the actual diagnosis instead of a bare exit code.
+
+## Verification
+- New suites: sidecar resolution (typed not-found + tried list, env override verbatim, slot never leaks on the refuse path) and stderr surfacing (real crashing child, marker text lands in the lane error + lastError). 7 lane-side suites green (39 tests). Standalone copy verified on the built output.
+
 # v0.6.83 (2026-11-13)
 
 Completes the bun-lane settings surface: the free-lane knobs get their dashboard card.

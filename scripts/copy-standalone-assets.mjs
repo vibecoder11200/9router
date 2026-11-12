@@ -37,6 +37,17 @@ export function copyStandaloneAssets({ projectRoot = process.cwd(), distDir = pr
     cpSync(serverWrapperSource, serverWrapperDestination, { force: true });
     console.log(`[standalone-assets] Copied custom-server.js to ${serverWrapperDestination}`);
   }
+
+  // Bun-lane sidecar: the lane spawns it by path (never bundled), and the
+  // standalone output has no open-sse/ tree — bare-standalone deploys would
+  // fail with a silent `bun child exited before headers (code 1)` (bun can't
+  // find the script). Mirrors the Docker deploy's `COPY /app/open-sse`.
+  const sidecarSource = resolve(projectRoot, "open-sse", "services", "opencodeBunSidecar.mjs");
+  const sidecarDestination = resolve(standaloneDir, "open-sse", "services", "opencodeBunSidecar.mjs");
+  if (existsSync(sidecarSource)) {
+    cpSync(sidecarSource, sidecarDestination, { force: true });
+    console.log(`[standalone-assets] Copied opencodeBunSidecar.mjs to ${sidecarDestination}`);
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(dirname(fileURLToPath(import.meta.url)), "copy-standalone-assets.mjs")) {

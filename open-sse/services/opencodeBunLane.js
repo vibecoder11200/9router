@@ -39,23 +39,44 @@ const STDIN_THRESHOLD_BYTES = 100_000;
 
 // Webpack freezes import.meta.url to the BUILD machine (gensparkTlsSidecar
 // lesson) — resolve the child script deterministically across candidates.
+const SIDECAR_NAME = "opencodeBunSidecar.mjs";
+
 let sidecarDirname = null;
 try {
   sidecarDirname = path.dirname(fileURLToPath(import.meta.url));
 } catch { /* cross-platform bundle */ }
 
-const SIDECAR_CANDIDATES = [
-  sidecarDirname && path.join(sidecarDirname, "opencodeBunSidecar.mjs"),
-  path.join("open-sse", "services", "opencodeBunSidecar.mjs"), // repo-root cwd
-];
+// Server entry dir: repo root under `node custom-server.js` / next dev,
+// `.next/standalone` under a bare standalone run — covers deploys whose cwd
+// is neither (systemd units, pm2 launched elsewhere). (gensparkTlsSidecar
+// lesson: webpack freezes import.meta.url to the chunks dir, so module-
+// relative and cwd candidates alone miss bare-standalone deploys — which
+// surfaced as a silent `bun child exited before headers (code 1)`.)
+function serverEntryDirname() {
+  try {
+    const entry = process.argv[1];
+    return entry ? path.dirname(path.resolve(entry)) : null;
+  } catch { return null; }
+}
+
+function sidecarCandidates() {
+  return [
+    sidecarDirname && path.join(sidecarDirname, SIDECAR_NAME),
+    path.join("open-sse", "services", SIDECAR_NAME), // repo-root cwd
+    serverEntryDirname() && path.join(serverEntryDirname(), "open-sse", "services", SIDECAR_NAME),
+  ];
+}
+
 function resolveSidecarScript() {
   // env override wins verbatim — even when absent on disk (fail-fast tests)
   if (process.env.OPENCODE_BUN_SIDECAR_SCRIPT) return process.env.OPENCODE_BUN_SIDECAR_SCRIPT;
-  return (
-    SIDECAR_CANDIDATES.find((p) => p && fs.existsSync(p)) ||
-    (sidecarDirname
-      ? path.join(sidecarDirname, "opencodeBunSidecar.mjs")
-      : path.join("open-sse", "services", "opencodeBunSidecar.mjs"))
+  const found = sidecarCandidates().find((p) => p && fs.existsSync(p));
+  if (found) return found;
+  // Refuse with the full candidate list instead of spawning bun at a missing
+  // path — bun exits 1 without our protocol header, which reads as a mystery
+  // script crash downstream.
+  throw new OpenCodeFreeLaneUnavailableError(
+    `bun sidecar script not found (tried: ${sidecarCandidates().filter(Boolean).join(", ")})`,
   );
 }
 
@@ -368,6 +389,12 @@ async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstL
     // its exit event fires before the finally block would ever attach.
     child.on("exit", releaseOnce);
     child.on("error", releaseOnce);
+    // Capture bun's stderr — pre-header exits (code 1: script not found,
+    // runtime error) otherwise die silently and read as a mystery crash.
+    let stderrTail = "";
+    child.stderr.on("data", (c) => {
+      stderrTail = (stderrTail + c.toString("utf8")).slice(-400);
+    });
     // Quota-safety: abort kills the child IMMEDIATELY — including during the
     // header phase (the most likely cancel moment). Wiring it only after
     // handoff left a pre-first-line abort ignored, and the lane would then
@@ -387,6 +414,11 @@ async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstL
         const abortErr = new Error("aborted while awaiting bun child headers");
         abortErr.name = "AbortError";
         throw abortErr;
+      }
+      if (/exited before headers/.test(e.message) && stderrTail.trim()) {
+        // bun's own stderr (e.g. "error: Could not find ...") is the actual
+        // diagnosis — surface it through the lane error onto the card
+        e.message = `${e.message} — stderr: ${stderrTail.trim().slice(-300)}`;
       }
       throw e;
     }
