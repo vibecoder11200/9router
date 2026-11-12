@@ -14,6 +14,9 @@ export const EVENT_TYPES = {
   XRAY_NODE_DOWN: "xray-node-down",
   XRAY_ROTATION_FAILED: "xray-rotation-failed",
   TOTU_FETCH_FAILED: "totu-fetch-failed",
+  // OpenCode v2 free-lane (open-sse/providers/opencodeWire.js + Bun stdio lane)
+  OPENCODE_WIRE_DRIFT: "opencode-wire-drift", // snapshot behind upstream CLI — fork release required
+  OPENCODE_BUN_LANE_UNAVAILABLE: "opencode-bun-lane-unavailable", // lane transport down (fail-fast, P4)
 };
 
 export const SEVERITY = { INFO: "info", WARN: "warn", CRITICAL: "critical" };
