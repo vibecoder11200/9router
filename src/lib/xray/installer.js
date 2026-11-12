@@ -14,11 +14,17 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
-import { spawn, execFile } from "node:child_process";
-import { pipeline } from "node:stream/promises";
-import { createWriteStream } from "node:fs";
+import { execFile } from "node:child_process";
 import { DATA_DIR } from "@/lib/dataDir.js";
+// Shared runtime-asset helpers (download/verify/extract/swap/prewarm) — one
+// implementation shared with the bun installer instead of a divergent copy.
+import {
+  atomicSwapIn,
+  downloadToFile,
+  extractZip,
+  restoreFromPrev,
+  sha256File,
+} from "@/lib/runtime/assetInstaller.js";
 
 // Latest verified stable as of implementation. All newer tags are marked
 // prerelease at time of writing. Override with the XRAY_VERSION env var.
@@ -120,114 +126,6 @@ export function getXrayRuntimeVersion() {
 
 function ensureDir() {
   if (!fs.existsSync(XRAY_DIR)) fs.mkdirSync(XRAY_DIR, { recursive: true });
-}
-
-/**
- * Download a URL to a file path with progress reporting via the callback.
- * Returns when the download stream finishes.
- */
-async function downloadToFile(url, dest, { signal } = {}) {
-  const res = await fetch(url, { redirect: "follow", signal });
-  if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}`);
-  const total = Number(res.headers.get("content-length")) || 0;
-  ensureDir();
-  const ws = createWriteStream(dest);
-  let received = 0;
-  // Read body as a stream and pipe to disk, reporting progress.
-  const reader = res.body.getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    received += value.length;
-    ws.write(Buffer.from(value));
-    if (signal?.aborted) throw new Error("download aborted");
-  }
-  await new Promise((resolve, reject) => {
-    ws.on("error", reject);
-    ws.end(resolve);
-  });
-  return { total, received };
-}
-
-/**
- * Extract a zip using the most reliable method for the platform.
- *
- * Windows: PowerShell's Expand-Archive is the most universally available
- * zip extractor (GNU tar in Git Bash can't do zips; bsdtar exists on Win10+
- * but may be shadowed by GNU tar in PATH). We shell out to powershell.exe.
- *
- * macOS/Linux: the `unzip` command is pre-installed on macOS and virtually
- * every Linux distro. Falls back to Python's zipfile module if absent.
- */
-async function extractZip(zipPath, destDir, { signal } = {}) {
-  ensureDirFn(destDir);
-  if (process.platform === "win32") {
-    // PowerShell Expand-Archive — robust on all Windows 10+ setups.
-    // Use -LiteralPath so brackets in the path don't trip the glob parser.
-    const psScript = `Expand-Archive -LiteralPath '${winPath(zipPath)}' -DestinationPath '${winPath(destDir)}' -Force`;
-    await new Promise((resolve, reject) => {
-      const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", psScript], {
-        stdio: ["ignore", "ignore", "ignore"],
-        windowsHide: true,
-      });
-      child.on("error", () => reject(new Error("powershell.exe not available")));
-      child.on("exit", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`powershell Expand-Archive exited with code ${code}`));
-      });
-      if (signal) signal.addEventListener("abort", () => { try { child.kill("SIGKILL"); } catch {} });
-    });
-    return;
-  }
-  // Unix: try unzip, fall back to python3.
-  try {
-    await new Promise((resolve, reject) => {
-      const child = spawn("unzip", ["-o", zipPath, "-d", destDir], {
-        stdio: ["ignore", "ignore", "ignore"],
-      });
-      child.on("error", () => reject(new Error("unzip not available")));
-      child.on("exit", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`unzip exited with code ${code}`));
-      });
-      if (signal) signal.addEventListener("abort", () => { try { child.kill("SIGKILL"); } catch {} });
-    });
-  } catch (e) {
-    // Fallback: python3 zipfile
-    await new Promise((resolve, reject) => {
-      const script = `import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])`;
-      const child = spawn("python3", ["-c", script, zipPath, destDir], {
-        stdio: ["ignore", "ignore", "ignore"],
-      });
-      child.on("error", () => reject(new Error("neither unzip nor python3 available")));
-      child.on("exit", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`python3 zipfile exited with code ${code}`));
-      });
-    });
-  }
-}
-
-// Ensure a directory exists (helper for extraction target).
-function ensureDirFn(dir) {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
-
-// Convert a path to Windows backslash form for PowerShell (forward slashes
-// work too, but backslashes avoid any edge cases with PowerShell quoting).
-function winPath(p) {
-  return p.replace(/\//g, "\\");
-}
-
-/** Stream a file through sha256 and return the hex digest. */
-function sha256File(filePath) {
-  return new Promise((resolve, reject) => {
-    const hash = crypto.createHash("sha256");
-    const rs = fs.createReadStream(filePath);
-    rs.on("error", reject);
-    rs.on("data", (chunk) => hash.update(chunk));
-    rs.on("end", () => resolve(hash.digest("hex")));
-  });
 }
 
 /**
@@ -340,40 +238,18 @@ export async function installXray(opts = {}) {
     } catch { /* process module/pid unavailable — proceed with the swap */ }
 
     // Retain the current files in `.prev` (rename, not rm) BEFORE swapping —
-    // the auto-rollback source for a failed post-install restart (RT-5).
-    let prevPopulated = false;
-    try {
-      const previousVersion = getInstalledVersion();
-      fs.rmSync(prevDir, { recursive: true, force: true });
-      fs.mkdirSync(prevDir, { recursive: true });
-      for (const name of fs.readdirSync(stagingDir)) {
-        const dest = path.join(XRAY_DIR, name);
-        if (fs.existsSync(dest)) fs.renameSync(dest, path.join(prevDir, name));
-      }
-      // `.version` is 9router's own file (never part of the Xray zip), so the
-      // loop above never archives it. Persist it separately: rollback must
-      // restore the OLD version string, or status/APIs report the failed tag
-      // as installed and reinstalling that tag short-circuits as
-      // alreadyInstalled with the rolled-back binary.
-      if (previousVersion) fs.writeFileSync(path.join(prevDir, PREV_VERSION_MARKER), previousVersion);
-      prevPopulated = fs.readdirSync(prevDir).length > 0;
-    } catch { /* .prev best-effort — swap proceeds without rollback source */ }
-
-    try {
-      for (const name of fs.readdirSync(stagingDir)) {
-        const dest = path.join(XRAY_DIR, name);
-        try { fs.rmSync(dest, { force: true, recursive: true }); } catch { /* dest absent */ }
-        fs.renameSync(path.join(stagingDir, name), dest);
-      }
-    } catch (swapErr) {
-      // Mid-swap failure on a mixed-version dir is worse than the old
-      // install: undo from `.prev` before propagating.
-      if (prevPopulated) {
-        log(`swap failed (${swapErr.message}) — restoring previous files from .prev`);
-        try { restoreFromPrevDir(); } catch { /* best-effort */ }
-      }
-      throw swapErr;
-    }
+    // the auto-rollback source for a failed post-install restart (RT-5) —
+    // then move the staged files in (with the Windows EPERM retry dance),
+    // rolling back from `.prev` on a mid-swap failure. Shared helper
+    // (assetInstaller.atomicSwapIn) — identical semantics to the former
+    // inline block.
+    await atomicSwapIn({
+      stagingPath: stagingDir,
+      finalPath: XRAY_DIR,
+      prevDir,
+      previousVersion: getInstalledVersion(),
+      versionMarkerName: PREV_VERSION_MARKER,
+    });
   } catch (e) {
     throw new Error(`Failed to install verified archive: ${e.message}`);
   } finally {
@@ -402,7 +278,12 @@ export async function installXray(opts = {}) {
 
 /** Move `.prev` contents back into the install dir (auto-rollback, RT-5). */
 export function rollbackXrayToPrev() {
-  return restoreFromPrevDir();
+  return restoreFromPrev({
+    prevDir: path.join(XRAY_DIR, ".prev"),
+    finalPath: XRAY_DIR,
+    versionMarkerName: PREV_VERSION_MARKER,
+    versionFile: VERSION_FILE,
+  });
 }
 
 /** Version held in `.prev` (the RT-5 rollback source), or null if none. */
@@ -412,32 +293,6 @@ export function getPrevXrayVersion() {
     if (!fs.existsSync(marker)) return null;
     return fs.readFileSync(marker, "utf8").trim() || null;
   } catch { return null; }
-}
-
-function restoreFromPrevDir() {
-  const prevDir = path.join(XRAY_DIR, ".prev");
-  if (!fs.existsSync(prevDir)) return false;
-  let restored = false;
-  // The version marker belongs to VERSION_FILE, not the install dir — after a
-  // rollback the file must name the binary that is actually running again.
-  const markerPath = path.join(prevDir, PREV_VERSION_MARKER);
-  if (fs.existsSync(markerPath)) {
-    try {
-      const prevVersion = fs.readFileSync(markerPath, "utf8").trim();
-      if (prevVersion) fs.writeFileSync(VERSION_FILE, prevVersion);
-    } catch { /* best-effort */ }
-    try { fs.rmSync(markerPath, { force: true }); } catch { /* best-effort */ }
-  }
-  for (const name of fs.readdirSync(prevDir)) {
-    const dest = path.join(XRAY_DIR, name);
-    try { fs.rmSync(dest, { force: true, recursive: true }); } catch { /* dest absent */ }
-    try {
-      fs.renameSync(path.join(prevDir, name), dest);
-      restored = true;
-    } catch { /* best-effort per file */ }
-  }
-  try { fs.rmSync(prevDir, { recursive: true, force: true }); } catch { /* best-effort */ }
-  return restored;
 }
 
 /** Remove the xray binary and all extracted assets. */
