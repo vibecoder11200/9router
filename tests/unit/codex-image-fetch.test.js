@@ -16,6 +16,16 @@ vi.mock("node:dns/promises", () => ({
   lookup: async (_host, opts) => (opts?.all ? [{ address: "93.184.216.34", family: 4 }] : { address: "93.184.216.34", family: 4 }),
 }));
 
+// image.js fetches through the PACKAGE undici (the patched global fetch drops
+// the per-request dispatcher), so the image-fetch mock lives on the undici
+// module. proxyFetch's rawFetch also dynamic-imports undici, but every test
+// here either mocks proxyAwareFetch itself or never triggers a proxy fetch.
+const { undiciFetchMock } = vi.hoisted(() => ({ undiciFetchMock: vi.fn() }));
+vi.mock("undici", async (importOriginal) => {
+  const mod = await importOriginal();
+  return { ...mod, fetch: undiciFetchMock };
+});
+
 import { CodexExecutor } from "../../open-sse/executors/codex.js";
 import * as proxyFetchModule from "../../open-sse/utils/proxyFetch.js";
 
@@ -50,19 +60,16 @@ function mockImageFetch(sizeBytes) {
 }
 
 describe("CodexExecutor image handling", () => {
-  let originalFetch;
-
   beforeEach(() => {
-    originalFetch = global.fetch;
+    undiciFetchMock.mockReset();
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
     vi.restoreAllMocks();
   });
 
   it("fetches 1MB remote image and inlines it as base64 data URI", async () => {
-    global.fetch = vi.fn(async () => mockImageFetch(IMAGE_1MB_BYTES));
+    undiciFetchMock.mockImplementation(async () => mockImageFetch(IMAGE_1MB_BYTES));
 
     const executor = new CodexExecutor();
     const body = {
@@ -87,12 +94,10 @@ describe("CodexExecutor image handling", () => {
     const base64Payload = imgBlock.image_url.split(",")[1];
     const decodedLen = Buffer.from(base64Payload, "base64").length;
     expect(decodedLen).toBe(IMAGE_1MB_BYTES);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(undiciFetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("passes through existing data URIs without calling fetch", async () => {
-    global.fetch = vi.fn();
-
     const executor = new CodexExecutor();
     const body = {
       input: [
@@ -107,11 +112,11 @@ describe("CodexExecutor image handling", () => {
 
     const imgBlock = body.input[0].content.find((c) => c.type === "input_image");
     expect(imgBlock.image_url).toBe(DATA_URI);
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(undiciFetchMock).not.toHaveBeenCalled();
   });
 
   it("falls back to original URL when remote fetch fails", async () => {
-    global.fetch = vi.fn(async () => { throw new Error("network down"); });
+    undiciFetchMock.mockImplementation(async () => { throw new Error("network down"); });
 
     const executor = new CodexExecutor();
     const body = {
@@ -130,7 +135,7 @@ describe("CodexExecutor image handling", () => {
   });
 
   it("execute() prefetches images before sending to upstream", async () => {
-    global.fetch = vi.fn(async () => mockImageFetch(IMAGE_1MB_BYTES));
+    undiciFetchMock.mockImplementation(async () => mockImageFetch(IMAGE_1MB_BYTES));
 
     let capturedBodyString = null;
     vi.spyOn(proxyFetchModule, "proxyAwareFetch").mockImplementation(async (url, init) => {

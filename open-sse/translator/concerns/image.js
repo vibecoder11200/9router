@@ -13,7 +13,7 @@ export function parseDataUri(url) {
 }
 
 import { lookup } from "node:dns/promises";
-import { Agent } from "undici";
+import { Agent, fetch as undiciFetch } from "undici";
 import { MAX_IMAGE_BYTES, FETCH_TIMEOUT_MS, IMAGE_SIGNATURES, BLOCKED_HOSTS } from "../../config/mediaConfig.js";
 
 // True if an IPv4/IPv6 address is private/reserved (SSRF target).
@@ -95,7 +95,11 @@ export async function fetchImageAsBase64(imageUrl, options = {}) {
 
   try {
     // redirect:"manual" prevents a public URL redirecting to a private one (SSRF bypass).
-    const response = await fetch(imageUrl, { signal: fetchSignal, redirect: "manual", dispatcher });
+    // Package undici fetch, NOT the global fetch: the patched global fetch
+    // strips the per-request `dispatcher`, which would silently drop the
+    // validated-IP pin below (TOCTOU DNS-rebind guard) and send the dial
+    // through the global dispatcher instead.
+    const response = await undiciFetch(imageUrl, { signal: fetchSignal, redirect: "manual", dispatcher });
     if (!response.ok || !response.body) return null;
 
     // Stream-read with a hard byte cap to avoid loading huge payloads into memory.

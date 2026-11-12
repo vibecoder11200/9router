@@ -11,6 +11,15 @@ vi.mock("node:dns/promises", () => ({
   },
 }));
 
+// image.js fetches through the PACKAGE undici (the patched global fetch drops
+// the per-request dispatcher — see translator-image-undici-fetch.test.js), so
+// the fetch mock must live on the undici module, not on globalThis.
+const { undiciFetchMock } = vi.hoisted(() => ({ undiciFetchMock: vi.fn() }));
+vi.mock("undici", async (importOriginal) => {
+  const mod = await importOriginal();
+  return { ...mod, fetch: undiciFetchMock };
+});
+
 import { fetchImageAsBase64 } from "../../open-sse/translator/concerns/image.js";
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -25,12 +34,14 @@ function mockFetchOnce(bytes, ok = true) {
       };
     },
   };
-  globalThis.fetch = vi.fn(async () => ({ ok, body }));
+  undiciFetchMock.mockReset();
+  undiciFetchMock.mockResolvedValue({ ok, body });
 }
 
 beforeEach(() => {
   lookupMock.mockReset();
   lookupMock.mockResolvedValue({ address: "93.184.216.34" }); // public by default
+  undiciFetchMock.mockReset();
 });
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -46,14 +57,14 @@ describe("fetchImageAsBase64 hardening", () => {
     lookupMock.mockResolvedValue({ address: "10.0.0.5" });
     mockFetchOnce(PNG);
     expect(await fetchImageAsBase64("http://internal.example/x.png")).toBeNull();
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(undiciFetchMock).not.toHaveBeenCalled();
   });
 
   it("SSRF: rejects cloud metadata 169.254.169.254", async () => {
     lookupMock.mockResolvedValue({ address: "169.254.169.254" });
     mockFetchOnce(PNG);
     expect(await fetchImageAsBase64("http://metadata/x.png")).toBeNull();
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(undiciFetchMock).not.toHaveBeenCalled();
   });
 
   it("SSRF: rejects blocked hostname localhost", async () => {
@@ -64,7 +75,7 @@ describe("fetchImageAsBase64 hardening", () => {
     lookupMock.mockResolvedValue({ address: "::1" });
     mockFetchOnce(PNG);
     expect(await fetchImageAsBase64("http://x/y.png")).toBeNull();
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(undiciFetchMock).not.toHaveBeenCalled();
   });
 
   it("accepts valid PNG from public host", async () => {

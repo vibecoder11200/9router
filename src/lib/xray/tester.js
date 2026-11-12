@@ -6,8 +6,14 @@
  *  - testProxyExitIp:  GET cloudflare cdn-cgi/trace through the SOCKS proxy,
  *    parse the egress IP (ports the fetchExitIP logic from v2go's tester.go).
  *
- * Both use the global fetch with an undici dispatcher passed as `dispatcher`,
- * matching how 9router's proxyAwareFetch applies SOCKS proxies at request time.
+ * Both ride the PACKAGE's undici fetch — never the global fetch. The server
+ * runtime's patched globalThis.fetch strips the per-request `dispatcher`, so
+ * probes silently went DIRECT (2026-11-10 production evidence: every free-lane
+ * model-filter "pass" recorded the host's own IP as the exit IP — see
+ * plans/reports/Audit-261111-opencode-free-filter-xray-leak.md). The package
+ * undici fetch also pairs correctly with the package-built dispatchers below
+ * (mixed undici copies reject with UND_ERR_INVALID_ARG). Same pattern as
+ * src/lib/network/proxyTest.js and open-sse/utils/proxyFetch.js rawFetch.
  *
  * NOTE: undici-backed fetch ignores the legacy `agent` option — the proxy MUST
  * be supplied via `dispatcher`, otherwise the request silently goes direct.
@@ -16,6 +22,7 @@
  */
 
 import net from "node:net";
+import { fetch as undiciFetch } from "undici";
 import { createSocksDispatcher, isSocksProxyUrl } from "@/lib/network/socksDispatcher";
 
 const DEFAULT_TIMEOUT_MS = 6000;
@@ -69,7 +76,7 @@ export async function testProxyLatency(socksPort, timeoutMs = DEFAULT_TIMEOUT_MS
   const start = Date.now();
   try {
     const dispatcher = await getDispatcher(proxyUriForPort(socksPort));
-    const res = await fetch(LATENCY_URL, {
+    const res = await undiciFetch(LATENCY_URL, {
       dispatcher,
       // Disable compression/redirect so the timing reflects a single round-trip.
       redirect: "manual",
@@ -104,7 +111,7 @@ export async function testProxyExitIp(socksPort, timeoutMs = 4000) {
 export async function testProxyExitIpWithUri(socksUri, timeoutMs = 4000) {
   try {
     const dispatcher = await getDispatcher(socksUri);
-    const res = await fetch(TRACE_URL, {
+    const res = await undiciFetch(TRACE_URL, {
       dispatcher,
       signal: AbortSignal.timeout(timeoutMs),
       headers: { "User-Agent": "9router-xray-test/1.0" },
