@@ -85,6 +85,11 @@ const DEFAULT_SETTINGS = {
   // by the v2 free-tier gate) or "legacy" kill-switch restoring the exact
   // pre-bun-lane path.
   opencodeFreeLaneEngine: "bun",
+  // Max concurrent bun-lane children (semaphore). RAM scales linearly:
+  // ~22MB steady / up to ~70MB spawn-peak per child. Default 3 keeps an
+  // 836MB VPS safe (v0.6.78 lesson); boxes with more RAM can raise it.
+  // Clamped to 1..16 on read; settings read failure fails open to 3.
+  opencodeFreeLaneMaxConcurrency: 3,
   xraySubscriptionUrl: "https://raw.githubusercontent.com/Danialsamadi/v2go/main/AllConfigsSub.txt",
   // Subscription auto-sync interval in minutes. 0 = manual-only (scheduler off,
   // sync runs only via the "Sync Now" button). Positive values are clamped to >= 5.

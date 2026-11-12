@@ -2,8 +2,9 @@
  * OpenCode Bun lane (plan P3): per-request `bun` stdio children performing
  * upstream fetches with Bun's BoringSSL TLS stack — SSE passthrough over
  * stdout, abort = kill child (quota-safe by construction), concurrency capped
- * at 3 with a bounded waiter queue. No port, no auth surface, no persistent
- * process, no boot-path change.
+ * by the user-configurable `opencodeFreeLaneMaxConcurrency` setting (default
+ * 3, clamped 1..16) with a bounded waiter queue. No port, no auth surface,
+ * no persistent process, no boot-path change.
  *
  * `opencodeFreeLaneFetch` has the SAME signature as `opencodeTlsFetch`
  * (opencodeTlsClient.js) — the executor's freeLaneFetch drop-in (P4).
@@ -20,11 +21,17 @@ import {
   isBunInstalled,
 } from "@/lib/runtime/bunInstaller.js";
 import { resolveXrayHttpProxyUrl } from "@/lib/xray/httpProxyResolver.js";
+import { getSettings } from "@/lib/db/repos/settingsRepo.js";
 import { dbg } from "../utils/debugLog.js";
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const QUEUE_TIMEOUT_MS = 30_000;
-const MAX_CONCURRENCY = 3;
+// Default/fallback cap. The effective cap is the user's
+// opencodeFreeLaneMaxConcurrency setting, clamped 1..16 — read per request
+// (same per-request settings read the executor already does for the engine
+// kill-switch), so changes apply to NEW requests immediately without restart.
+const DEFAULT_MAX_CONCURRENCY = 3;
+const MAX_CONCURRENCY_CEILING = 16;
 const RETRY_BUDGET_MS = 5_000;
 // Bodies larger than this go to the child over stdin instead of env (Windows
 // env block-size limits make large env vars unreliable).
@@ -80,18 +87,39 @@ export class OpenCodeFreeLaneBusyError extends Error {
   }
 }
 
-// ── Lane semaphore: ≤3 concurrent children; waiters queue with a timeout ────
+// ── Lane semaphore: ≤cap concurrent children; waiters queue with a timeout ──
 
 const laneState = {
   active: 0,
   waiters: [],
+  // effective cap of the most recent request (status route observability);
+  // DEFAULT until the first configured request lands
+  maxConcurrency: DEFAULT_MAX_CONCURRENCY,
   lastErrorAt: null,
   lastError: null,
 };
 
-function acquireSlot(queueTimeoutMs) {
+// Clamp helper: user value wins within 1..ceiling; junk/absent → default.
+function clampConcurrency(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return DEFAULT_MAX_CONCURRENCY;
+  return Math.min(MAX_CONCURRENCY_CEILING, Math.max(1, Math.floor(n)));
+}
+
+async function resolveMaxConcurrency() {
+  try {
+    const settings = await getSettings();
+    return clampConcurrency(settings?.opencodeFreeLaneMaxConcurrency);
+  } catch {
+    // settings read failure must not take the lane down (same fail-open as
+    // the executor's engine kill-switch read)
+    return DEFAULT_MAX_CONCURRENCY;
+  }
+}
+
+function acquireSlot(cap, queueTimeoutMs) {
   return new Promise((resolve, reject) => {
-    if (laneState.active < MAX_CONCURRENCY) {
+    if (laneState.active < cap) {
       laneState.active++;
       resolve();
       return;
@@ -102,7 +130,7 @@ function acquireSlot(queueTimeoutMs) {
       const i = laneState.waiters.indexOf(waiter);
       if (i >= 0) laneState.waiters.splice(i, 1);
       reject(new OpenCodeFreeLaneBusyError(
-        `bun lane queue timeout after ${queueTimeoutMs}ms (max ${MAX_CONCURRENCY} concurrent children)`,
+        `bun lane queue timeout after ${queueTimeoutMs}ms (max ${cap} concurrent children)`,
       ));
     }, queueTimeoutMs);
     if (timer.unref) timer.unref();
@@ -313,8 +341,8 @@ async function mapProxy(proxyUrl) {
 
 // ── One lane attempt: acquire → spawn → first line → live Response ──────────
 
-async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs, signal }) {
-  await acquireSlot(queueTimeoutMs);
+async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs, signal, cap }) {
+  await acquireSlot(cap, queueTimeoutMs);
   let child = null;
   let handedOff = false; // response handed to the caller (child still streaming)
   let released = false;
@@ -395,9 +423,11 @@ export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
     abortErr.name = "AbortError";
     throw abortErr;
   }
+  const cap = await resolveMaxConcurrency(); // per-request read — new value applies immediately
+  laneState.maxConcurrency = cap;
   const proxy = await mapProxy(proxyUrl); // typed unmapped-proxy error — no slot consumed
   try {
-    return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: timeoutMs, signal });
+    return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: timeoutMs, signal, cap });
   } catch (e) {
     if (e.name === "AbortError") throw e; // aborted: do NOT retry, never spawn a second child
     if (e instanceof OpenCodeFreeLaneBusyError) throw e; // healthy-but-saturated: fail-fast, no retry
@@ -413,7 +443,7 @@ export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
     // Fail-fast: ONE bounded retry (first-line deadline compressed into the
     // retry budget), then the typed unavailable error.
     try {
-      return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: RETRY_BUDGET_MS, signal });
+      return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: RETRY_BUDGET_MS, signal, cap });
     } catch (e2) {
       if (e2.name === "AbortError") throw e2;
       if (e2 instanceof OpenCodeFreeLaneBusyError || e2 instanceof OpenCodeFreeLaneUnavailableError || e2 instanceof OpenCodeFreeLaneUnmappedProxyError) throw e2;
@@ -430,7 +460,7 @@ export function getBunLaneStatus() {
     bunVersion: getInstalledBunVersion(),
     busy: laneState.active,
     queued: laneState.waiters.length,
-    maxConcurrency: MAX_CONCURRENCY,
+    maxConcurrency: laneState.maxConcurrency,
     lastErrorAt: laneState.lastErrorAt,
     lastError: laneState.lastError,
   };
@@ -441,6 +471,7 @@ export const __test__ = {
   reset() {
     laneState.active = 0;
     laneState.waiters = [];
+    laneState.maxConcurrency = DEFAULT_MAX_CONCURRENCY;
     laneState.lastErrorAt = null;
     laneState.lastError = null;
   },

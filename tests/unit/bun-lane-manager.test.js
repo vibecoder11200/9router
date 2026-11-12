@@ -21,6 +21,10 @@ vi.mock("@/lib/runtime/bunInstaller.js", () => ({
 vi.mock("@/lib/xray/httpProxyResolver.js", () => ({
   resolveXrayHttpProxyUrl: vi.fn(async () => null),
 }));
+const { settingsMock } = vi.hoisted(() => ({ settingsMock: vi.fn() }));
+vi.mock("@/lib/db/repos/settingsRepo.js", () => ({
+  getSettings: (...a) => settingsMock(...a),
+}));
 
 import {
   __test__,
@@ -46,6 +50,8 @@ function sseServer(handler) {
 
 beforeEach(async () => {
   __test__.reset();
+  settingsMock.mockReset();
+  settingsMock.mockResolvedValue({ opencodeFreeLaneMaxConcurrency: 3 });
   process.env.OPENCODE_BUN_PATH = process.execPath;
   process.env.OPENCODE_BUN_SIDECAR_SCRIPT = SIDECAR;
   server = http.createServer(() => {});
@@ -183,6 +189,38 @@ describe("opencodeBunLane semaphore", () => {
       opencodeFreeLaneFetch(serverUrl, { method: "GET" }, { signal: controller.signal }),
     ).rejects.toMatchObject({ name: "AbortError" });
     expect(getBunLaneStatus().busy).toBe(0);
+  });
+
+  it("configured opencodeFreeLaneMaxConcurrency is honored (cap=1 -> second request queues as BUSY)", { timeout: 30_000 }, async () => {
+    settingsMock.mockResolvedValue({ opencodeFreeLaneMaxConcurrency: 1 });
+    sseServer((req, res) => {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      res.write("data: held\n\n");
+      req.on("close", () => res.destroy());
+    });
+    const first = opencodeFreeLaneFetch(serverUrl, { method: "GET" });
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(1), { timeout: 10_000 });
+    expect(getBunLaneStatus().maxConcurrency).toBe(1);
+    const second = opencodeFreeLaneFetch(serverUrl, { method: "GET" }, { queueTimeoutMs: 800 });
+    await expect(second).rejects.toBeInstanceOf(OpenCodeFreeLaneBusyError);
+    const r = await first;
+    await r.body.cancel();
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 3_000, interval: 25 });
+  });
+
+  it("settings read failure fails open to the default cap 3", { timeout: 30_000 }, async () => {
+    settingsMock.mockRejectedValue(new Error("db down"));
+    sseServer((req, res) => {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      res.write("data: held\n\n");
+      req.on("close", () => res.destroy());
+    });
+    const two = [opencodeFreeLaneFetch(serverUrl, { method: "GET" }), opencodeFreeLaneFetch(serverUrl, { method: "GET" })];
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(2), { timeout: 10_000 });
+    expect(getBunLaneStatus().maxConcurrency).toBe(3); // fallback cap visible in status
+    const rs = await Promise.all(two);
+    for (const r of rs) await r.body.cancel();
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 3_000, interval: 25 });
   });
 });
 

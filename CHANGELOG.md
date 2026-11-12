@@ -1,3 +1,13 @@
+# v0.6.82 (2026-11-13)
+
+Follow-up to the v0.6.81 bun lane: the free-lane concurrency cap becomes a user setting instead of a hard-coded 3.
+
+## Features
+- **`opencodeFreeLaneMaxConcurrency` (default 3, clamped 1..16)**: max concurrent bun-lane children. RAM scales linearly (~22MB steady / up to ~70MB spawn-peak per child) — keep <=5 on an 836MB VPS; bigger boxes can raise it. Read per request, so changes apply to new requests immediately without a restart; a settings read failure fails open to 3. Surfaced by `GET /api/opencode-free-lane` `lane.maxConcurrency`. Saturated lanes still fail fast with the BUSY-typed 503 (info alert) — raising the cap only changes when that happens, not what happens.
+
+## Verification
+- Lane suites 32/32 (2 new: cap=1 honored with BUSY queueing + settings-failure fail-open to 3); all feature suites green.
+
 # v0.6.81 (2026-11-13)
 
 The OpenCode Free (noAuth) lane now ships its traffic through per-request Bun stdio children replicating the v2 CLI wire exactly - the lane that the v2 free-tier gate was actively refusing (Node TLS fingerprint) becomes the primary engine, with a one-key kill-switch back to the old path.
