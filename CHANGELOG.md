@@ -1,6 +1,30 @@
-# v0.6.88 (unreleased)
+# v0.6.88 (2026-11-13)
 
-Card display truthfulness round two, from the same filter sessions.
+Upstream decolua/9router v0.5.116 → v0.5.119 migration (39 commits, upstream range `1339107e..1855aa44`) ported via surgical 3-way apply; 6 conflicted files hand-merged with every fork mod preserved. Plus a card display truthfulness fix from the filter sessions.
+
+## Upstream features
+- **OpenCode free-lane load shedding matched to the CLI**: a 429 "The inference service is overloaded" that lands after the TLS gate is now retried with backoff (8 attempts, 800ms→4s, abort-aware) instead of surfacing; every other 429/403 hands the session-drop path — the spent/flagged session id is dropped so the next request re-mints instead of 429ing until restart (#5559, 989b1eec).
+- **Claude live model list + auto-updating CLI version**: new `utils/claudeCliVersion.js` resolves the latest `@anthropic-ai/claude-code` from npm (6h cache, background refresh, `CLAUDE_CLI_VERSION` pin, floor 2.1.322); `proxyAwareFetch` rewrites outgoing `claude-cli/x.y.z` headers from it; the cloaking billing header follows; the dashboard lists live Claude models via the OAuth bearer + `oauth-2025-04-20` beta (43bc940e + 10b0afa4).
+- **New providers**: `synthetic.new` (apikey, usage + key validation via `/v2/quotas`) and SenseNova Intl (`token.sensenova.ai` — separate keys/catalog from the CN site) (ebe398a9 + 402230ed + 14b27dc7).
+- **CommandCode live catalog**: the public catalog resolves models for the dashboard and `/v1/models` (registry static list trimmed accordingly); `google/gemini-4-carbon` + `claude-fable-5-2` added (fa73c938 + 60a1b365).
+- **Model refresh**: Claude Fable 5.2 + Haiku 5.5 (adaptive-only thinking; Fable 5.1 retired from the catalogs), Gemini 4 Carbon, Codex CLI 0.167.1, xiaomi-tokenplan catalog sync, gemini-4 real pricing (8aef7480 + 12e7930e + 4c7804ef + aaf9b65f + 5e54377b).
+- **thinking_levels on `/v1/models`** so clients build effort selectors from the gateway; opencode settings generate effort `variants` per model (7abc190d).
+- **clinepass quota tracker** on the usage-limits dashboard (OAuth WorkOS JWT or plain API key) (5f925cf9); **MiniMax desktop lease usage** on the connection (201e81fb); request details display Claude `output_tokens` (fe0d1a29).
+- **Proxy pools**: status filter + visible-range selection with shift-click ranges (12256f72); SearXNG shows in the Web Search picker — no-auth providers are no longer implicitly "free-tier" (3a936d13).
+
+## Upstream fixes
+- **wreq proxy carry (#5275 follow-up)**: the resolved proxy reaches the wreq-js transport (sessions keyed by proxy identity) and strictProxy fails closed on the adapter path (a76c2afc) — the fork already shipped this as `directFetchProxyBridge`; upstream's observability ported.
+- **Single `[DONE]` sentinel** in passthrough streams — an unterminated upstream `data: [DONE]` no longer glues onto the framed one (#5592, 9ae6e147); **zstd only advertised when the runtime can decode it** (#5539, 97b2c545); **undici FormData for STT** multipart (Next's polyfill serializes as text/plain) (ec165e1c).
+- **Claude**: `tool_reference` blocks inside `tool_result` renamed when cloaking; quota auto-ping catches resets missed between ticks; bare `claude-*` ids route to Claude OAuth when no anthropic connection is active (f4f5f183 + ce1e0c3c + 29f3db11).
+- NVIDIA NIM hardened against parameter rejection and degraded clusters (model-scoped 15min lock on "degraded"; catalog + capabilities refresh — 2275bc0d); CommandCode/Qoder/Fal/muse-web key + cookie validation fixes; codex-image edits hit the native `images/edits` endpoint with a terra fallback; antigravity tolerates `~optional` in tool schemas; Zed Anthropic wire always emits `tool_result.is_error`; explicit input IDs in forms; engine floors declared (`engines.node`).
+
+## Fork-merge decisions
+- **undici stays 8.12.x** (user decision): upstream reverted to ^7.30.2 for Node <22.15 support; the fork keeps ^8.12.3 (installed 8.12.4) and declares the honest floor `engines.node >=22.15.0` (root + CLI) instead. The revert's code diff is comments-only, so nothing else diverges.
+- **opencode executor hand-merge**: the fork's bun-lane `freeLaneFetch` (stdio transport, fail-fast lane errors, cooldown rotation) stays the directFetch; upstream's overload retry wraps `run()` so BOTH lanes gain the retry; session-class rejections drop through upstream's value-matched `forgetOpencodeSession` **gated by the fork's 10-min rotation cooldown** — a fully quota-capped exit IP cannot turn every request into a re-mint.
+- **proxyFetch**: upstream's `proxyCapable` branch NOT ported (dead code next to the fork's `directFetchProxyBridge`); the bridge path now accepts BOTH flag shapes (`options.directFetchProxyBridge` from base.js or a `proxyBridge` function flag for direct callers) and gains upstream's `PROXY ROUTING VERIFIED` debug line + strictProxy fail-close; the credential-free `x-9r-proxy-via` transport proof added to the fork's wreq client.
+- **Registry renumbering**: upstream p154/p155 (sensenova-intl, synthetic) imported as fork p153/p154 — fork customs keep p131-135, nace stays p152.
+- **errorConfig**: upstream's nvidia "degraded" rule ported into the fork's `providers: [...]` array schema.
+- **Tests**: upstream's 3 wreq-proxy suites adapted to the fork mechanism (proxyBridge flag, `{ proxyUrl }` ctx, raw-URL session keying documented as stricter identity isolation); the overload-retry suite runs verbatim (the cooldown-gated drop is transparent to it); `nvidia-params` converted from node:test to vitest; `usage-route-lease` mocks the fork's strict-proxy gate helper. known-fails gains the under-documented second gotScraping case (the fork disabled got-scraping long ago).
 
 ## Fixes
 - **`children N/M` denominator follows settings, not the last request**: the badge's denominator came from `lane.maxConcurrency` — a snapshot of the cap used by the LAST lane request — so right after raising the cap (e.g. 3 → 5) the card kept showing `x/3` until some request happened to land. The denominator is now the settings value (what a NEW request will actually use; settings are read per request), falling back to the lane snapshot while settings load. The numerator (`busy`) was already live-correct — `0` simply means no child is running at poll time.

@@ -11,6 +11,14 @@ import {
 import { dbg } from "./debugLog.js";
 import { canonicalizeProxyUrl } from "@/lib/proxy/parseProxy.js";
 import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
+import { ensureClaudeCliVersion, applyClaudeCliVersion } from "./claudeCliVersion.js";
+
+const CLAUDE_UA_PROBE = /claude-cli\/\d/;
+function hasClaudeCliHeader(headers) {
+  if (!headers) return false;
+  const values = headers instanceof Headers ? [...headers.values()] : Array.isArray(headers) ? headers.map((h) => h[1]) : Object.values(headers);
+  return values.some((v) => typeof v === "string" && CLAUDE_UA_PROBE.test(v));
+}
 
 const directDispatchers = new Map();
 
@@ -28,10 +36,9 @@ export function isStaleSocketError(error) {
   return STALE_SOCKET_ERROR_SUBSTRINGS.some((sub) => msg.includes(sub));
 }
 
-// Always fetch through the package's own undici instance: undici 8 rejects
-// dispatchers created by a different undici copy (UND_ERR_INVALID_ARG on the
-// bundled-in-Node global fetch), so originalFetch/globalThis.fetch is not an
-// option once we build our own Agents.
+// Always fetch through the package's own undici instance so fetch and the
+// Agents below come from the same copy — dispatcher options are only guaranteed
+// to match within one undici version.
 let undiciFetch = null;
 async function rawFetch(url, options) {
   undiciFetch ??= (await import("undici")).fetch;
@@ -162,6 +169,25 @@ const HTTP_SUCCESS_MAX = 300;
 function normalizeString(value) {
   if (value === undefined || value === null) return "";
   return String(value).trim();
+}
+
+/** scheme://host:port only — never credentials. */
+function safeProxyHost(proxyUrl) {
+  try {
+    const parsed = new URL(String(proxyUrl));
+    return `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
+  } catch {
+    return "unparseable-proxy-url";
+  }
+}
+
+/** Destination host only, never the full URL (which may carry a query/path). */
+function safeTargetHost(url) {
+  try {
+    return new URL(typeof url === "string" ? url : url.toString()).host;
+  } catch {
+    return "unparseable-url";
+  }
 }
 
 /**
@@ -323,8 +349,7 @@ const TLS_ECDH_CURVE = process.env.NINEROUTER_TLS_ECDH_CURVE || "X25519";
 // autoSelectFamilyAttemptTimeout = happy eyeballs (RFC 8305): race both address
 // families, fall over in 250ms — replaces the old global ipv4first flag, which fixed
 // one broken-family network by breaking the other (see claude-code#20240).
-// requestTls must stay TLS-options-only (undici 8 rejects connect-level options there
-// with UND_ERR_INVALID_ARG).
+// requestTls must stay TLS-options-only (connect-level options belong in `connect`).
 const EYEBALLS_CONNECT = { autoSelectFamily: true, autoSelectFamilyAttemptTimeout: 250 };
 function buildConnectOptions(insecure) {
   return { ...EYEBALLS_CONNECT, ecdhCurve: TLS_ECDH_CURVE, ...(insecure ? { rejectUnauthorized: false } : {}) };
@@ -409,19 +434,37 @@ function isBodyReplaySafe(body) {
   return !(body && typeof body.getReader === "function" && body.locked);
 }
 
-async function fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket = false) {
+async function fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket = false, strictProxy = false) {
   const run = async (insecure) => {
     // Protocol adapters may need Node's HTTP/1 transport on the direct path.
     // Keep proxy/no-proxy resolution and strict-proxy enforcement here.
     if (!proxyUrl && options.directFetch) return await options.directFetch(url, options);
-    // A transport that opts in via `directFetchProxyBridge` also carries the
-    // connection proxy WITH it (wreq sessions are proxy-pinned) — the opencode
-    // free lane must keep its impersonated ClientHello even when routed
-    // through a proxy (upstream #5275: the proxy path silently degraded to
-    // native fetch and hit the TLS gate). 2-arg directFetch implementations
-    // (codex STT) never set the flag and keep today's dispatcher path.
-    if (!insecure && proxyUrl && options.directFetch && options.directFetchProxyBridge === true) {
-      return await options.directFetch(url, options, { proxyUrl });
+    // A transport that opts in also carries the connection proxy WITH it
+    // (wreq sessions are proxy-pinned) — the opencode free lane must keep its
+    // impersonated ClientHello even when routed through a proxy (upstream
+    // #5275: the proxy path silently degraded to native fetch and hit the TLS
+    // gate). Two equivalent opt-in shapes: executors go through base.js,
+    // which copies the adapter's `proxyBridge` function flag into
+    // `options.directFetchProxyBridge`; direct proxyAwareFetch callers may
+    // set either. 2-arg directFetch implementations (codex STT) set neither
+    // and keep today's dispatcher path.
+    const proxyBridge = options.directFetchProxyBridge === true
+      || options.directFetch?.proxyBridge === true;
+    if (!insecure && proxyUrl && options.directFetch && proxyBridge) {
+      try {
+        const res = await options.directFetch(url, options, { proxyUrl });
+        // Transport-level proof (upstream v0.5.119): reported only after the
+        // adapter that holds the tunnel returned. x-9r-proxy-via is set by the
+        // adapter itself and never carries credentials.
+        const via = res?.headers?.get?.("x-9r-proxy-via");
+        dbg("PROXY", `PROXY ROUTING VERIFIED | ${safeTargetHost(url)} | transport=adapter | proxy=${via || safeProxyHost(proxyUrl)} | status=${res?.status}`);
+        return res;
+      } catch (err) {
+        if (strictProxy) {
+          throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${err.message}`);
+        }
+        throw err;
+      }
     }
     if (!proxyUrl) {
       // Direct path through the shared capped Agent (eyeballs + curved
@@ -530,6 +573,13 @@ async function createBypassRequest(parsedUrl, realIP, options) {
 }
 
 export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
+  // Keep the spoofed Claude Code version current (new models require a minimum CLI version).
+  // Refresh in the background: the request uses the version already known, so an
+  // unreachable npm registry can never add latency to the chat path.
+  if (hasClaudeCliHeader(options?.headers)) {
+    void ensureClaudeCliVersion(rawFetch);
+    options = { ...options, headers: applyClaudeCliVersion(options.headers) };
+  }
   const targetUrl = typeof url === "string" ? url : url.toString();
 
   // Vercel relay: forward request via relay headers
@@ -598,7 +648,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
     if (proxyUrl) {
       // Proxy resolves DNS externally (not affected by /etc/hosts) — use proxy directly
       try {
-        return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket);
+        return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket, strict);
       } catch (proxyError) {
         if (strict) {
           const err = new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
@@ -620,7 +670,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
   if (proxyUrl) {
     try {
-      return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket);
+      return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket, strict);
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
       if (strict) {
@@ -629,7 +679,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
         throw err;
       }
       console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
-      return fetchWithTlsFallback(url, options, null, forceFreshSocket);
+      return fetchWithTlsFallback(url, options, null, forceFreshSocket, strict);
     }
   }
 
@@ -664,7 +714,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
   // got-scraping disabled — use native fetch directly
   // (Re-enable per-host by wrapping with tryGotScrapingFetch when needed)
-  return fetchWithTlsFallback(url, options, null, forceFreshSocket);
+  return fetchWithTlsFallback(url, options, null, forceFreshSocket, strict);
 }
 
 /**

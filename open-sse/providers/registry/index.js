@@ -165,6 +165,10 @@ import p135 from "./totu-ai.js";
 import p151 from "./runcrate.js";
 // Upstream v0.5.112 provider (nace), renumbered from upstream's p153 → p152.
 import p152 from "./nace.js";
+// Upstream v0.5.119 providers (sensenova-intl, synthetic), renumbered from
+// upstream's p154/p155 → p153/p154.
+import p153 from "./sensenova-intl.js";
+import p154 from "./synthetic.js";
 export default [
   p0,
   p1,
@@ -318,4 +322,6 @@ export default [
   p150,
   p151,
   p152,
+  p153,
+  p154,
 ];

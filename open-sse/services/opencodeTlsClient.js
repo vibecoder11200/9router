@@ -212,6 +212,17 @@ export async function opencodeTlsFetch(url, init = {}, { signal, timeoutMs = DEF
   res.headers?.forEach?.((value, key) => {
     headers[key] = value;
   });
+  // Transport-level proof, not selection-level: this is only set after the
+  // session that actually holds the proxy tunnel returned a response. The
+  // value never carries credentials (scheme://host:port only).
+  if (proxyUrl) {
+    try {
+      const parsed = new URL(String(proxyUrl));
+      headers["x-9r-proxy-via"] = `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
+    } catch {
+      headers["x-9r-proxy-via"] = "wreq-js-proxy";
+    }
+  }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 

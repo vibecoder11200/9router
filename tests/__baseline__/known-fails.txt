@@ -6,6 +6,7 @@
 # Also failing on the fork's v0.6.61 baseline (stale local entries, now recorded).
 
 tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch — api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
+tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch — api.anthropic.com routing falls back gracefully when got-scraping throws on non-streaming path
 tests/unit/combo-autoswitch.test.js :: detectRequiredCapabilities web_search tool -> search
 tests/unit/combo-autoswitch.test.js :: reorderByCapabilities keeps order when no model matches
 tests/unit/mimo-free.live.test.js :: MiMo Free anti-abuse gate (live) chat WITH Chrome User-Agent → 200
