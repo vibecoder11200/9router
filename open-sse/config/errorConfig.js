@@ -50,7 +50,7 @@ const COOLDOWN = {
 /**
  * Unified error classification rules.
  * Checked top-to-bottom: text rules first (by order), then status rules.
- * Each rule: { text?, status?, cooldownMs?, backoff?, providers? }
+ * Each rule: { text?, status?, cooldownMs?, backoff?, providers?, modelScoped? }
  *   - text: substring match (case-insensitive) on error message
  *   - status: HTTP status code match
  *   - cooldownMs: fixed cooldown duration
@@ -58,6 +58,10 @@ const COOLDOWN = {
  *   - providers: optional array; when present the rule matches only if the
  *     caller-supplied provider equals one of the entries (fail-closed: an
  *     undefined/unknown provider skips the rule entirely)
+ *   - modelScoped: advisory flag surfaced on checkFallbackError's return
+ *     (parity with upstream v0.5.119) — the model-scoped locking itself is
+ *     architectural: auth.js always writes modelLock_<model>, never an
+ *     account-wide rateLimitedUntil, for text-rule cooldowns
  */
 export const ERROR_RULES = [
   // --- Text-based rules (checked first, order = priority) ---

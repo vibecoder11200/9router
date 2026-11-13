@@ -42,6 +42,50 @@
   N/M fix, CHANGELOG + xray/FreeLaneCard only) landed before the apply —
   no overlap, apply stacked correctly on top.
 
+## Post-release review round (v0.6.89, 2026-11-13 evening)
+Three parallel code-reviewer passes over 50d46f47:
+- **Completeness audit**: 39/39 upstream commits verified landed (byte-
+  equality for 91 non-diverged files + re-apply proof for diverged set);
+  0 P0/P1. P2s: vitest unpinned (version roulette), user's untracked
+  zz-tmp-failfast matching the suite glob (left for user decision).
+- **Providers/registry/UI review**: clean; P3s only — modelScoped doc
+  comment (fixed), nvidia degraded account-wide testStatus stamp (upstream
+  parity, product-decision follow-up), bulkDelete count cosmetic (upstream-
+  identical, left).
+- **Transport review** — 3 P1s, all runtime-reproduced, all FIXED:
+  1. fork 429 hooks evicted on overload-429s too (healthy-session churn)
+     → hooks removed; retry loop's session branch is the single eviction
+     point.
+  2. hook's cooldown timestamp blocked the retry loop's drop →
+     forgetOpencodeSession unreachable on real 429 paths (hinted/translated
+     sessions stuck until TTL) → same fix; new real-path suite
+     opencode-session-rotation-real-path.test.js pins both behaviors
+     through real base + real proxyAwareFetch (mocked-base upstream suite
+     cannot see this).
+  3. strictProxy catches REPLACED adapter errors → noRetry/statusCode/code
+     lost → base re-retired lane fail-fasts 3× + double-wrapped message →
+     all 3 catch sites annotate (message + proxyInfra) instead.
+- P3s fixed in passing: bitwise-or → two statements; stale-socket recursion
+  comment; errorConfig modelScoped doc.
+- Environment hardening: vitest ^5.1.0 pinned (root devDependencies +
+  tests/package.json); reviewer-era tests/node_modules (vitest 4.1.10)
+  removed — full-suite run #3 had silently used it; run #4 (final) under
+  pinned 5.1.0. npx cache entries for vitest cleared.
+- Verification: 12 affected suites 75/75; full suite final run under pinned
+  vitest: failing set == v0.6.88 baseline minus the 3 regenerated golden
+  cases, modulo the rotating flaky family (siblings swap between runs);
+  0 regressions. Reviewer temp repro (econreset-repro.test.js) confirmed
+  deleted, not a repo file.
+- Final reconciliation catch: opencode-executor-proxy-forwarding failed
+  FILE-LEVEL under 5.1.0 — the one NEW-vs-baseline entry that was NOT a
+  flake. Root cause: upstream's vi.hoisted/vi.mock calls lived inside it();
+  vitest ≥4 rejects them at collection (only 3.x tolerated). Mocks hoisted
+  to module top level (same shape as the real-path suite); the two other
+  NEW entries (cli-launcher-process, runtime-install-scope global=true)
+  re-verified green in isolation — load flakes. detect_changes on the
+  staged fix set: medium risk, 6 symbols, all expected (ERROR_RULES + 5
+  proxyFetch fns; 4 processes via proxyAwareFetch).
+
 **Upstream range:** `1339107e..1855aa44` (39 commits, 116 files, +3802/−266).
 `1339107e` = v0.5.116 — already migrated (fork commit b496b331, released as
 fork v0.6.77). First new commit is cdcd09cc (parent = 1339107e, verified).

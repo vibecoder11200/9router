@@ -670,6 +670,14 @@ export class OpenCodeExecutor extends BaseExecutor {
   // instead of erroring here.
   async execute(args) {
     const credentials = this.prepareRequestCredentials(args);
+    // NOTE: no 429 rotation hooks in here anymore. Both engines previously
+    // evicted on ANY 429 — including the transient "overloaded" 429 the retry
+    // loop below classifies as not-session-related — and the eviction wrote
+    // the rotation cooldown timestamp, which then blocked the retry loop's
+    // session-branch from dropping hinted/translated sessions at all. The
+    // retry loop is now the single eviction point: body-classified, gated by
+    // the same rotation cooldown, and value-matched across both session
+    // stores (review 261113 P1×2).
     const freeLaneFetch = async (url, options, ctx) => {
       const legacy = () => opencodeTlsFetch(url, {
         method: options.method,
@@ -680,13 +688,7 @@ export class OpenCodeExecutor extends BaseExecutor {
       const engine = await getFreeLaneEngine();
       if (engine !== "legacy" && model && !isResponsesModel(model) && !isMessagesModel(model)) {
         try {
-          const res = await runBunFreeLane(options, ctx, credentials, model);
-          // 429 rotation hook (see legacy branch): a real bun-lane 429 means
-          // THIS exit identity's quota is spent — rotate exactly as before.
-          if (res && res.status === 429 && shouldRotateStableSession(credentials)) {
-            evictStableSessionForRotation(credentials);
-          }
-          return res;
+          return await runBunFreeLane(options, ctx, credentials, model);
         } catch (e) {
           if (e instanceof OpenCodeFreeLaneUnavailableError || e instanceof OpenCodeFreeLaneUnmappedProxyError || e instanceof OpenCodeFreeLaneBusyError) {
             throw surfaceLaneUnavailable(e); // fail-fast — NO legacy serving
@@ -694,15 +696,7 @@ export class OpenCodeExecutor extends BaseExecutor {
           throw e;
         }
       }
-      const res = await legacy();
-      // 429 FreeUsageLimitError can be pinned to THIS session id (per-session
-      // accounting, see stableSessionId). Rotate it (cooldown-limited) so the
-      // identity recovers instead of 429ing until the 2h idle TTL — the flag
-      // outlives any single quota window once a session hopped exit IPs.
-      if (res && res.status === 429 && shouldRotateStableSession(credentials)) {
-        evictStableSessionForRotation(credentials);
-      }
-      return res;
+      return await legacy();
     };
     freeLaneFetch.proxyBridge = true;
     const run = () => super.execute({
@@ -724,16 +718,15 @@ export class OpenCodeExecutor extends BaseExecutor {
       if (rejection === "session") {
         // A client-supplied native session is not ours to replace; this only
         // drops ids we minted, so the next request starts on a fresh one.
-        // Fork: the drop runs under the rotation cooldown (same gate as the
-        // 429 hooks above) — a fully quota-capped exit IP 429s/403s every
-        // fresh session too, and re-minting per request looks abusive.
-        // evictStableSessionForRotation records the cooldown timestamp;
-        // forgetOpencodeSession also drops value-matched duplicates a
-        // concurrent request may have minted.
+        // Fork: the drop runs under the rotation cooldown — a fully
+        // quota-capped exit IP 429s/403s every fresh session too, and
+        // re-minting per request looks abusive. forgetOpencodeSession also
+        // drops value-matched duplicates a concurrent request may have minted
+        // and covers hinted/translated per-conversation sessions.
         if (shouldRotateStableSession(credentials)) {
-          const dropped = evictStableSessionForRotation(credentials)
-            | forgetOpencodeSession(credentials[SESSION_FIELD]);
-          if (dropped) {
+          const evicted = evictStableSessionForRotation(credentials);
+          const forgot = forgetOpencodeSession(credentials[SESSION_FIELD]);
+          if (evicted || forgot) {
             args.log?.debug?.("SESSION", `OpenCode ${result.response.status}: dropped cached session, next request re-mints`);
           }
         }

@@ -1,6 +1,6 @@
 {
   "name": "9router-app",
-  "version": "0.6.88",
+  "version": "0.6.89",
   "description": "9Router web dashboard",
   "private": true,
   "engines": {
@@ -70,8 +70,10 @@
     "playwright-core": "^1.62.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4",
+    "vitest": "^5.1.0",
     "wreq-js": "^3.2.0"
   },
+  "comment_vitest": "pinned to the 5.x line the suite is validated on (tests/vitest.config.js lives under tests/ — run `npx vitest run` from that directory so the @/ aliases resolve); npx alone floats majors and breaks vi.mock-in-it patterns (executor-proxy-forwarding) and fake-timer reuse (quota-auto-ping).",
   "overrides": {
     "dompurify": "^3.4.17",
     "ip-address": "^10.7.4"

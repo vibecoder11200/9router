@@ -461,7 +461,10 @@ async function fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket = f
         return res;
       } catch (err) {
         if (strictProxy) {
-          throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${err.message}`);
+          // Annotate, never replace: adapter guards (noRetry / statusCode /
+          // code) and the cause chain must survive the strict wrap.
+          err.message = `[ProxyFetch] Proxy required but failed (strictProxy=true): ${err.message}`;
+          err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
         }
         throw err;
       }
@@ -507,6 +510,8 @@ async function fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket = f
       && isStaleSocketError(err)
     ) {
       dbg("FETCH", `stale keep-alive socket (${err.cause?.code || err.code || err.message}), retrying on fresh socket: ${url}`);
+      // strictProxy not re-threaded: this branch is direct-only
+      // (!proxyUrl && !options.directFetch), so the bridge never runs here.
       return await fetchWithTlsFallback(url, options, proxyUrl, true);
     }
     throw err;
@@ -651,9 +656,11 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
         return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket, strict);
       } catch (proxyError) {
         if (strict) {
-          const err = new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
-          err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
-          throw err;
+          // Annotate, never replace: adapter guards (noRetry / statusCode /
+          // code) and the cause chain must survive the strict wrap.
+          proxyError.message = `[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`;
+          proxyError.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
+          throw proxyError;
         }
         console.warn(`[ProxyFetch] Proxy failed, falling back to direct bypass: ${proxyError.message}`);
       }
@@ -674,9 +681,11 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
       if (strict) {
-        const err = new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
-        err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
-        throw err;
+        // Annotate, never replace: adapter guards (noRetry / statusCode /
+        // code) and the cause chain must survive the strict wrap.
+        proxyError.message = `[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`;
+        proxyError.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
+        throw proxyError;
       }
       console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
       return fetchWithTlsFallback(url, options, null, forceFreshSocket, strict);
