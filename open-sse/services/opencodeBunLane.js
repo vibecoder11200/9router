@@ -189,6 +189,14 @@ function recordLaneError(err) {
   laneState.lastError = err?.message || String(err);
 }
 
+// A successful lane round-trip proves the lane healthy again — keep the sticky
+// error only while the lane is actually misbehaving (otherwise the dashboard
+// card waves a stale failure forever, which reads as "still broken").
+function clearLaneError() {
+  laneState.lastErrorAt = null;
+  laneState.lastError = null;
+}
+
 // ── Bun path resolution ──────────────────────────────────────────────────────
 
 async function resolveBunPath() {
@@ -475,7 +483,9 @@ export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
   laneState.maxConcurrency = cap;
   const proxy = await mapProxy(proxyUrl); // typed unmapped-proxy error — no slot consumed
   try {
-    return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: timeoutMs, signal, cap });
+    const res = await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: timeoutMs, signal, cap });
+    clearLaneError(); // headers arrived through the lane — it is healthy again
+    return res;
   } catch (e) {
     if (e.name === "AbortError") throw e; // aborted: do NOT retry, never spawn a second child
     if (e instanceof OpenCodeFreeLaneBusyError) throw e; // healthy-but-saturated: fail-fast, no retry
@@ -491,7 +501,9 @@ export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
     // Fail-fast: ONE bounded retry (first-line deadline compressed into the
     // retry budget), then the typed unavailable error.
     try {
-      return await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: RETRY_BUDGET_MS, signal, cap });
+      const res = await attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstLineDeadlineMs: RETRY_BUDGET_MS, signal, cap });
+      clearLaneError();
+      return res;
     } catch (e2) {
       if (e2.name === "AbortError") throw e2;
       if (e2 instanceof OpenCodeFreeLaneBusyError || e2 instanceof OpenCodeFreeLaneUnavailableError || e2 instanceof OpenCodeFreeLaneUnmappedProxyError) throw e2;

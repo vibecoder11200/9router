@@ -105,8 +105,20 @@ describe("opencodeBunLane manager", () => {
       OpenCodeFreeLaneUnavailableError,
     );
     expect(getBunLaneStatus().lastError).toMatch(/failed twice/);
-    // restore for any later test in this file
+    // a later SUCCESSFUL lane round-trip clears the sticky error — the card
+    // must not wave a stale failure while the lane is healthy again
     process.env.OPENCODE_BUN_SIDECAR_SCRIPT = SIDECAR;
+    sseServer((req, res) => {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      res.end("data: recovered\n\n");
+    });
+    const res = await opencodeFreeLaneFetch(serverUrl, { method: "GET" });
+    expect(res.status).toBe(200);
+    await res.text();
+    expect(getBunLaneStatus().lastError).toBeNull();
+    expect(getBunLaneStatus().lastErrorAt).toBeNull();
+    // let the child fully exit before the next test claims slots
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 10_000 });
   });
 });
 

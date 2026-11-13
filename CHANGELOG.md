@@ -1,3 +1,13 @@
+# v0.6.87 (2026-11-13)
+
+Small card-truthfulness fix from the first real filter sessions: the dashboard kept waving a lane failure long after the lane recovered.
+
+## Fixes
+- **`lane.lastError` clears on a successful round-trip**: the sticky error was only ever written (never cleared outside tests), so after one dead node the "Last lane error" line stayed on the card indefinitely — reading as "still broken" while children were actively serving. A successful attempt (first or retry) now clears it; the per-kind unavailable alerts keep their own 1h-dedupe history.
+
+## Verification
+- Fail-fast test extended: two failed attempts record the error, then a successful lane request clears `lastError`/`lastErrorAt`, with the slot fully released before the next test. 9 lane/PoW/build suites green (57 tests).
+
 # v0.6.86 (2026-11-13)
 
 First real filter runs on a CLI deploy (75 tested / 12 usable) exposed two follow-ups: a false-fail race that can mark healthy nodes as failed, and the same foreign-cwd gap in the DeepSeek PoW worker that the sidecar had.
