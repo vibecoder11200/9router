@@ -113,6 +113,20 @@ export class OpenCodeFreeLaneBusyError extends Error {
   }
 }
 
+// The sidecar SPAWNED fine and RAN — its upstream fetch died (dead node, socks
+// reset, connection refused; sidecar header phase:"upstream"). That is evidence
+// about the REQUEST'S route (e.g. the xray config a model-filter probe is
+// testing), not about the lane: no retry (same dead route), no lane-error
+// record, and the executor must NOT page it as lane-unavailable — the filter's
+// isProbeInfraError treats that as systemic and aborts the whole run.
+export class OpenCodeFreeLaneUpstreamError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "OpenCodeFreeLaneUpstreamError";
+    this.code = "OPENCODE_BUN_LANE_UPSTREAM";
+  }
+}
+
 // ── Lane semaphore: ≤cap concurrent children; waiters queue with a timeout ──
 
 const laneState = {
@@ -448,6 +462,13 @@ async function attemptOnce({ url, init, timeoutMs, proxy, queueTimeoutMs, firstL
     }
     const header = JSON.parse(first.headerLine);
     if (header.error) {
+      // phase:"upstream" = the sidecar ran but its fetch died — per-request
+      // route evidence (dead node), rethrow typed so the wrapper passes it
+      // through without the lane-unavailable wrap. Anything else (no phase:
+      // internal script/runtime failure) keeps the generic lane-level error.
+      if (header.phase === "upstream") {
+        throw new OpenCodeFreeLaneUpstreamError(`bun child upstream fetch failed: ${header.error}`);
+      }
       throw new Error(`bun child error before headers: ${header.error}`);
     }
     handedOff = true;
@@ -491,6 +512,7 @@ export async function opencodeFreeLaneFetch(url, init = {}, opts = {}) {
     if (e instanceof OpenCodeFreeLaneBusyError) throw e; // healthy-but-saturated: fail-fast, no retry
     if (e instanceof OpenCodeFreeLaneUnavailableError) throw e; // queue/typed: fail-fast, no retry
     if (e instanceof OpenCodeFreeLaneUnmappedProxyError) throw e;
+    if (e instanceof OpenCodeFreeLaneUpstreamError) throw e; // dead route, not a lane fault: the retry would hit the identical dead node and the unavailable wrap would lie "lane down"
     if (signal?.aborted) {
       const abortErr = new Error("aborted during bun lane attempt");
       abortErr.name = "AbortError";

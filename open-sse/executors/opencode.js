@@ -31,6 +31,7 @@ import {
   OpenCodeFreeLaneUnavailableError,
   OpenCodeFreeLaneUnmappedProxyError,
   OpenCodeFreeLaneBusyError,
+  OpenCodeFreeLaneUpstreamError,
 } from "../services/opencodeBunLane.js";
 import { emitAlert, EVENT_TYPES, SEVERITY } from "@/lib/alerts";
 import { getSettings } from "@/lib/localDb.js";
@@ -690,6 +691,15 @@ export class OpenCodeExecutor extends BaseExecutor {
         try {
           return await runBunFreeLane(options, ctx, credentials, model);
         } catch (e) {
+          if (e instanceof OpenCodeFreeLaneUpstreamError) {
+            // The lane is healthy — the ROUTE died (e.g. the xray node a
+            // model-filter probe is testing). Not lane-unavailable (that pages
+            // + aborts filter runs as "infra"), and not retriable: the retry
+            // would re-spawn a child onto the identical dead node.
+            e.noRetry = true;
+            if (!e.statusCode) e.statusCode = 502;
+            throw e;
+          }
           if (e instanceof OpenCodeFreeLaneUnavailableError || e instanceof OpenCodeFreeLaneUnmappedProxyError || e instanceof OpenCodeFreeLaneBusyError) {
             throw surfaceLaneUnavailable(e); // fail-fast — NO legacy serving
           }

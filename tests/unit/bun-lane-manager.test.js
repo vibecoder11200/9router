@@ -33,6 +33,7 @@ import {
   OpenCodeFreeLaneBusyError,
   OpenCodeFreeLaneUnavailableError,
   OpenCodeFreeLaneUnmappedProxyError,
+  OpenCodeFreeLaneUpstreamError,
 } from "../../open-sse/services/opencodeBunLane.js";
 
 const ORIG = {
@@ -95,6 +96,23 @@ describe("opencodeBunLane manager", () => {
     expect(res.status).toBe(429);
     const body = await res.text();
     expect(body).toContain("FreeUsageLimitError");
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 10_000 });
+  });
+
+  it("upstream route death (connection refused) → typed upstream error, ONE child, lane stays healthy", { timeout: 20_000 }, async () => {
+    // A closed port is exactly what a model-filter probe hits on a dead xray
+    // node: the sidecar spawns fine, its fetch dies. This must come back as
+    // per-route evidence — NOT retried (identical dead route) and NOT recorded
+    // as a lane error (the lane is healthy; prod 261113: the unavailable wrap
+    // here aborted whole filter runs after 2-3 probes).
+    const dead = http.createServer();
+    const port = await new Promise((res) => {
+      dead.listen(0, "127.0.0.1", () => res(dead.address().port));
+    });
+    dead.close();
+    await expect(opencodeFreeLaneFetch(`http://127.0.0.1:${port}`, { method: "GET" }))
+      .rejects.toBeInstanceOf(OpenCodeFreeLaneUpstreamError);
+    expect(getBunLaneStatus().lastError).toBeNull(); // no lane-fault record
     await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 10_000 });
   });
 

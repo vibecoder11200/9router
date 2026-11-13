@@ -277,3 +277,46 @@ describe("auto-filter skip-on-conflict — coalesced re-run instead of a lost tr
     expect(xrayRepo.getXrayConfigs).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("infra abort is visible — abortedReason on the status, not a silent 'done'", () => {
+  // prod 261113: a genuine infra abort ended the run "done" with the tail
+  // skipped and nothing on the status explaining why — the dashboard read a
+  // truncated run (2-3 of 1297 tested) as full success. The reason must land
+  // on modelFilterState.
+  it("surfaces abortedReason on the job result AND the status when a probe reports an infra failure", async () => {
+    settingsRepo.getSettings.mockResolvedValue({
+      xrayFilterMode: "api",
+      xrayFilterApiSocksPort: 53080,
+      xrayFilterApiPort: 15491,
+      xrayFilterApiAccounts: 16,
+    });
+    const { startFilterXray, stopFilterXray, probeConfigViaApi } = await import("../../src/lib/xray/apiFilter.js");
+    startFilterXray.mockResolvedValue({ socksPort: 53080, apiPort: 15491, pid: 4242 });
+    stopFilterXray.mockResolvedValue(); // finally-block awaits .catch on this
+    const { getModelInfo } = await import("@/sse/services/model.js");
+    getModelInfo.mockResolvedValue({ provider: "p", model: "m" });
+
+    const configs = [
+      { id: "cfg-a", link: "vless://a@h:1#n", name: "A", host: "h", country: "US" },
+      { id: "cfg-b", link: "vless://b@h:2#n", name: "B", host: "h", country: "US" },
+    ];
+    xrayRepo.getXrayConfigs.mockResolvedValue(configs);
+    // Genuine infra wording (what a real lane-down still produces): the run
+    // aborts — that part is by design — but it must not be silent anymore.
+    probeConfigViaApi.mockResolvedValue({
+      ok: false, status: 503, error: "[503]: OpenCode free lane unavailable (bun runtime/lane failure)", infraError: true,
+    });
+
+    // concurrency 1 → deterministic: config A probes, aborts, B never runs.
+    const result = await manager.runModelFilterJob({
+      model: "p/m", limit: 10, all: false, prune: false, concurrency: 1, pauseOnTraffic: false, source: "manual",
+    });
+
+    expect(result.tested).toBe(1); // A only — B skipped by the abort
+    expect(result.abortedReason).toContain("free lane unavailable");
+    const status = manager.getModelFilterStatus();
+    expect(status.status).toBe("done");
+    expect(status.abortedReason).toContain("free lane unavailable");
+    await vi.waitFor(() => expect(stopFilterXray).toHaveBeenCalled(), { timeout: 5000 });
+  });
+});

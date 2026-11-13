@@ -8,7 +8,10 @@
  *   line 1: JSON  { "status": N, "headers": {...} }          — on response headers
  *   then  : RAW response body bytes, verbatim (SSE passthrough) until EOF
  *   exit 0 at stream end
- *   failure BEFORE headers: line 1 = { "error": "..." } + exit 5
+ *   failure BEFORE headers: line 1 = { "error": "...", "phase": "upstream" } + exit 5
+ *     ("phase" distinguishes the upstream fetch dying — dead node / socks
+ *     closed / TLS refused, i.e. per-request evidence — from internal script
+ *     failures, which omit it and stay lane-level)
  *   idle timeout (no body chunk for idleTimeoutMs): abort upstream, exit 6
  *   malformed request: { "error": "..." } + exit 7
  *
@@ -138,7 +141,11 @@ async function main() {
   } catch (e) {
     clearTimeout(totalTimer);
     if (idleTimer) clearTimeout(idleTimer);
-    emit({ error: e?.message || String(e) });
+    // phase: "upstream" — the fetch itself died (dead node, socks reset,
+    // connection refused). Per-request evidence, NOT a lane outage: the xray
+    // model filter probes dead nodes on purpose and must see this as a normal
+    // probe failure, not a lane-level unavailable that aborts the whole run.
+    emit({ error: e?.message || String(e), phase: "upstream" });
     process.exit(EXIT_UPSTREAM_ERROR);
   }
 

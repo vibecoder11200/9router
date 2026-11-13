@@ -342,7 +342,13 @@ export default function XrayProxyPage() {
         notify.error(`Model filter failed: ${mf.error || "unknown error"}`);
       } else {
         const cachedNote = mf.cached ? ` · ${mf.cached} cached` : "";
-        notify.success(`Model filter done: ${mf.passed}/${mf.tested} usable${mf.pruned ? ` · removed ${mf.pruned}` : ""}${cachedNote}`);
+        if (mf.abortedReason) {
+          // Infra abort: the run ended early and skipped the remaining configs —
+          // report it, or a truncated run reads as full success.
+          notify.error(`Model filter aborted after ${mf.tested} tested: ${mf.abortedReason}`);
+        } else {
+          notify.success(`Model filter done: ${mf.passed}/${mf.tested} usable${mf.pruned ? ` · removed ${mf.pruned}` : ""}${cachedNote}`);
+        }
       }
       fetchConfigs();
       fetchStatus();

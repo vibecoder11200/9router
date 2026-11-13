@@ -1,3 +1,19 @@
+# v0.6.90 (2026-11-13)
+
+Xray model filter could never test more than 2-3 of ~1300 servers per run — diagnosed live on prod, root-caused to a three-layer misclassification, fixed end to end.
+
+## Root cause (prod 261113, reproduced)
+"Test all servers" finished in ~5s with `tested: 3` and status **"done"**. Chain: the filter probes dead nodes on purpose → the bun lane's sidecar fetch dies on the dead route (`The socket connection was closed unexpectedly`) → the lane retried it and wrapped the failure as `OPENCODE_FREE_LANE_UNAVAILABLE` (a LANE fault) → the filter's `isProbeInfraError` matched the wording and set `infraAbort`, skipping the remaining ~1294 configs → `runModelFilterJob` recorded the run as plain "done" without surfacing the abort reason. Every run died the same way minutes after "Clear Cache" reset the cache — hence "1/3 tested, the rest untested".
+
+## Fixes
+- **Sidecar tags its own fetch-stage death** (`phase: "upstream"` on the error header): a dead node / socks reset / connection refused is per-route evidence, distinct from internal script failures.
+- **New `OpenCodeFreeLaneUpstreamError`** in the lane manager: pass-through (no bounded retry — the retry would hit the identical dead route), no lane-error record (the lane is healthy; the status card must not wave a stale "lane down"). Executor surfaces it as `502 noRetry` WITHOUT the lane-unavailable alert/wording.
+- **`abortedReason` on the filter status**: a genuine infra abort still stops the run (by design), but the reason now lands on `modelFilterState` and the dashboard toast reports "aborted after N tested: …" instead of a green "done".
+- Genuinely lane-level failures (bun runtime down, unmapped proxy) keep the old behavior unchanged — real infra still aborts, still pages.
+
+## Verification
+- New pins: sidecar protocol `{error, phase:"upstream"}` + exit 5; lane pass-through with ONE child and no lane-error record; executor passthrough (no alert, no infra wording, noRetry); end-to-end probe of a dead node classifies NOT-infra (the regression that aborted runs); run-level `abortedReason` lands on job result + status. 12 opencode/xray suites: 79/79 green. detect_changes: expected symbols only (additive change; core transport paths untouched).
+
 # v0.6.89 (2026-11-13)
 
 Post-migration review round: three code-reviewer passes (transport/opencode hand-merge, providers/registry/UI, upstream-completeness audit) over v0.6.88. The completeness audit confirmed all 39 upstream commits landed with zero losses; the transport review found three real defects in the hand-merge interactions — all runtime-reproduced, all fixed here.

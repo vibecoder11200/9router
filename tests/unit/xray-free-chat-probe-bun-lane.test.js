@@ -255,4 +255,49 @@ describe("xray model-filter probe — free lane skip + opt-in chat probe", () =>
     // surfaced error carries noRetry — the base loop does NOT retry it
     expect(spawnCalls.length).toBe(2);
   });
+
+  it("dead node during an opt-in chat probe → per-node failure, NOT infra — the filter run must continue", { timeout: 20000 }, async () => {
+    // prod 261113: every "test all servers" run died after 2-3 probes because
+    // a dead node's socket close was escalated to lane-unavailable, which
+    // isProbeInfraError matches, aborting the remaining ~1294 configs with a
+    // silent "done". The sidecar now tags fetch-stage deaths phase:"upstream"
+    // and the lane rethrows them typed — the probe must see an ordinary
+    // per-node failure.
+    spawnBehaviorImpl = () => ({
+      errorLine: JSON.stringify({ error: "The socket connection was closed unexpectedly", phase: "upstream" }),
+      exitCode: 5,
+    });
+    resolverMock.mockImplementation((s) => (s === SOCKS ? HTTP_MAPPED : null));
+    handleChatCoreMock.mockImplementation(async (ctx0) => {
+      chatCoreCalls.push(ctx0);
+      const psd = ctx0.credentials?.providerSpecificData || {};
+      const proxyOptions = psd.connectionProxyEnabled
+        ? { connectionProxyEnabled: true, connectionProxyUrl: psd.connectionProxyUrl, connectionNoProxy: "", strictProxy: true }
+        : null;
+      const { OpenCodeExecutor } = await import("open-sse/executors/opencode.js");
+      const executor = new OpenCodeExecutor();
+      try {
+        const out = await executor.execute({
+          model: ctx0.modelInfo.model,
+          body: ctx0.body,
+          stream: true,
+          credentials: ctx0.credentials,
+          proxyOptions,
+        });
+        return { success: true, response: out.response };
+      } catch (e) {
+        return { success: false, status: e.statusCode || 502, error: `[${e.statusCode || 502}]: ${e.message}` };
+      }
+    });
+
+    const result = await _probeModelViaChatCoreForTests(MODEL_INFO, SOCKS, 10000, { freeChatProbe: true });
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(502);
+    expect(String(result.error)).toContain("socket connection was closed");
+    // THE regression pin: this error must NOT classify as infra — an infra
+    // verdict aborts the whole filter run.
+    expect(isProbeInfraError(result.error)).toBe(false);
+    // one child only: no lane retry (same dead route), no base retry (noRetry)
+    expect(spawnCalls.length).toBe(1);
+  });
 });

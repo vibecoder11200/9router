@@ -127,6 +127,27 @@ describe("opencode executor — bun free lane integration", () => {
     await expect(directFetch()).rejects.toMatchObject({ statusCode: 503 });
     expect(emitAlertMock).toHaveBeenCalledTimes(1);
   });
+
+  it("upstream route death → 502 noRetry passthrough, NO lane alert, NOT infra wording", async () => {
+    // Dead node through the route (e.g. an xray model-filter probe): the lane
+    // is healthy. Must surface as a per-request failure — never as
+    // lane-unavailable (that wording is what the filter's isProbeInfraError
+    // matches, and it aborts whole runs — prod 261113).
+    const { OpenCodeFreeLaneUpstreamError } = await import("../../open-sse/services/opencodeBunLane.js");
+    const routeDeath = new OpenCodeFreeLaneUpstreamError(
+      "bun child upstream fetch failed: The socket connection was closed unexpectedly",
+    );
+    laneFetchMock.mockRejectedValue(routeDeath);
+
+    const directFetch = await captureDirectFetch(chatArgs());
+    const err = await directFetch().catch((e) => e);
+    expect(err).toBe(routeDeath); // same object — socket message preserved for the cache row
+    expect(err.noRetry).toBe(true); // the base loop must not re-spawn onto the identical dead route
+    expect(err.statusCode).toBe(502);
+    expect(String(err.message)).not.toMatch(/free lane unavailable/i);
+    expect(emitAlertMock).not.toHaveBeenCalled(); // no page: the lane did not fail
+    expect(tlsFetchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("opencode executor — engine kill-switch + known-refused models", () => {

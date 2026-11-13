@@ -126,7 +126,7 @@ describe("opencodeBunSidecar protocol", () => {
     expect(secondEvent.at - firstAt).toBeGreaterThanOrEqual(150);
   });
 
-  it("upstream transport failure → {error} first line + exit 5", { timeout: 20_000 }, async () => {
+  it("upstream transport failure → {error, phase:'upstream'} first line + exit 5", { timeout: 20_000 }, async () => {
     // closed port: fetch throws before headers
     const dead = net.createServer();
     const port = await new Promise((res) => {
@@ -137,6 +137,10 @@ describe("opencodeBunSidecar protocol", () => {
     const result = await collect(child, { timeoutMs: 15_000 });
     expect(result.exitCode).toBe(5);
     expect(result.header).toHaveProperty("error");
+    // phase marks it as per-route evidence (dead node), not a lane fault —
+    // the manager rethrows it typed so filter probes record a normal failure
+    // instead of aborting the whole run as "infra".
+    expect(result.header.phase).toBe("upstream");
   });
 
   it("idle timeout (no body chunk) → exit 6", { timeout: 20_000 }, async () => {

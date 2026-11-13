@@ -1527,6 +1527,7 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
       cached: 0,
       trafficWaiters: 0,
       error: null,
+      abortedReason: null,
       autoFilterSkipReason: null,
       autoFilterSkipAt: null,
     });
@@ -1568,6 +1569,9 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
         pruneSuspended: result.pruneSuspended === true,
         trafficWaiters: 0,
         error: null,
+        // An infra abort ends the run "done" with the tail skipped — surface
+        // WHY, or the dashboard reports a silently truncated run as success.
+        abortedReason: result.abortedReason || null,
       });
       return result;
     } catch (error) {
