@@ -1,3 +1,10 @@
+# v0.6.88 (unreleased)
+
+Card display truthfulness round two, from the same filter sessions.
+
+## Fixes
+- **`children N/M` denominator follows settings, not the last request**: the badge's denominator came from `lane.maxConcurrency` — a snapshot of the cap used by the LAST lane request — so right after raising the cap (e.g. 3 → 5) the card kept showing `x/3` until some request happened to land. The denominator is now the settings value (what a NEW request will actually use; settings are read per request), falling back to the lane snapshot while settings load. The numerator (`busy`) was already live-correct — `0` simply means no child is running at poll time.
+
 # v0.6.87 (2026-11-13)
 
 Small card-truthfulness fix from the first real filter sessions: the dashboard kept waving a lane failure long after the lane recovered.

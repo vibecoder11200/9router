@@ -64,7 +64,11 @@ export default function FreeLaneCard({ settings, onSaveSetting }) {
   const bunInstalled = lane ? lane.bun?.installed : null;
   const lastErr = lane?.lane?.lastError;
   const busy = lane?.lane?.busy;
-  const maxCap = lane?.lane?.maxConcurrency ?? cap;
+  // Denominator = the cap a NEW request would use (settings, read per
+  // request). lane.maxConcurrency is a stale snapshot of the LAST request —
+  // right after a settings change it would keep showing the old cap (e.g.
+  // "0/3" with the cap already raised to 5) until the next request lands.
+  const maxCap = settings?.opencodeFreeLaneMaxConcurrency ?? lane?.lane?.maxConcurrency ?? 3;
 
   return (
     <Card className="space-y-4">
