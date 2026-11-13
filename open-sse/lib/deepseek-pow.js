@@ -56,16 +56,33 @@ function solveSynchronously(validated) {
   return findDeepSeekPowNonce(validated.prefix, validated.challenge, validated.difficulty);
 }
 
-// Anchored on process.cwd(), never import.meta.url: the production standalone
-// bundle freezes import.meta.url to the build-machine path, leaving an
-// import.meta.url-relative fallback silently dead in production. A single
-// non-branching cwd-relative path avoids both problems.
+// Anchored on cwd + the server entry dir, never import.meta.url: the
+// production standalone bundle freezes import.meta.url to the build-machine
+// path, leaving an import.meta.url-relative fallback silently dead in
+// production. cwd covers repo-root and the normal npm CLI launch (next-server
+// runs with cwd = <pkg>/app); the entry-dir candidates cover systemd/pm2-style
+// launches with a foreign cwd (same class as the bun-lane sidecar fix).
+function serverEntryDirname() {
+  try {
+    const entry = process.argv[1];
+    return entry ? path.dirname(path.resolve(entry)) : null;
+  } catch { return null; }
+}
+
+function workerCandidates() {
+  return [
+    path.join(process.cwd(), "open-sse/lib/deepseek-pow-worker.mjs"),
+    serverEntryDirname() && path.join(serverEntryDirname(), "app", "open-sse/lib/deepseek-pow-worker.mjs"), // npm CLI layout
+    serverEntryDirname() && path.join(serverEntryDirname(), "open-sse/lib/deepseek-pow-worker.mjs"), // bare standalone
+  ].filter(Boolean);
+}
+
 function resolveWorkerPath() {
-  const workerPath = path.join(process.cwd(), "open-sse/lib/deepseek-pow-worker.mjs");
-  if (!existsSync(workerPath)) {
-    throw new Error(`DeepSeek PoW worker script not found at ${workerPath}`);
+  const found = workerCandidates().find((p) => existsSync(p));
+  if (!found) {
+    throw new Error(`DeepSeek PoW worker script not found (tried: ${workerCandidates().join(", ")})`);
   }
-  return workerPath;
+  return found;
 }
 
 function solveInWorker(validated, options = {}) {
@@ -154,3 +171,5 @@ export function solveDeepSeekPow(algorithm, challenge, salt, difficulty, expireA
   const validated = validateChallenge(algorithm, challenge, salt, difficulty, expireAt);
   return solveSynchronously(validated);
 }
+
+export const __test__ = { resolveWorkerPath, workerCandidates };

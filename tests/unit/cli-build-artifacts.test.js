@@ -18,6 +18,8 @@ const {
   assertRequiredApiArtifacts,
   copyDeepSeekPowFiles,
   assertDeepSeekPowFiles,
+  copyOpencodeBunSidecar,
+  assertOpencodeBunSidecar,
   copyStandaloneBuild,
   mergeServerArtifacts,
 } = require("../../cli/scripts/build-cli.js");
@@ -182,6 +184,42 @@ describe("CLI build DeepSeek PoW worker files", () => {
     assert.throws(
       () => assertDeepSeekPowFiles(cliAppDir),
       (error) => error.message.includes(path.join(cliAppDir, "open-sse/lib/deepseek-pow-hash.js")),
+    );
+  });
+});
+
+describe("CLI build OpenCode bun-lane sidecar", () => {
+  it("copies the sidecar into app/open-sse/services (v0.6.85: tarball shipped without it)", () => {
+    const root = createTempDir();
+    const appDir = path.join(root, "9router");
+    const cliAppDir = path.join(root, "cli-app");
+    writeFixture(path.join(appDir, "open-sse/services"), "opencodeBunSidecar.mjs", "sidecar");
+
+    copyOpencodeBunSidecar(appDir, cliAppDir);
+    assertOpencodeBunSidecar(cliAppDir);
+
+    assert.equal(
+      fs.readFileSync(path.join(cliAppDir, "open-sse/services/opencodeBunSidecar.mjs"), "utf8"),
+      "sidecar",
+    );
+  });
+
+  it("fails loudly when the sidecar source is missing", () => {
+    const root = createTempDir();
+    const appDir = path.join(root, "9router");
+    const cliAppDir = path.join(root, "cli-app");
+
+    assert.throws(() => copyOpencodeBunSidecar(appDir, cliAppDir), /opencodeBunSidecar\.mjs/);
+  });
+
+  it("reports the missing sidecar path from the assert", () => {
+    const root = createTempDir();
+    const cliAppDir = path.join(root, "cli-app");
+
+    assert.throws(
+      () => assertOpencodeBunSidecar(cliAppDir),
+      (error) =>
+        error.message.includes(path.join(cliAppDir, "open-sse/services/opencodeBunSidecar.mjs")),
     );
   });
 });

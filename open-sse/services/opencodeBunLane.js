@@ -267,7 +267,18 @@ function readFirstLine(child, { deadlineMs }) {
     });
     child.on("error", (e) => finish(reject, e));
     child.on("exit", (code) => {
-      finish(reject, new Error(`bun child exited before headers (code ${code})`));
+      // 'exit' can be delivered before the stdout stream hands us its
+      // buffered data (fast-exiting children under load — a filter run's
+      // many short probe requests surfaced it as a false `exited before
+      // headers (code 0)` even though the header WAS in the pipe). Defer
+      // the rejection to stdout actually ending; the data handler above
+      // still resolves if a line arrives. The deadline keeps it bounded.
+      const fail = () =>
+        finish(reject, new Error(`bun child exited before headers (code ${code})`));
+      const out = child.stdout;
+      if (!out || out.readableEnded || out.destroyed) return fail();
+      out.once("end", fail);
+      out.once("close", fail); // destroyed without 'end' — the settled guard dedupes
     });
   });
 }
@@ -513,4 +524,5 @@ export const __test__ = {
     laneState.lastError = null;
   },
   mapProxy,
+  readFirstLine,
 };

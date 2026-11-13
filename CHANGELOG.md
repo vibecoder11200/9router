@@ -1,3 +1,14 @@
+# v0.6.86 (2026-11-13)
+
+First real filter runs on a CLI deploy (75 tested / 12 usable) exposed two follow-ups: a false-fail race that can mark healthy nodes as failed, and the same foreign-cwd gap in the DeepSeek PoW worker that the sidecar had.
+
+## Fixes
+- **Exit-before-flush race in the lane's first-line read**: the child's `exit` event can be delivered before the stdout stream hands over its buffered data — short-lived children (a filter run's rapid small probes) surfaced it as a false `bun child exited before headers (code 0)` even though the header was in the pipe the whole time. With "Delete failures" on, that could prune usable configs. The rejection now defers to stdout actually ending (deadline still bounds it); genuinely empty stdout still fails fast with the exit code.
+- **DeepSeek PoW worker resolution hardened**: cwd-only → cwd + `<entry-dir>/app/open-sse/lib` (npm CLI layout) + `<entry-dir>/open-sse/lib` (bare standalone), and a miss throws with every candidate tried — same class of fix as the bun-lane sidecar (worker is runtime-loaded and never traced; foreign-cwd launches like systemd/pm2 missed the only candidate).
+
+## Verification
+- Deterministic race test: adversarial ordering (exit event first, then the buffered header + end) resolves the header; empty-stdout exit still rejects with the code; fast full exchanges ride the lane end-to-end. PoW resolution suite: cwd-first back-compat, CLI layout, bare-standalone layout, tried-list error. Sidecar packaging (v0.6.85's copy + assert) now covered in cli-build-artifacts too. 10 lane/pow/build suites green (60 tests).
+
 # v0.6.85 (2026-11-13)
 
 The v0.6.84 sidecar fix covered standalone/Docker deploys but missed the npm CLI tarball — a CLI deploy shipped without `open-sse/services/opencodeBunSidecar.mjs`, so the lane refused every free-lane request with `bun sidecar script not found`. That is what "0/2 usable" on the Model Proxy Filter really was: the real-chat probe aborts on lane-down (app-side infra) without writing results, so the usable count stayed empty.

@@ -266,3 +266,47 @@ describe("opencodeBunLane proxy mapping", () => {
     resolveXrayHttpProxyUrl.mockResolvedValue(null);
   });
 });
+
+describe("readFirstLine exit-before-flush race", () => {
+  it("exit delivered before stdout data still resolves the buffered header (no false code-0 fail)", async () => {
+    // Adversarial parent-side ordering, delivered deterministically: the child
+    // 'exit' event first, THEN the stdout pipe's buffered data + end. Prod hit
+    // this as a false `bun child exited before headers (code 0)` on a filter
+    // run — the header was in the pipe the whole time.
+    const { EventEmitter } = await import("node:events");
+    const { PassThrough } = await import("node:stream");
+    const fake = new EventEmitter();
+    fake.stdout = new PassThrough();
+    const pending = __test__.readFirstLine(fake, { deadlineMs: 5000 });
+    fake.emit("exit", 0);
+    // one write: header + body tail arrive together (restBuffer stays deterministic)
+    fake.stdout.write('{"status":200}\ndata: payload\n\n');
+    fake.stdout.end();
+    const first = await pending;
+    expect(JSON.parse(first.headerLine)).toEqual({ status: 200 });
+    expect(first.restBuffer.toString("utf8")).toContain("payload");
+  });
+
+  it("exit with genuinely empty stdout still rejects (crash detection intact)", async () => {
+    const { EventEmitter } = await import("node:events");
+    const { PassThrough } = await import("node:stream");
+    const fake = new EventEmitter();
+    fake.stdout = new PassThrough();
+    const pending = __test__.readFirstLine(fake, { deadlineMs: 5000 });
+    fake.emit("exit", 1);
+    fake.stdout.end();
+    await expect(pending).rejects.toThrow(/exited before headers \(code 1\)/);
+  });
+
+  it("fast full exchange (header+body+immediate end) rides the lane as a 200", { timeout: 20_000 }, async () => {
+    // Short-lived child exercising the same window end-to-end under node.
+    sseServer((req, res) => {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      res.end("data: fast\n\n");
+    });
+    const res = await opencodeFreeLaneFetch(serverUrl, { method: "GET" });
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("fast");
+    await vi.waitFor(() => expect(getBunLaneStatus().busy).toBe(0), { timeout: 10_000 });
+  });
+});
