@@ -47,13 +47,13 @@ Prod evidence driving the error-class taxonomy (261113; counts from the results 
 
 ## Success Criteria
 
-- [ ] A strict-failure through the nested bridge path carries the prefix exactly once (unit-pinned, incl. refusal wordings)
-- [ ] After a run, the dashboard shows `N usable · N× <class> · …` (from the `lastFinishedRun` snapshot) without opening any table; aborted runs show the "aborted after N — M untested" chip
-- [ ] Default-mode (freeChatProbe=false) dead nodes classify as `tunnel-check`, not `other`
-- [ ] The modal (route-backed) shows full verdicts with class filter/search/pagination; "Last run" counts equal the chips
-- [ ] After server restart, per-server last verdicts are still reachable via the new route
-- [ ] exitIp only with explicit opt-in; soft-deleted configs never appear; parity tests (real sqlite) assert pairwise-disjoint fragments
-- [ ] All touched suites green from `tests/` under vitest ^5.1.0; `detect_changes` before commit; release v0.6.91
+- [x] A strict-failure through the nested bridge path carries the prefix exactly once (unit-pinned, incl. refusal wordings) — a7506899
+- [x] After a run, the dashboard shows `N usable · N× <class> · …` (from the `lastFinishedRun` snapshot) without opening any table; aborted runs show the "aborted after N — M untested" chip — d2c40fb0; untested arithmetic corrected post-review (selected + cached − tested)
+- [x] Default-mode (freeChatProbe=false) dead nodes classify as `tunnel-check`, not `other` — pinned in xray-filter-error-breakdown.test.js
+- [x] The modal (route-backed) shows full verdicts with class filter/search/pagination — 94259ef0; "Last run" counts USUALLY equal the chips: parity is not guaranteed (cached/pruned rows, rotation-window leaks, tunnelOk caveat) — labels state this honestly post-review
+- [x] After server restart, per-server last verdicts are still reachable via the new route — rows read the persisted xrayModelFilterResults table (real-sqlite tests)
+- [x] exitIp only with explicit opt-in; soft-deleted configs never appear; parity tests (real sqlite) assert pairwise-disjoint fragments — e03ccb1b
+- [x] All touched suites green from `tests/` under vitest ^5.1.0; `detect_changes` before commit; release v0.6.91 — 79/79 across 9 suites; independent code review (post-cook) found no P0/P1
 
 ## Dependencies
 

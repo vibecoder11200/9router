@@ -1175,9 +1175,14 @@ export default function XrayProxyPage() {
             const entries = errorBreakdownEntries(lastRun.errorBreakdown);
             return (
               <div className="flex items-center gap-1.5 flex-wrap">
+                {status.modelFilter?.status === "error" && (
+                  <Badge variant="error" title={status.modelFilter.error || "unknown error"}>
+                    last run failed
+                  </Badge>
+                )}
                 {lastRun.abortedReason && (
                   <Badge variant="error" title={`Aborted: ${lastRun.abortedReason}`}>
-                    aborted after {lastRun.tested || 0} — {Math.max(0, (lastRun.selected || 0) - (lastRun.tested || 0))} untested
+                    aborted after {lastRun.tested || 0} — {Math.max(0, (lastRun.selected || 0) + (lastRun.cached || 0) - (lastRun.tested || 0))} untested
                   </Badge>
                 )}
                 <Badge

@@ -4,8 +4,12 @@
 // persistent filter verdicts via GET /api/xray/configs/model-filter/results
 // (phase 3). Two labeled modes:
 //   - "Last run": scoped by the last finished run's startedAt (minTestedAt) —
-//     its per-class counts match the dashboard chips (modulo the documented
-//     tunnelOk caveat for ambiguous non-429 HTTP rows).
+//     shows the probe results WRITTEN DURING that run window. Its counts
+//     usually match the dashboard chips but are not guaranteed identical:
+//     cached-reused verdicts keep their old testedAt (excluded here, counted
+//     in the chips), pruned configs lose their rows, managedRotation writes
+//     landing in the window leak in, and ambiguous non-429 HTTP rows differ
+//     by the documented tunnelOk caveat.
 //   - "All verdicts": everything persisted for the model (spans runs, incl.
 //     managedRotation writes) — explicitly labeled as such.
 // Fetch hygiene (plan red-team F13): AbortController per fetch + a monotonic
@@ -45,7 +49,7 @@ const MODE_LABELS = {
 };
 
 export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
-  const [mode, setMode] = useState("lastrun");
+  const [mode, setMode] = useState(lastRun ? "lastrun" : "all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [classFilter, setClassFilter] = useState("all");
@@ -135,6 +139,10 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
   }, [fetchData]);
 
   // total/totalPages can shrink mid-session (clear-cache); clamp the page
+  // STATE so the next fetch agrees with what Pagination displays.
+  useEffect(() => {
+    if (page > totalPages) setPage(Math.max(1, totalPages));
+  }, [page, totalPages]);
   const safePage = Math.min(page, totalPages);
 
   const classChips = useMemo(() => {
@@ -180,7 +188,7 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
           ) : (
             <div className="text-xs text-text-muted">
               {mode === "lastrun" && lastRun
-                ? `Scoped to the run started ${timeAgo(lastRun.startedAt)} on ${lastRun.model || "?"}`
+                ? `Probe results written during the run started ${timeAgo(lastRun.startedAt)} on ${lastRun.model || "?"} (cached/pruned rows may differ from the chips)`
                 : "All persisted verdicts for the configured model — spans runs, incl. auto-rotation"}
             </div>
           )}
@@ -259,10 +267,10 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
             </thead>
             <tbody>
               {loadError && (
-                <tr><td colSpan={9} className="py-4 px-3 text-center text-red-500">Failed to load: {loadError}</td></tr>
+                <tr><td colSpan={includeExitIp ? 9 : 8} className="py-4 px-3 text-center text-red-500">Failed to load: {loadError}</td></tr>
               )}
               {!loadError && rows.length === 0 && !loading && (
-                <tr><td colSpan={9} className="py-4 px-3 text-center text-text-muted">
+                <tr><td colSpan={includeExitIp ? 9 : 8} className="py-4 px-3 text-center text-text-muted">
                   No verdicts match — the cache may have been cleared or the filters are too narrow.
                 </td></tr>
               )}
