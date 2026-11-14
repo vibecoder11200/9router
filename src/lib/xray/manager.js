@@ -43,6 +43,7 @@ import {
 import { testProxy, testProxyLatency, isSocksPortOpen, testProxyExitIpWithUri } from "./tester.js";
 import { startFilterXray, stopFilterXray, probeConfigViaApi } from "./apiFilter.js";
 import { createPruneCanary, shouldPruneFilterResult } from "./filterPrunePolicy.js";
+import { bumpErrorBreakdown } from "./modelFilterErrors.js";
 import {
   getSelectedXrayConfig,
   getXrayConfigById,
@@ -135,6 +136,14 @@ const modelFilterState = {
   error: null,
   autoFilterSkipReason: null,
   autoFilterSkipAt: null,
+  // Run-level error classes (phase 2): accumulated live by onProgress,
+  // snapshotted into lastFinishedRun at completion. Reset at run start.
+  errorBreakdown: {},
+  // Snapshot of the last FINISHED run (assigned once at completion; never
+  // reset by a subsequent auto-run's startedAt reset). The idle UI reads
+  // ONLY this snapshot — background auto-runs must not silently replace
+  // what the user is reading (plan red-team F9).
+  lastFinishedRun: null,
 };
 
 // Mirror of getModelFilterCacheStats(), refreshed at job boundaries and on
@@ -1475,6 +1484,7 @@ export async function filterConfigsByModel({ model, limit = 50, all = false, pru
     limit: normalized.all ? "all" : normalized.limit,
     concurrency: workerCount,
     filterMode: apiMode ? "api" : "spawn",
+    selected: toTest.length,
     tested: results.length,
     passed: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
@@ -1530,8 +1540,10 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
       abortedReason: null,
       autoFilterSkipReason: null,
       autoFilterSkipAt: null,
+      // Per-class error counters accumulate live (phase 2). Reset each run;
+      // the completion assign snapshots the final tally into lastFinishedRun.
+      errorBreakdown: {},
     });
-
     try {
       // forceRetest wipes the cache for this model so every selected config is
       // re-probed fresh. Done before the probe loop so the splitter in
@@ -1556,11 +1568,13 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
           if (result.ok) modelFilterState.passed += 1;
           else modelFilterState.failed += 1;
           if (result.pruned === true) modelFilterState.pruned += 1;
+          bumpErrorBreakdown(modelFilterState.errorBreakdown, result);
         },
       });
+      const finishedAtStr = new Date().toISOString();
       Object.assign(modelFilterState, {
         status: result.cancelled ? "cancelled" : "done",
-        finishedAt: new Date().toISOString(),
+        finishedAt: finishedAtStr,
         tested: result.tested,
         passed: result.passed,
         failed: result.failed,
@@ -1572,6 +1586,28 @@ export async function runModelFilterJob({ model, limit = 50, all = false, prune 
         // An infra abort ends the run "done" with the tail skipped — surface
         // WHY, or the dashboard reports a silently truncated run as success.
         abortedReason: result.abortedReason || null,
+        // Snapshot ONCE (plan red-team F9/F2): the idle badge reads ONLY this,
+        // so a later auto-run's start-reset can't replace what the user is
+        // reading, and a manual run's frozen start response can't shadow the
+        // live state either (page.js nulls its local copy at completion).
+        lastFinishedRun: {
+          finishedAt: finishedAtStr,
+          startedAt: modelFilterState.startedAt,
+          model,
+          source,
+          all: normalized.all,
+          freeChatProbe: freeChatProbe === true,
+          selected: result.selected,
+          tested: result.tested,
+          passed: result.passed,
+          failed: result.failed,
+          cached: result.cached,
+          pruned: result.pruned,
+          // Defensive copy — onProgress mutated the live object.
+          errorBreakdown: { ...modelFilterState.errorBreakdown },
+          abortedReason: result.abortedReason || null,
+          cancelled: result.cancelled,
+        },
       });
       return result;
     } catch (error) {

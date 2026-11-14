@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Badge, Button, Card, CardSkeleton, Input, Toggle, ConfirmModal } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
+import { errorBreakdownEntries } from "@/lib/xray/modelFilterErrors.js";
 import SubscriptionManager from "./SubscriptionManager.jsx";
 import VersionPanel from "./VersionPanel.jsx";
 import FreeLaneCard from "./FreeLaneCard.jsx";
@@ -336,6 +337,11 @@ export default function XrayProxyPage() {
     prevFilterStatusRef.current = mf.status;
     if (mf.status !== "running") setModelFilterBusy(false);
     if (prev === "running" && mf.status !== "running") {
+      // Stale-badge fix (plan red-team F2): the POST start response stored in
+      // `modelFilterResult` is a frozen "0 tested" snapshot that otherwise
+      // shadows the live status forever. Null it at the running→finished
+      // transition so the idle badge renders from lastFinishedRun instead.
+      setModelFilterResult(null);
       if (mf.status === "cancelled") {
         notify.info(`Filter stopped: ${mf.passed}/${mf.tested} tested before stop. Re-run to resume from where it stopped.`);
       } else if (mf.status === "error") {
@@ -1154,13 +1160,36 @@ export default function XrayProxyPage() {
               Test Xray IPs against a real routed model request, then optionally delete failing configs.
             </p>
           </div>
-          {visibleModelFilterResult && (
-            <Badge variant={visibleModelFilterResult.status === "running" ? "warning" : visibleModelFilterResult.cancelled || visibleModelFilterResult.failed > 0 ? "warning" : "success"}>
-              {visibleModelFilterResult.status === "running"
-                ? `${visibleModelFilterResult.tested || 0} tested${visibleModelFilterResult.cached ? ` · ${visibleModelFilterResult.cached} cached` : ""}...`
-                : `${visibleModelFilterResult.cancelled ? "Stopped · " : ""}${visibleModelFilterResult.passed}/${visibleModelFilterResult.tested} usable${visibleModelFilterResult.cached ? ` · ${visibleModelFilterResult.cached} cached` : ""}`}
-            </Badge>
-          )}
+          {(() => {
+            if (visibleModelFilterResult?.status === "running") {
+              return (
+                <Badge variant="warning">
+                  {visibleModelFilterResult.tested || 0} tested{visibleModelFilterResult.cached ? ` · ${visibleModelFilterResult.cached} cached` : ""}...
+                </Badge>
+              );
+            }
+            const lastRun = status.modelFilter?.lastFinishedRun;
+            if (!lastRun) return null;
+            const entries = errorBreakdownEntries(lastRun.errorBreakdown);
+            return (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {lastRun.abortedReason && (
+                  <Badge variant="error" title={`Aborted: ${lastRun.abortedReason}`}>
+                    aborted after {lastRun.tested || 0} — {Math.max(0, (lastRun.selected || 0) - (lastRun.tested || 0))} untested
+                  </Badge>
+                )}
+                <Badge
+                  variant={lastRun.cancelled || lastRun.failed > 0 ? "warning" : "success"}
+                  title={`Last run: ${lastRun.model || "?"} · finished ${formatDateTime(lastRun.finishedAt)}`}
+                >
+                  {lastRun.cancelled ? "Stopped · " : ""}{lastRun.passed}/{lastRun.tested} usable{lastRun.cached ? ` · ${lastRun.cached} cached` : ""}
+                </Badge>
+                {entries.length > 0 && entries.map(({ cls, count, label, variant }) => (
+                  <Badge key={cls} variant={variant} title={`Filter error class: ${cls}`}>{count}× {label}</Badge>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {(() => {
@@ -1294,6 +1323,13 @@ export default function XrayProxyPage() {
               : <>Filtering {status.modelFilter.all ? "all active configs" : `up to ${status.modelFilter.limit}`} with {status.modelFilter.concurrency || 2} threads:{" "}</>
             }
             {!stopRequested && <>{status.modelFilter.tested || 0} tested, {status.modelFilter.passed || 0} usable, {status.modelFilter.failed || 0} failed{status.modelFilter.cached ? `, ${status.modelFilter.cached} cached` : ""}.</>}
+            {!stopRequested && errorBreakdownEntries(status.modelFilter.errorBreakdown).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1.5">
+                {errorBreakdownEntries(status.modelFilter.errorBreakdown).map(({ cls, count, label, variant }) => (
+                  <Badge key={cls} variant={variant} title={`Filter error class: ${cls}`}>{count}× {label}</Badge>
+                ))}
+              </div>
+            )}
             {!stopRequested && status.modelFilter.pauseOnTraffic ? " Pauses when live traffic is active." : ""}
             {!stopRequested && modelFilterTrafficWaiters > 0
               ? ` Waiting for live traffic to go quiet (${modelFilterLiveTraffic} active request${modelFilterLiveTraffic === 1 ? "" : "s"}).`
