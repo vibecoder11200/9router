@@ -119,6 +119,7 @@ export {
   upsertModelFilterResult,
   clearModelFilterResultsByModel, clearAllModelFilterResults,
   deleteModelFilterResultsByConfigIds, pruneOrphanModelFilterResults,
+  listFilterResultsJoined, countFilterResultsJoined, scanFilterResults,
 } from "./repos/modelFilterResultsRepo.js";
 
 // Export/import full DB

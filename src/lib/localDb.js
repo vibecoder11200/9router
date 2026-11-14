@@ -33,5 +33,6 @@ export {
   upsertModelFilterResult,
   clearModelFilterResultsByModel, clearAllModelFilterResults,
   deleteModelFilterResultsByConfigIds, pruneOrphanModelFilterResults,
+  listFilterResultsJoined, countFilterResultsJoined, scanFilterResults,
   exportDb, importDb,
 } from "@/lib/db/index.js";

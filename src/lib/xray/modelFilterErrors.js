@@ -45,8 +45,11 @@ const hasText = (row, needle) =>
 // true)") plus the annotate prefix — the prefix stays exactly once since
 // v0.6.91 phase 1 (idempotent guard).
 const TUNNEL_WORDINGS = Object.freeze([
-  "Proxy required but failed",
-  "Proxy required but none resolved",
+  // One broad wording mirrored by the SQL fragment's '%proxy required%'
+  // LIKE (single truth, phase 3): covers both the annotate prefix
+  // ("Proxy required but failed …") and the refusal ("Proxy required but
+  // none resolved …"). The two remaining wordings are exact.
+  "Proxy required",
   "strictProxy=true but connection proxy could not be resolved",
   "refusing direct fetch",
 ]);
@@ -77,7 +80,11 @@ const MATCHERS = Object.freeze([
         ? r.tunnelOk === true && r.status !== 429
         : typeof r.status === "number" && r.status >= 400 && r.status !== 429,
   },
-  { id: "timeout", match: (r) => /timed? ?out/i.test(r?.error || "") },
+  // Mirrors the SQL base '%timed%out%' OR '%timeout%' exactly (single truth,
+  // phase 3): "timed.*out" covers "timed out" / "timedout" / "ETIMEDOUT";
+  // "timeout" the compact form. SQL LIKE has no equivalent of the old
+  // /timed? ?out/ single-space variant, so JS widened to match SQL.
+  { id: "timeout", match: (r) => /timed.*out|timeout/i.test(r?.error || "") },
   { id: "spawn", match: (r) => r.spawnFailed === true || Boolean(r.infraError) },
   { id: "other", match: () => true },
 ]);
@@ -151,3 +158,63 @@ export function errorBreakdownEntries(breakdown) {
     .filter((cls) => (breakdown[cls] || 0) > 0)
     .map((cls) => ({ cls, count: breakdown[cls], label: FILTER_ERROR_LABELS[cls], variant: FILTER_ERROR_VARIANTS[cls] }));
 }
+
+// ─── SQL fragments (phase 3) — the persisted-domain truth ────────────────
+// One base predicate per class, over the xrayModelFilterResults (r) ⋈
+// xrayConfigses (c) join, all fully parameterized at the call sites.
+// SQLite LIKE is case-insensitive for ASCII — matching the JS classifier's
+// toLowerCase().includes() comparisons.
+//
+// SINGLE TRUTH: the JS precedence array above and these bases are two views
+// of the same taxonomy. fragment(cls) = base(cls) AND NOT(any earlier base)
+// — pairwise disjoint BY CONSTRUCTION, mirroring first-match-wins.
+// The parity test (tests/unit/xray-model-filter-results-route.test.js)
+// proves it over the fixture corpus: every row matches exactly one
+// fragment, and JS(persisted) === SQL for all of them.
+
+export const FILTER_ERROR_BASE_PREDICATES = Object.freeze([
+  { cls: "usable", sql: "r.ok = 1" },
+  { cls: "quota-429", sql: "(COALESCE(r.status, -1) = 429 OR COALESCE(r.error, '') LIKE '%freeusagelimiterror%')" },
+  { cls: "edge-ban", sql: "COALESCE(r.error, '') LIKE '%cloudflare edge ip block%'" },
+  { cls: "tunnel",
+    sql: `(COALESCE(r.error, '') LIKE '%proxy required%'
+           OR COALESCE(r.error, '') LIKE '%strictproxy=true but connection proxy%'
+           OR COALESCE(r.error, '') LIKE '%refusing direct fetch%')` },
+  { cls: "upstream-net", sql: "COALESCE(r.error, '') LIKE '%bun child upstream fetch failed%'" },
+  { cls: "tunnel-check", sql: "(COALESCE(r.status, -1) = 0 AND COALESCE(r.error, '') LIKE '%tunnel connectivity check failed%')" },
+  // Persisted domain: no tunnelOk column, so upstream-http is the residual
+  // non-429 HTTP status bucket. "other" is the complement of all bases.
+  // COALESCE everywhere: `r.status = 429` on NULL status yields NULL and a
+  // NULL inside NOT(...) silently excludes otherwise-matching rows (the
+  // three-valued-logic trap the first draft hit).
+  { cls: "upstream-http", sql: "(r.ok = 0 AND COALESCE(r.status, -1) >= 400 AND COALESCE(r.status, -1) <> 429)" },
+  { cls: "timeout", sql: "(COALESCE(r.error, '') LIKE '%timed%out%' OR COALESCE(r.error, '') LIKE '%timeout%')" },
+]);
+
+// Classes WITHOUT a SQL base: `spawn` rows are never persisted (recordCache
+// skips them — manager.js), `other` is the complement of every base above.
+export const FILTER_ERROR_CLASSES_WITHOUT_FRAGMENT = Object.freeze(["spawn", "other"]);
+
+function filterErrorEarlierBaseSql(cls) {
+  const idx = FILTER_ERROR_BASE_PREDICATES.findIndex((p) => p.cls === cls);
+  if (idx <= 0) return null;
+  return FILTER_ERROR_BASE_PREDICATES.slice(0, idx).map((p) => p.sql).join(" OR ");
+}
+
+/**
+ * The pairwise-disjoint SQL fragment for one error class (persisted rows).
+ * fragment(cls) = base(cls) AND NOT(any earlier base) — first-match-wins in
+ * SQL form. Returns null for classes without a persisted fragment
+ * ("spawn" — never persisted; "other" — use FILTER_ERROR_SQL_OTHER_FRAGMENT).
+ */
+export function getFilterErrorFragmentSql(cls) {
+  const base = FILTER_ERROR_BASE_PREDICATES.find((p) => p.cls === cls);
+  if (!base) return null;
+  const earlier = filterErrorEarlierBaseSql(cls);
+  if (!earlier) return base.sql;
+  return `(${base.sql} AND NOT (${earlier}))`;
+}
+
+/** The "other" fragment: complement of every base (residual bucket). */
+export const FILTER_ERROR_SQL_OTHER_FRAGMENT =
+  `NOT (${FILTER_ERROR_BASE_PREDICATES.map((p) => p.sql).join(" OR ")})`;

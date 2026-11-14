@@ -14,6 +14,153 @@
  */
 
 import { getAdapter } from "../driver.js";
+import {
+  getFilterErrorFragmentSql,
+  FILTER_ERROR_SQL_OTHER_FRAGMENT,
+} from "../../xray/modelFilterErrors.js";
+
+// ─── reads (joined, phase 3) ─────────────────────────────────────────────
+
+// Shared WHERE assembly for the joined read/scan helpers. `c.deletedAt IS
+// NULL` ALWAYS applies (red-team F8: soft-deleted configs must never
+// resurrect through the join); isActive is caller-controlled (default
+// true — inactive-but-not-deleted rows stay reachable for History).
+function buildJoinedWhere({ model, ok, search, minTestedAt, activeOnly, fragmentSql = null } = {}) {
+  const where = ["c.deletedAt IS NULL"];
+  const params = [];
+  if (model) {
+    where.push("r.model = ?");
+    params.push(model);
+  }
+  if (activeOnly !== false) {
+    where.push("c.isActive = 1");
+  }
+  if (ok === true) where.push("r.ok = 1");
+  if (ok === false) where.push("r.ok = 0");
+  if (minTestedAt) {
+    where.push("r.testedAt >= ?");
+    params.push(minTestedAt);
+  }
+  if (search) {
+    // LIKE-escape the user text (\, %, _) so it matches literally.
+    const escaped = String(search).replace(/[\\%_]/g, (ch) => `\\${ch}`);
+    where.push(`(c.name LIKE ? ESCAPE '\\' OR c.host LIKE ? ESCAPE '\\' OR r.error LIKE ? ESCAPE '\\')`);
+    params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
+  }
+  if (fragmentSql) {
+    where.push(fragmentSql);
+  }
+  return { where, params };
+}
+
+/**
+ * Read-only join listing for the run-log modal (phase 3 route). Rows carry
+ * identity (from xrayConfigs) + verdict fields; error/exitIp are omitted
+ * for ok rows (they are null there anyway); exitIp is omitted entirely
+ * unless `includeExitIp` (opt-in exposure mitigation, red-team F6).
+ *
+ * @returns rows ordered by testedAt DESC (newest verdict first)
+ */
+export async function listFilterResultsJoined({
+  model, errorClass = null, ok = null, search = null, minTestedAt = null,
+  activeOnly = true, includeExitIp = false, page = 1, pageSize = 20,
+} = {}) {
+  const db = await getAdapter();
+  const fragmentSql = errorClass === "other"
+    ? FILTER_ERROR_SQL_OTHER_FRAGMENT
+    : errorClass === "spawn"
+      ? "1 = 0" // spawn rows are never persisted (plan red-team F14) — empty fragment
+      : errorClass
+        ? getFilterErrorFragmentSql(errorClass)
+        : null;
+  const { where, params } = buildJoinedWhere({ model, ok, search, minTestedAt, activeOnly, fragmentSql });
+  const limit = Math.max(1, Math.min(Number(pageSize) || 20, 200));
+  const offset = Math.max(0, (Math.max(1, Number(page) || 1) - 1) * limit);
+  const rows = db.all(
+    `SELECT
+        r.configId AS configId,
+        c.name     AS name,
+        c.host     AS host,
+        c.country  AS country,
+        c.isActive AS isActive,
+        r.model    AS model,
+        r.ok       AS ok,
+        r.status   AS status,
+        r.latencyMs AS latencyMs,
+        r.error    AS error,
+        r.exitIp   AS exitIp,
+        r.testedAt AS testedAt
+      FROM xrayModelFilterResults r
+      JOIN xrayConfigs c ON c.id = r.configId
+      WHERE ${where.join(" AND ")}
+      ORDER BY r.testedAt DESC
+      LIMIT ? OFFSET ?`,
+    [...params, limit, offset],
+  );
+  return rows.map((row) => {
+    const out = {
+      configId: row.configId,
+      name: row.name,
+      host: row.host,
+      country: row.country,
+      isActive: row.isActive === 1 || row.isActive === true,
+      model: row.model,
+      ok: row.ok === 1 || row.ok === true,
+      status: row.status ?? null,
+      latencyMs: row.latencyMs ?? null,
+      error: !row.ok ? row.error : null,
+      testedAt: row.testedAt,
+    };
+    if (!row.ok) {
+      if (includeExitIp && row.exitIp) out.exitIp = row.exitIp;
+    }
+    return out;
+  });
+}
+
+/** Total row count for the same filters as listFilterResultsJoined. */
+export async function countFilterResultsJoined({
+  model, errorClass = null, ok = null, search = null, minTestedAt = null, activeOnly = true,
+} = {}) {
+  const db = await getAdapter();
+  const fragmentSql = errorClass === "other"
+    ? FILTER_ERROR_SQL_OTHER_FRAGMENT
+    : errorClass === "spawn"
+      ? "1 = 0" // spawn rows are never persisted (plan red-team F14) — empty fragment
+      : errorClass
+        ? getFilterErrorFragmentSql(errorClass)
+        : null;
+  const { where, params } = buildJoinedWhere({ model, ok, search, minTestedAt, activeOnly, fragmentSql });
+  const row = db.get(
+    `SELECT COUNT(*) AS n
+      FROM xrayModelFilterResults r
+      JOIN xrayConfigs c ON c.id = r.configId
+      WHERE ${where.join(" AND ")}`,
+    params,
+  );
+  return Number(row?.n) || 0;
+}
+
+/**
+ * Full-text scan for view=summary (plan red-team F5): one query returns
+ * every scoped row's FULL error text, classified in JS with per-class
+ * counters — O(rows) time, O(classes) memory. Never substr() grouping
+ * (truncated prefixes merge rows of different classes).
+ *
+ * @returns {Promise<Array<{ok, status, error, testedAt}>>}
+ */
+export async function scanFilterResults({ model, minTestedAt = null, activeOnly = true } = {}) {
+  const db = await getAdapter();
+  const { where, params } = buildJoinedWhere({ model, minTestedAt, activeOnly });
+  return db.all(
+    `SELECT r.ok AS ok, r.status AS status, r.error AS error, r.testedAt AS testedAt
+      FROM xrayModelFilterResults r
+      JOIN xrayConfigs c ON c.id = r.configId
+      WHERE ${where.join(" AND ")}
+      ORDER BY r.testedAt DESC`,
+    params,
+  );
+}
 
 // ─── mapper ───────────────────────────────────────────────────────────────
 
