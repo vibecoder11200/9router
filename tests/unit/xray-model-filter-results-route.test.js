@@ -21,8 +21,13 @@ let driver;
 let repo;
 let frag;
 let resultsRoute;
+let configsRoute;
 
 const MODEL = "oc/beam-free";
+const FRAG_CLASSES = [
+  "usable", "quota-429", "edge-ban", "tunnel", "upstream-net",
+  "tunnel-check", "upstream-http", "timeout", "spawn", "other",
+];
 
 // Fixture corpus — every probe-producing path's wording (plan phase-2/3 tables)
 const CORPUS = [
@@ -52,6 +57,7 @@ beforeAll(async () => {
   repo = await import("@/lib/db/repos/modelFilterResultsRepo.js");
   frag = await import("@/lib/xray/modelFilterErrors.js");
   resultsRoute = await import("../../src/app/api/xray/configs/model-filter/results/route.js");
+  configsRoute = await import("../../src/app/api/xray/configs/route.js");
   driver = await import("@/lib/db/driver.js");
 
   // Configs: 3 active + 1 inactive + 1 soft-deleted (tombstone)
@@ -70,6 +76,7 @@ beforeAll(async () => {
   // flip cfg-i inactive + tombstone cfg-x (the xrayRepo soft delete)
   const xrayRepo = await import("@/lib/db/repos/xrayRepo.js");
   const adb = await driver.getAdapter();
+  await db.updateSettings({ xrayModelFilterModel: MODEL });
   adb.run(`UPDATE xrayConfigs SET isActive = 0 WHERE id = 'cfg-i'`);
   await xrayRepo.tombstoneXrayConfig("cfg-x");
 
@@ -281,5 +288,26 @@ describe("rows view — repo + route", () => {
     const rows = await resRows.json();
     expect(rows.rows).toEqual([]);
     expect(rows.total).toBe(0);
+  });
+});
+
+describe("configs route badge payload — errorClass (phase 4)", () => {
+  it("badge carries errorClass (persisted-domain) without raw error text", async () => {
+    const res = await configsRoute.GET(new Request("http://localhost/api/xray/configs"));
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    const withResult = data.configs.filter((c) => c.modelFilterResult);
+    expect(withResult.length).toBeGreaterThan(0);
+    for (const c of withResult) {
+      const b = c.modelFilterResult;
+      expect(b).toHaveProperty("errorClass");
+      if (b.ok) expect(b.errorClass).toBe("usable");
+      else expect(FRAG_CLASSES).toContain(b.errorClass);
+      // raw error text must NOT leak into the servers-table payload
+      expect(b).not.toHaveProperty("error");
+    }
+    // a known failed row: the usable fixture's class must be exact
+    const usable = withResult.find((c) => c.modelFilterResult.ok === true);
+    expect(usable.modelFilterResult.errorClass).toBe("usable");
   });
 });

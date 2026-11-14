@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { classifyPersistedFilterError } from "@/lib/xray/modelFilterErrors.js";
 import {
   getXrayConfigs,
   getXrayConfigCounts,
@@ -43,7 +44,15 @@ export async function GET(request) {
       for (const c of configs) {
         const r = cacheMap.get(c.id);
         c.modelFilterResult = r
-          ? { ok: r.ok, latencyMs: r.latencyMs, testedAt: r.testedAt }
+          ? {
+              ok: r.ok,
+              latencyMs: r.latencyMs,
+              testedAt: r.testedAt,
+              // Persisted-domain class for the servers-table badge (v0.6.91
+              // phase 4). Additive on the already-fetched row — zero extra
+              // queries; raw error text stays OUT of the payload.
+              errorClass: r.ok ? "usable" : classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error }),
+            }
           : null;
       }
     } else {

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Badge, Button, Card, CardSkeleton, Input, Toggle, ConfirmModal } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
-import { errorBreakdownEntries } from "@/lib/xray/modelFilterErrors.js";
+import { errorBreakdownEntries, FILTER_ERROR_LABELS, FILTER_ERROR_VARIANTS } from "@/lib/xray/modelFilterErrors.js";
+import FilterRunLogModal from "./FilterRunLogModal.jsx";
 import SubscriptionManager from "./SubscriptionManager.jsx";
 import VersionPanel from "./VersionPanel.jsx";
 import FreeLaneCard from "./FreeLaneCard.jsx";
@@ -144,6 +145,7 @@ export default function XrayProxyPage() {
   });
   const [modelFilterBusy, setModelFilterBusy] = useState(false);
   const [modelFilterResult, setModelFilterResult] = useState(null);
+  const [runLogOpen, setRunLogOpen] = useState(false);
   // True after the user clicks "Stop Filter" until the running job actually
   // winds down (status leaves "running"). Drives the "Stopping..." banner and
   // keeps the button disabled to prevent duplicate stop requests.
@@ -1187,6 +1189,9 @@ export default function XrayProxyPage() {
                 {entries.length > 0 && entries.map(({ cls, count, label, variant }) => (
                   <Badge key={cls} variant={variant} title={`Filter error class: ${cls}`}>{count}× {label}</Badge>
                 ))}
+                <Button size="sm" variant="ghost" onClick={() => setRunLogOpen(true)}>
+                  View run log
+                </Button>
               </div>
             );
           })()}
@@ -1334,6 +1339,9 @@ export default function XrayProxyPage() {
             {!stopRequested && modelFilterTrafficWaiters > 0
               ? ` Waiting for live traffic to go quiet (${modelFilterLiveTraffic} active request${modelFilterLiveTraffic === 1 ? "" : "s"}).`
               : ""}
+            <Button size="sm" variant="ghost" className="ml-2" onClick={() => setRunLogOpen(true)}>
+              View run log
+            </Button>
           </div>
         )}
 
@@ -1369,39 +1377,6 @@ export default function XrayProxyPage() {
           </Button>
         </div>
 
-        {modelFilterResult?.results?.length > 0 && (
-          <div className="overflow-x-auto border rounded-lg">
-            <table className="w-full text-xs">
-              <thead className="text-left text-text-muted border-b">
-                <tr>
-                  <th className="py-2 px-3">Server</th>
-                  <th className="py-2 px-3">Country</th>
-                  <th className="py-2 px-3">Status</th>
-                  <th className="py-2 px-3">Latency</th>
-                  <th className="py-2 px-3">Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {modelFilterResult.results.slice(0, 25).map((r) => (
-                  <tr key={r.configId} className="border-b last:border-0">
-                    <td className="py-2 px-3 max-w-xs truncate">{r.name || r.host || r.configId}</td>
-                    <td className="py-2 px-3">{r.country || "—"}</td>
-                    <td className="py-2 px-3">
-                      <Badge variant={r.ok ? "success" : "error"}>{r.ok ? "usable" : "failed"}</Badge>
-                    </td>
-                    <td className="py-2 px-3">{latencyText(r.latencyMs)}</td>
-                    <td className="py-2 px-3 max-w-sm truncate">{r.error || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {modelFilterResult.results.length > 25 && (
-              <div className="text-center py-2 text-xs text-text-muted">
-                Showing first 25 of {modelFilterResult.results.length} results.
-              </div>
-            )}
-          </div>
-        )}
       </Card>
 
       <FreeLaneCard settings={settings} onSaveSetting={handleSaveSetting} />
@@ -1542,8 +1517,11 @@ export default function XrayProxyPage() {
                         <Badge key={name} title={`From subscription: ${name}`}>{name}</Badge>
                       ))}
                       {c.modelFilterResult ? (
-                        <Badge variant={c.modelFilterResult.ok ? "success" : "error"} title={`Last model probe: ${c.modelFilterResult.ok ? "usable" : "failed"}${c.modelFilterResult.latencyMs != null && c.modelFilterResult.latencyMs >= 0 ? ` · ${c.modelFilterResult.latencyMs}ms` : ""}`}>
-                          {c.modelFilterResult.ok ? "✓" : "✗"} {formatTimeAgo(c.modelFilterResult.testedAt)}
+                        <Badge
+                          variant={c.modelFilterResult.ok ? "success" : (FILTER_ERROR_VARIANTS[c.modelFilterResult.errorClass] || "error")}
+                          title={`Last model probe${c.modelFilterResult.latencyMs != null && c.modelFilterResult.latencyMs >= 0 ? ` · ${c.modelFilterResult.latencyMs}ms` : ""} · ${formatDateTime(c.modelFilterResult.testedAt)}`}
+                        >
+                          {c.modelFilterResult.ok ? "✓" : "✗"} {c.modelFilterResult.ok ? "" : (FILTER_ERROR_LABELS[c.modelFilterResult.errorClass] || "failed")}{c.modelFilterResult.ok ? "" : " · "}{formatTimeAgo(c.modelFilterResult.testedAt)}
                         </Badge>
                       ) : (
                         <Badge title="Not yet probed against the current filter model">untested</Badge>
@@ -1699,6 +1677,13 @@ export default function XrayProxyPage() {
         message={confirmState?.message}
         onConfirm={confirmState?.onConfirm}
         onClose={() => setConfirmState(null)}
+      />
+
+      <FilterRunLogModal
+        isOpen={runLogOpen}
+        onClose={() => setRunLogOpen(false)}
+        lastRun={status?.modelFilter?.lastFinishedRun}
+        live={status?.modelFilter}
       />
     </div>
   );
