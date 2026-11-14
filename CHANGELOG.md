@@ -1,3 +1,19 @@
+# v0.6.91 (2026-11-14)
+
+Xray model filter observability — "why did it fail" is now answerable on the dashboard, without SSH + sqlite. Follows v0.6.90's fix of the silent filter abort; the first full prod run (82 tested / 0 usable) exposed the reporting gap.
+
+## Fixes
+- **strictProxy annotation is idempotent** (phase 1): an error crossing nested strict catch layers (the opencode probe path: directFetch bridge → outer fetch caller) no longer double-prefixes `[ProxyFetch] Proxy required but failed (strictProxy=true):` — every annotate site guards on the already-set `proxyInfra` flag. Refusal wordings survive untouched; non-strict path unchanged. Unit-pinned.
+
+## Features
+- **Error-class taxonomy + breakdown chips** (phase 2): every filter result classifies into a stable 10-class taxonomy (`usable`, `quota-429`, `edge-ban`, `tunnel`, `upstream-net`, `tunnel-check`, `upstream-http`, `timeout`, `spawn`, `other`) with explicit first-match precedence (ETIMEDOUT cause-text inside tunnel messages buckets as `tunnel` exactly once; managedRotation's `cloudflare edge ip block` never reads as a model-gate rejection). The running banner shows live chips; the idle badge renders the `lastFinishedRun` snapshot (background auto-runs can no longer silently replace what you're reading), plus an `aborted after N — M untested` chip. The completion watcher nulls the frozen POST-start snapshot (stale-badge fix).
+- **Persistent results API** (phase 3): `GET /api/xray/configs/model-filter/results` — rows + summary views over `xrayModelFilterResults ⋈ xrayConfigs`. Soft-deleted configs never resurrect (`deletedAt IS NULL` everywhere); `isActive` param; `exitIp` is opt-in (`?includeExitIp=1`); server-side pagination (≤200); search LIKE-escaped; summary = one ordered scan classifying FULL error text in JS. SQL fragments and the JS classifier are two views of one taxonomy in `modelFilterErrors.js` — fragment(cls) = base AND NOT(any earlier base), pairwise-disjoint by construction, proven on real sqlite (the NULL-vs-three-valued-logic trap in the first draft is pinned by tests).
+- **Run log viewer modal** (phase 4): "Last run" mode is scoped by the finished run's `startedAt` so its per-class counts match the chips; "All verdicts" is explicitly labeled as spanning runs incl. auto-rotation. Class chips, debounced server-side search, clamped pagination with page reset on dataset change, per-row + TSV copy, exitIp column behind an explicit toggle, live counters footer, and an AbortController + fetch-sequence guard so rapid toggles never show stale data. The dead inline results table (never populated — fire-and-forget POST since 11796d20) is removed. Servers-table badges now show the error class + full probe-time tooltip (badge payload gains `errorClass`, additive, raw error text stays out).
+
+## Verification
+- 5 suites / 59 tests green from `tests/` (vitest ^5.1.0): classifier table + precedence pins, real-sqlite parity (every corpus row matches exactly one fragment; JS ≡ SQL), tombstone/exitIp/pagination/search pins, strict-proxy single-prefix pins.
+- `detect_changes` per phase; risk assessed (proxyAwareFetch CRITICAL hub — message-only diff; runModelFilterJob HIGH — additive state; dashboard page HIGH — UI wiring).
+
 # v0.6.90 (2026-11-13)
 
 Xray model filter could never test more than 2-3 of ~1300 servers per run — diagnosed live on prod, root-caused to a three-layer misclassification, fixed end to end.
