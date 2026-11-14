@@ -64,11 +64,9 @@ export async function GET(request) {
       });
     }
 
-    // rows view
+    // rows view — "" and "all" mean no class filter; unknown ids also fall back to none.
     const clsParam = (searchParams.get("class") || "").trim();
-    const errorClass = !clsParam || clsParam === "all"
-      ? null
-      : FILTER_ERROR_CLASSES.includes(clsParam) ? clsParam : null;
+    const errorClass = FILTER_ERROR_CLASSES.includes(clsParam) ? clsParam : null;
     const okParam = searchParams.get("ok");
     const ok = okParam === "1" ? true : okParam === "0" ? false : null;
     const includeExitIp = searchParams.get("includeExitIp") === "1";

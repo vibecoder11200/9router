@@ -1191,7 +1191,7 @@ export default function XrayProxyPage() {
                 >
                   {lastRun.cancelled ? "Stopped · " : ""}{lastRun.passed}/{lastRun.tested} usable{lastRun.cached ? ` · ${lastRun.cached} cached` : ""}
                 </Badge>
-                {entries.length > 0 && entries.map(({ cls, count, label, variant }) => (
+                {entries.map(({ cls, count, label, variant }) => (
                   <Badge key={cls} variant={variant} title={`Filter error class: ${cls}`}>{count}× {label}</Badge>
                 ))}
                 <Button size="sm" variant="ghost" onClick={() => setRunLogOpen(true)}>
@@ -1333,13 +1333,16 @@ export default function XrayProxyPage() {
               : <>Filtering {status.modelFilter.all ? "all active configs" : `up to ${status.modelFilter.limit}`} with {status.modelFilter.concurrency || 2} threads:{" "}</>
             }
             {!stopRequested && <>{status.modelFilter.tested || 0} tested, {status.modelFilter.passed || 0} usable, {status.modelFilter.failed || 0} failed{status.modelFilter.cached ? `, ${status.modelFilter.cached} cached` : ""}.</>}
-            {!stopRequested && errorBreakdownEntries(status.modelFilter.errorBreakdown).length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1.5">
-                {errorBreakdownEntries(status.modelFilter.errorBreakdown).map(({ cls, count, label, variant }) => (
-                  <Badge key={cls} variant={variant} title={`Filter error class: ${cls}`}>{count}× {label}</Badge>
-                ))}
-              </div>
-            )}
+            {!stopRequested && (() => {
+              const chips = errorBreakdownEntries(status.modelFilter.errorBreakdown);
+              return chips.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1.5">
+                  {chips.map(({ cls, count, label, variant }) => (
+                    <Badge key={cls} variant={variant} title={`Filter error class: ${cls}`}>{count}× {label}</Badge>
+                  ))}
+                </div>
+              );
+            })()}
             {!stopRequested && status.modelFilter.pauseOnTraffic ? " Pauses when live traffic is active." : ""}
             {!stopRequested && modelFilterTrafficWaiters > 0
               ? ` Waiting for live traffic to go quiet (${modelFilterLiveTraffic} active request${modelFilterLiveTraffic === 1 ? "" : "s"}).`
@@ -1526,7 +1529,9 @@ export default function XrayProxyPage() {
                           variant={c.modelFilterResult.ok ? "success" : (FILTER_ERROR_VARIANTS[c.modelFilterResult.errorClass] || "error")}
                           title={`Last model probe${c.modelFilterResult.latencyMs != null && c.modelFilterResult.latencyMs >= 0 ? ` · ${c.modelFilterResult.latencyMs}ms` : ""} · ${formatDateTime(c.modelFilterResult.testedAt)}`}
                         >
-                          {c.modelFilterResult.ok ? "✓" : "✗"} {c.modelFilterResult.ok ? "" : (FILTER_ERROR_LABELS[c.modelFilterResult.errorClass] || "failed")}{c.modelFilterResult.ok ? "" : " · "}{formatTimeAgo(c.modelFilterResult.testedAt)}
+                          {c.modelFilterResult.ok
+                            ? `✓ ${formatTimeAgo(c.modelFilterResult.testedAt)}`
+                            : `✗ ${FILTER_ERROR_LABELS[c.modelFilterResult.errorClass] || "failed"} · ${formatTimeAgo(c.modelFilterResult.testedAt)}`}
                         </Badge>
                       ) : (
                         <Badge title="Not yet probed against the current filter model">untested</Badge>

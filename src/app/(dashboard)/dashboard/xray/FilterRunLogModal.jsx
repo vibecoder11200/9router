@@ -91,9 +91,13 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const params = new URLSearchParams();
-    if (mode === "lastrun" && lastRun?.startedAt) params.set("minTestedAt", lastRun.startedAt);
-    if (mode === "all") params.set("active", "0");
+    // Scoping shared by both requests: the run window (lastrun) and the
+    // active-config widening (all).
+    const scopeParams = new URLSearchParams();
+    if (mode === "lastrun" && lastRun?.startedAt) scopeParams.set("minTestedAt", lastRun.startedAt);
+    if (mode === "all") scopeParams.set("active", "0");
+
+    const params = new URLSearchParams(scopeParams);
     if (classFilter !== "all") params.set("class", classFilter);
     if (search) params.set("name", search);
     if (includeExitIp) params.set("includeExitIp", "1");
@@ -105,13 +109,7 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
     try {
       const [rowsRes, summaryRes] = await Promise.all([
         fetch(`/api/xray/configs/model-filter/results?${params.toString()}`, { signal: controller.signal }),
-        fetch(
-          `/api/xray/configs/model-filter/results?view=summary&${new URLSearchParams({
-            ...(mode === "lastrun" && lastRun?.startedAt ? { minTestedAt: lastRun.startedAt } : {}),
-            ...(mode === "all" ? { active: "0" } : {}),
-          }).toString()}`,
-          { signal: controller.signal },
-        ),
+        fetch(`/api/xray/configs/model-filter/results?view=summary&${scopeParams.toString()}`, { signal: controller.signal }),
       ]);
       if (seq !== fetchSeqRef.current) return; // stale — a newer fetch started
       if (!rowsRes.ok || !summaryRes.ok) throw new Error(`HTTP ${rowsRes.status}/${summaryRes.status}`);
@@ -145,10 +143,7 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
   }, [page, totalPages]);
   const safePage = Math.min(page, totalPages);
 
-  const classChips = useMemo(() => {
-    if (!summary?.byClass) return [];
-    return errorBreakdownEntries(summary.byClass);
-  }, [summary]);
+  const classChips = useMemo(() => errorBreakdownEntries(summary?.byClass), [summary]);
 
   const copySummaryTsv = useCallback(() => {
     const lines = ["class\tcount"];
@@ -156,7 +151,7 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
     lines.push("");
     lines.push(["server", "host", "country", "class", "status", "latencyMs", "testedAt", "error"].join("\t"));
     for (const r of rows) {
-      const cls = r.ok ? "usable" : classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error });
+      const cls = classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error });
       lines.push([
         r.name || "", r.host || "", r.country || "",
         cls,
@@ -276,8 +271,8 @@ export default function FilterRunLogModal({ isOpen, onClose, lastRun, live }) {
               )}
               {rows.map((r) => {
                 // Client-side classification mirrors the route's summary scan
-                // (same persisted-domain classifier — single truth).
-                const rowCls = r.ok ? "usable" : classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error });
+                // (same persisted-domain classifier — ok rows return "usable").
+                const rowCls = classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error });
                 return (
                   <tr key={`${r.configId}-${r.model}`} className="border-b last:border-0 align-top">
                     <td className="py-2 px-3 max-w-xs">

@@ -50,8 +50,9 @@ export async function GET(request) {
               testedAt: r.testedAt,
               // Persisted-domain class for the servers-table badge (v0.6.91
               // phase 4). Additive on the already-fetched row — zero extra
-              // queries; raw error text stays OUT of the payload.
-              errorClass: r.ok ? "usable" : classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error }),
+              // queries; raw error text stays OUT of the payload. Ok rows
+              // classify as "usable" (first matcher).
+              errorClass: classifyPersistedFilterError({ ok: r.ok, status: r.status, error: r.error }),
             }
           : null;
       }

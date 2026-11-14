@@ -53,6 +53,15 @@ function buildJoinedWhere({ model, ok, search, minTestedAt, activeOnly, fragment
   return { where, params };
 }
 
+// SQL fragment for an errorClass filter: null = unfiltered; "other" = the
+// residual complement of all bases; "spawn" = matches nothing (spawn rows
+// are never persisted — plan red-team F14).
+function errorClassFragmentSql(errorClass) {
+  if (errorClass === "other") return FILTER_ERROR_SQL_OTHER_FRAGMENT;
+  if (errorClass === "spawn") return "1 = 0";
+  return errorClass ? getFilterErrorFragmentSql(errorClass) : null;
+}
+
 /**
  * Read-only join listing for the run-log modal (phase 3 route). Rows carry
  * identity (from xrayConfigs) + verdict fields; error/exitIp are omitted
@@ -66,13 +75,7 @@ export async function listFilterResultsJoined({
   activeOnly = true, includeExitIp = false, page = 1, pageSize = 20,
 } = {}) {
   const db = await getAdapter();
-  const fragmentSql = errorClass === "other"
-    ? FILTER_ERROR_SQL_OTHER_FRAGMENT
-    : errorClass === "spawn"
-      ? "1 = 0" // spawn rows are never persisted (plan red-team F14) — empty fragment
-      : errorClass
-        ? getFilterErrorFragmentSql(errorClass)
-        : null;
+  const fragmentSql = errorClassFragmentSql(errorClass);
   const { where, params } = buildJoinedWhere({ model, ok, search, minTestedAt, activeOnly, fragmentSql });
   const limit = Math.max(1, Math.min(Number(pageSize) || 20, 200));
   const offset = Math.max(0, (Math.max(1, Number(page) || 1) - 1) * limit);
@@ -111,9 +114,7 @@ export async function listFilterResultsJoined({
       error: !row.ok ? row.error : null,
       testedAt: row.testedAt,
     };
-    if (!row.ok) {
-      if (includeExitIp && row.exitIp) out.exitIp = row.exitIp;
-    }
+    if (!row.ok && includeExitIp && row.exitIp) out.exitIp = row.exitIp;
     return out;
   });
 }
@@ -123,13 +124,7 @@ export async function countFilterResultsJoined({
   model, errorClass = null, ok = null, search = null, minTestedAt = null, activeOnly = true,
 } = {}) {
   const db = await getAdapter();
-  const fragmentSql = errorClass === "other"
-    ? FILTER_ERROR_SQL_OTHER_FRAGMENT
-    : errorClass === "spawn"
-      ? "1 = 0" // spawn rows are never persisted (plan red-team F14) — empty fragment
-      : errorClass
-        ? getFilterErrorFragmentSql(errorClass)
-        : null;
+  const fragmentSql = errorClassFragmentSql(errorClass);
   const { where, params } = buildJoinedWhere({ model, ok, search, minTestedAt, activeOnly, fragmentSql });
   const row = db.get(
     `SELECT COUNT(*) AS n

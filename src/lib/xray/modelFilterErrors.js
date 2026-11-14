@@ -149,8 +149,8 @@ export function bumpErrorBreakdown(breakdown, row, opts) {
 }
 
 /**
- * Ordered chip entries for a breakdown: non-zero classes only, FILTER_ERROR
- * _CLASSES precedence order (usable first, "other" last).
+ * Ordered chip entries for a breakdown: non-zero classes only, in
+ * FILTER_ERROR_CLASSES precedence order (usable first, "other" last).
  */
 export function errorBreakdownEntries(breakdown) {
   if (!breakdown) return [];
