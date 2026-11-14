@@ -460,9 +460,11 @@ async function fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket = f
         dbg("PROXY", `PROXY ROUTING VERIFIED | ${safeTargetHost(url)} | transport=adapter | proxy=${via || safeProxyHost(proxyUrl)} | status=${res?.status}`);
         return res;
       } catch (err) {
-        if (strictProxy) {
+        if (strictProxy && !err.proxyInfra) {
           // Annotate, never replace: adapter guards (noRetry / statusCode /
           // code) and the cause chain must survive the strict wrap.
+          // Idempotent: nested strict catch layers re-throw the SAME error
+          // object — without the flag guard the prefix doubles.
           err.message = `[ProxyFetch] Proxy required but failed (strictProxy=true): ${err.message}`;
           err.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
         }
@@ -655,9 +657,11 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       try {
         return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket, strict);
       } catch (proxyError) {
-        if (strict) {
+        if (strict && !proxyError.proxyInfra) {
           // Annotate, never replace: adapter guards (noRetry / statusCode /
           // code) and the cause chain must survive the strict wrap.
+          // Idempotent: nested strict catch layers re-throw the SAME error
+          // object — without the flag guard the prefix doubles.
           proxyError.message = `[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`;
           proxyError.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
           throw proxyError;
@@ -680,9 +684,11 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       return await fetchWithTlsFallback(url, options, proxyUrl, forceFreshSocket, strict);
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
-      if (strict) {
+      if (strict && !proxyError.proxyInfra) {
         // Annotate, never replace: adapter guards (noRetry / statusCode /
         // code) and the cause chain must survive the strict wrap.
+        // Idempotent: nested strict catch layers re-throw the SAME error
+        // object — without the flag guard the prefix doubles.
         proxyError.message = `[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`;
         proxyError.proxyInfra = true; // proxy-side outage — never lock/feed the account (chat loop)
         throw proxyError;
