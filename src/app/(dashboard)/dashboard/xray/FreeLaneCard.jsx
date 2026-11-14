@@ -163,7 +163,7 @@ export default function FreeLaneCard({ settings, onSaveSetting }) {
 
         {Array.isArray(lane?.lane?.modelsKnownRefused) && lane.lane.modelsKnownRefused.length > 0 && (
           <div className="text-xs text-text-muted">
-            Served legacy regardless of engine (v2 gate refuses their wire shape): {lane.lane.modelsKnownRefused.join(", ")}.
+            Models known to be unavailable via the free lane (rejected upstream): {lane.lane.modelsKnownRefused.join(", ")}.
           </div>
         )}
       </div>

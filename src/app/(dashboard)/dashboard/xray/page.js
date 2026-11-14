@@ -1256,13 +1256,13 @@ export default function XrayProxyPage() {
             />
             Pause while live traffic is active
           </label>
-          <label className="text-sm flex items-center gap-2 h-10" title="Free models (e.g. OpenCode Free): send a real chat request per tested node instead of a connectivity check. Costs a small amount of free-tier quota per node, but 'usable' then truly means the node can chat.">
+          <label className="text-sm flex items-center gap-2 h-10" title="Send a real chat request per tested node instead of a connectivity check. Costs a small amount of free-tier quota per node, but 'usable' then truly means the node can chat.">
             <input
               type="checkbox"
               checked={modelFilter.freeChatProbe === true}
               onChange={(e) => saveModelFilterSettings({ freeChatProbe: e.target.checked })}
             />
-            Real chat probe for free models
+            Real chat probe per node
           </label>
           <span className="text-xs text-text-muted self-center">
             Recommended threads: 2. Turn pause off only when you want filtering to run continuously.
