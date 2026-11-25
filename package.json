@@ -1,6 +1,6 @@
 {
   "name": "9router-app",
-  "version": "0.6.91",
+  "version": "0.6.92",
   "description": "9Router web dashboard",
   "private": true,
   "engines": {
@@ -25,7 +25,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@monaco-editor/react": "^4.7.0",
-    "@next/third-parties": "^16.2.9",
+    "@next/third-parties": "^16.4.6",
     "@node-saml/node-saml": "^5.1.0",
     "@xyflow/react": "^12.10.1",
     "bcryptjs": "^3.0.3",
@@ -37,8 +37,8 @@
     "marked": "^18.0.1",
     "material-symbols": "^0.44.6",
     "monaco-editor": "^0.57.0",
-    "next": "16.3.4",
-    "node-forge": "^1.3.3",
+    "next": "^16.4.6",
+    "node-forge": "^1.4.3",
     "node-machine-id": "^1.1.12",
     "open": "^11.0.0",
     "ora": "^9.1.0",
@@ -66,7 +66,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.4.6",
     "playwright-core": "^1.62.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4",
@@ -76,6 +76,8 @@
   "comment_vitest": "pinned to the 5.x line the suite is validated on (tests/vitest.config.js lives under tests/ — run `npx vitest run` from that directory so the @/ aliases resolve); npx alone floats majors and breaks vi.mock-in-it patterns (executor-proxy-forwarding) and fake-timer reuse (quota-auto-ping).",
   "overrides": {
     "dompurify": "^3.4.17",
-    "ip-address": "^10.7.4"
+    "ip-address": "^10.7.4",
+    "minimatch": "^11.0.1",
+    "brace-expansion": "^5.0.13"
   }
 }

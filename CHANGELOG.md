@@ -1,3 +1,33 @@
+# v0.6.92 (2026-11-25)
+
+Upstream decolua/9router v0.5.119 → v0.5.123 migration (34 commits, effective range `db83e88b..5ae63d22`, 152 files, +7396/−478) ported via surgical 3-way apply; 5 conflicted files hand-merged with every fork mod preserved (proven by a divergence-identity check: 28/39 fork-diverged files show byte-identical fork-vs-upstream deltas before and after). Plus the toolchain adoption the user opted into.
+
+## Upstream features
+- **New providers with gateway-quota usage tracking**: OpenDesign Go (control-plane key → `amr-api`, workspaces/wallet preflight+balance, `usage/opendesign.js`) and DeepRelay (quota tracker, `usage/deeprelay.js`); `synthetic.js` usage reworked onto the shared gateway-quota shape (`/v2/quotas`-style accounting) (db83e88b). QwenCloud split out of `alitp-intl` with Alibaba Token Plan dual-endpoint + usage accounting (dbe446d0). Registry renumbered fork-style: p155 opendesign-go, p156 deeprelay, p157 qwencloud.
+- **Kiro**: CreateResponse (`/v1/responses`) fallback when chat 429s with `USER_REQUEST_RATE_EXCEEDED` (#5631; new `utils/kiroCreateResponse.js`, executor wiring) (0957919c); Kiro identifies as IDE 1.4.154 on every call incl. token refresh (new `shared/kiroIdentity.js` + `config/kiroClient.js`) (ada236da + 1da78e2b).
+- **Antigravity**: Gemini 4 Hydrogen with long-decode support (`utils/geminiLongDecode.js`) and prompt-rejection recovery (109e4816); Hermes system-prompt lines that trigger fake 429 RESOURCE_EXHAUSTED are stripped (bb399170); OpenClaw header rewritten to Antigravity identity (c779db2b); fingerprint bumped to Hub 2.33.0 with the live IDE client identity and UA shape preserved (05fa58b8 + 6b8b7ceb); lead-generation requests carry the official identity prompt (e37cb78e); Gemini 4 / Claude 5.5 model ids + thinking tiers corrected (767d7aeb).
+- **Model catalogs**: Codex GPT 6.2 Sol + Astra (374e17b8); Kimi K3.1 Code context limits (7d32657c); Nvidia hosted Nemotron 3 Ultra advertises tools + 1M window (ba3bba47) and gains live embedding models with `input_type` support (new `config/embeddingParams.js`) (a851a89c); Mistral emits string `text_delta` for array content chunks + Large 4 limits pinned (213558f1); combo-seat context limits respect thinking-level overrides and `/v1/models` gains an opencode live free-model resolver (4e548583).
+- **Cloudflare/SystemOne**: clef, clef-omni, clairic models with custom `upstreamModelId` support (46f488b1); Cloudflare result envelope unwrapped (35b920c6); deprecated CF models pruned (ecb4d49e).
+- **ElevenLabs TTS**: refreshed model list, live model route (`/api/media-providers/tts/elevenlabs/models`), OpenAI `voice` field honored (72ad720c).
+- **Token-saver**: REA allow-prompt toggle — new `translator/concerns/systemPrompt.js` strips/keeps the system prompt per setting (fdd942de).
+- **CLI tools**: Pi model input/reasoning/thinking-level configuration (new `shared/utils/piModels.js`, `GenericCliToolCard` rework) (1ca07616); commandcode + claude live catalogs offered in the model pickers (9fb84c94).
+- **Usage dashboard**: billion/trillion token counts formatted compactly (shared `tokenDisplay.js`) (6e3c16a1); client billing header kept out of the cached Claude system prompt (971ae638); qoder image uploads signed with multipart length (ef55a10c).
+- **Proxy pools**: Cloudflare worker uploaded as a hand-built multipart body (new `src/lib/cloudflare-worker-upload.js`) — fixes broken deploys through proxies that mangle FormData (f5f3d396).
+- Upstream i18n sweep: leftover Vietnamese comments/strings translated to English (c0feb3a0).
+
+## Fork interplay (hand-merges)
+- `chatCore.js`: fork's `onStreamError` (xray observability) and upstream's new `reaAllowEnabled` are threaded together in the signature — both callers (chat handler) pass both.
+- `validate/route.js`: the fork's `/usage` probe for opencode-go (no token cost, no false-invalid on exhausted plans) keeps its mechanism and now also sends upstream's `x-opencode-session` header derived from the key hash (bf5c4192) so validate looks like a normal session.
+- Registry maintains the fork −2 numbering offset; alias baseline gains the `nous` row the fork had been missing since the v0.5.104 migration, plus the three new provider rows.
+
+## Toolchain (user decision)
+- `next` un-pinned from 16.3.4 → `^16.4.6` (installs 16.4.6; the 16.3.5-era reason for the pin — missing `@next/swc-win32-x64-msvc` — no longer holds, binary verified present and the webpack build passes on Windows). `@next/third-parties` ^16.4.6, `eslint-config-next` 16.4.6, `node-forge` ^1.4.3 (root+cli), new overrides `minimatch ^11.0.1` + `brace-expansion ^5.0.13` (e180e752). `tests` vitest stays on the fork's ^5.1.0 line (upstream bumped their 4.x line; irrelevant here).
+
+## Verification
+- Full suite (vitest 5.1.0): pre-migration 5963 tests / 51 failed; post-migration 6237 tests (+274 upstream tests) / 48 failed. Failing-file set identical to the pre-migration baseline minus golden-url-header (snapshots regenerated: 184/184). The no-regression gate's 3 flags (mimo-free.live bootstrap, xai-oauth ×2) are live-service tests that also failed pre-migration — environmental, not regressions. 36/36 new + upstream-touched suites green with zero adaptation (both `vi.mock` uses are module-top-level).
+- Baselines: providers-baseline regenerated (111 providers, verify byte-for-byte equal); alias-baseline 142 tokens (verify equal); oauth-urls equal.
+- `npm run build` (webpack, next 16.4.6) passes; standalone assets + opencodeBunSidecar copied.
+
 # v0.6.91 (2026-11-14)
 
 Xray model filter observability — "why did it fail" is now answerable on the dashboard, without SSH + sqlite. Follows v0.6.90's fix of the silent filter abort; the first full prod run (82 tested / 0 usable) exposed the reporting gap.

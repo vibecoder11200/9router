@@ -29,7 +29,7 @@
     ],
     "format": "antigravity",
     "headers": {
-      "User-Agent": "antigravity/hub/2.24.0 darwin/arm64"
+      "User-Agent": "antigravity/hub/2.33.0 darwin/arm64"
     },
     "retry": {
       "429": {
@@ -590,9 +590,7 @@
     },
     "headers": {
       "Content-Type": "application/json",
-      "Accept": "application/vnd.amazon.eventstream",
-      "User-Agent": "AWS-SDK-JS/3.0.0 kiro-ide/1.0.0",
-      "X-Amz-User-Agent": "aws-sdk-js/3.0.0 kiro-ide/1.0.0"
+      "Accept": "application/vnd.amazon.eventstream"
     },
     "tokenUrl": "https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken",
     "authUrl": "https://prod.us-east-1.auth.desktop.kiro.dev",
@@ -1134,7 +1132,33 @@
     "quirks": {
       "preserveCacheControl": true
     },
-    "format": "openai"
+    "format": "openai",
+    "transports": [
+      {
+        "format": "claude",
+        "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic/v1/messages",
+        "headers": {
+          "Anthropic-Version": "2023-06-01",
+          "Anthropic-Beta": "claude-code-20250219,interleaved-thinking-2025-05-14"
+        },
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer",
+          "anthropicVersion": true
+        },
+        "thinkingFormat": "claude-adaptive"
+      },
+      {
+        "format": "openai",
+        "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      }
+    ]
   },
   "tokenharbor": {
     "baseUrl": "https://tokenharbor.ai/v1/chat/completions",
@@ -1353,5 +1377,141 @@
       "url": "https://api.synthetic.new/v2/quotas"
     },
     "format": "openai"
+  },
+  "opendesign-go": {
+    "baseUrl": "https://amr-link.open-design.ai/v1/chat/completions",
+    "validateUrl": "https://amr-link.open-design.ai/v1/models",
+    "auth": {
+      "combined": true,
+      "header": "Authorization",
+      "scheme": "bearer"
+    },
+    "timeoutMs": 180000,
+    "retry": {
+      "502": {
+        "attempts": 1,
+        "delayMs": 2000
+      }
+    },
+    "usage": {
+      "url": "https://amr-api.open-design.ai/api/v1/workspaces"
+    },
+    "format": "openai",
+    "transports": [
+      {
+        "format": "openai",
+        "baseUrl": "https://amr-link.open-design.ai/v1/chat/completions",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      },
+      {
+        "format": "claude",
+        "baseUrl": "https://amr-link.open-design.ai/v1/messages",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer",
+          "anthropicVersion": true
+        }
+      },
+      {
+        "format": "openai-responses",
+        "baseUrl": "https://amr-link.open-design.ai/v1/responses",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      }
+    ]
+  },
+  "deeprelay": {
+    "baseUrl": "https://api.deeprelay.ai/v1/chat/completions",
+    "validateUrl": "https://api.deeprelay.ai/v1/models",
+    "usage": {
+      "url": "https://api.deeprelay.ai/v1/billing/balance"
+    },
+    "auth": {
+      "combined": true,
+      "header": "Authorization",
+      "scheme": "bearer"
+    },
+    "format": "openai",
+    "transports": [
+      {
+        "format": "openai",
+        "baseUrl": "https://api.deeprelay.ai/v1/chat/completions",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      },
+      {
+        "format": "claude",
+        "baseUrl": "https://api.deeprelay.ai/v1/messages",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer",
+          "anthropicVersion": true
+        }
+      },
+      {
+        "format": "openai-responses",
+        "baseUrl": "https://api.deeprelay.ai/v1/responses",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      }
+    ]
+  },
+  "qwencloud": {
+    "baseUrl": "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1/chat/completions",
+    "validateUrl": "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1/models",
+    "quirks": {
+      "preserveCacheControl": true
+    },
+    "format": "openai",
+    "transports": [
+      {
+        "format": "openai",
+        "baseUrl": "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1/chat/completions",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      },
+      {
+        "format": "claude",
+        "baseUrl": "https://token-plan.maas.qwencloudapi.com/apps/anthropic/v1/messages",
+        "headers": {
+          "Anthropic-Version": "2023-06-01",
+          "Anthropic-Beta": "claude-code-20250219,interleaved-thinking-2025-05-14"
+        },
+        "auth": {
+          "combined": true,
+          "header": "x-api-key",
+          "scheme": "raw",
+          "anthropicVersion": true
+        },
+        "thinkingFormat": "claude-adaptive"
+      },
+      {
+        "format": "openai-responses",
+        "baseUrl": "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1/responses",
+        "auth": {
+          "combined": true,
+          "header": "Authorization",
+          "scheme": "bearer"
+        }
+      }
+    ]
   }
 }

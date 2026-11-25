@@ -467,8 +467,12 @@ export async function POST(request) {
           // a working key as invalid. It also costs no tokens.
           // OPENCODE_GO_USAGE_URL tracks the registry (inference/go/v1 since
           // upstream 7ef6df56).
+          // x-opencode-session (upstream bf5c4192): opencode.ai expects a session
+          // id on inference-family calls; derive it from the key hash the same
+          // way upstream does so validate looks like a normal session.
+          const sessionId = "validate-" + (await import("node:crypto")).createHash("sha256").update(apiKey).digest("hex").slice(0, 16);
           const res = await fetch(OPENCODE_GO_USAGE_URL, {
-            headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+            headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json", "x-opencode-session": sessionId },
             signal: AbortSignal.timeout(8000),
           });
           // Belt and braces: if this endpoint ever starts 401ing an exhausted plan

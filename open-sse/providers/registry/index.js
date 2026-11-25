@@ -169,6 +169,11 @@ import p152 from "./nace.js";
 // upstream's p154/p155 → p153/p154.
 import p153 from "./sensenova-intl.js";
 import p154 from "./synthetic.js";
+// Upstream v0.5.123 providers (opendesign-go, deeprelay, qwencloud),
+// renumbered from upstream's p156/p157/p158 → p155/p156/p157.
+import p155 from "./opendesign-go.js";
+import p156 from "./deeprelay.js";
+import p157 from "./qwencloud.js";
 export default [
   p0,
   p1,
@@ -324,4 +329,7 @@ export default [
   p152,
   p153,
   p154,
+  p155,
+  p156,
+  p157,
 ];
